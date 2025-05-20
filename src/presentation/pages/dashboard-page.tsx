@@ -1,8 +1,11 @@
+import { SectionCards } from "../components/dashboard/section-cards";
+
 export function DashboardPage() {
   return (
-    <div>
-      <h1 className="text-2xl font-bold mb-4">Welcome to the Dashboard</h1>
-      <p>This is your dashboard. You can view your projects, tasks, and more from here.</p>
+    <div className="@container/main flex flex-1 flex-col gap-2">
+      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <SectionCards />
+      </div>
     </div>
   );
 }

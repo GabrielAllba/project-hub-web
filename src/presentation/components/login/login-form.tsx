@@ -21,14 +21,14 @@ export function LoginForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const navigate = useNavigate();
   
-  const { execute, loading } = useLogin();
+  const { triggerLogin, triggerLoginLoading } = useLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
     const payload: LoginRequestDTO = { email, password };
-    const response = await execute(payload);
+    const response = await triggerLogin(payload);
 
     if (response.status === 200) {
       localStorage.setItem("accessToken", response.data.accessToken);
@@ -63,7 +63,7 @@ export function LoginForm() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="m@example.com"
+                  placeholder="example@gmail.com"
                   required
                 />
               </div>
@@ -89,8 +89,8 @@ export function LoginForm() {
                 <div className="text-sm text-red-500">{errorMessage}</div>
               )}
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? "Logging in..." : "Login"}
+                <Button type="submit" className="w-full" disabled={triggerLoginLoading}>
+                  {triggerLoginLoading ? "Logging in..." : "Login"}
                 </Button>
               </div>
             </div>

@@ -32,15 +32,15 @@ export function useLogin() {
     loginFetcher
   );
 
-  const execute = async (
+  const triggerLogin = async (
     payload: LoginRequestDTO
   ): Promise<BaseResponse<LoginResponseDTO>> => {
     return await trigger(payload);
   };
 
   return {
-    execute,
-    data,
-    loading: isMutating,
+    triggerLogin,
+    triggerLoginResponse: data,
+    triggerLoginLoading: isMutating,
   };
 }
