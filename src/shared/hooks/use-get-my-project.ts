@@ -1,38 +1,39 @@
-import { GetMyProjectUseCase } from "@/application/usecases/get-my-project";
+
+import { GetMyProjectUseCase } from "@/application/usecases/get-my-projects-usecase";
 import type { BaseResponse } from "@/domain/dto/base-response";
 import type { Page } from "@/domain/dto/page-response";
 import type { ProjectSummary } from "@/domain/entities/project-summary";
-import { ProjectHubApiRepository } from "@/domain/repositories/project-hub-api-repository";
+import { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository";
 import useSWRMutation from "swr/mutation";
 import { convertAxiosErrorToBaseResponse } from "../lib/utils";
 
-const getMyProjectUseCase = new GetMyProjectUseCase(new ProjectHubApiRepository());
+const getMyProjectUseCase = new GetMyProjectUseCase(new ProjectHubServiceRepository());
 
 async function fetcher(
-  _: string,
-  { arg: { token, page, size } }: { arg: { token: string; page?: number; size?: number } }
+    _: string,
+    { arg: { token, page, size } }: { arg: { token: string; page: number; size: number } }
 ): Promise<BaseResponse<Page<ProjectSummary>>> {
-  try {
-    return await getMyProjectUseCase.execute(token, page ?? 0, size ?? 10);
-  } catch (err) {
-    return convertAxiosErrorToBaseResponse<Page<ProjectSummary>>(err, "Failed to fetch my project");
-  }
+    try {
+        return await getMyProjectUseCase.execute(token, page, size);
+    } catch (err) {
+        return convertAxiosErrorToBaseResponse<Page<ProjectSummary>>(err);
+    }
 }
 
 
 export function useGetMyProject() {
-  const { trigger, data, isMutating } = useSWRMutation("/project/my", fetcher);
+    const { trigger, data, isMutating } = useSWRMutation("/project/my", fetcher);
 
-  const triggerGetMyProject = async (page = 0, size = 10): Promise<BaseResponse<Page<ProjectSummary>>> => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) throw new Error("No access token found");
+    const triggerGetMyProject = async (page: number, size: number): Promise<BaseResponse<Page<ProjectSummary>>> => {
+        const token = localStorage.getItem("accessToken");
+        if (!token) throw new Error("No access token found");
 
-    return await trigger({ token, page, size });
-  };
+        return await trigger({ token, page, size });
+    };
 
-  return {
-    triggerGetMyProject,
-    triggerGetMyProjectResponse: data,
-    triggerGetMyProjectLoading: isMutating,
-  };
+    return {
+        triggerGetMyProject,
+        triggerGetMyProjectResponse: data,
+        triggerGetMyProjectLoading: isMutating,
+    };
 }

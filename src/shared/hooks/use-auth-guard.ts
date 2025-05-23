@@ -1,11 +1,10 @@
-import useSWR from "swr";
+import { ValidateTokenUseCase } from "@/application/usecases/validate-token-usecase";
+import { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ValidateTokenUseCase } from "@/application/usecases/validate-token-usecase";
-import { AuthenticationApiRepository } from "@/domain/repositories/authentication-api-repository";
+import useSWR from "swr";
 
-
-const validateTokenUseCase = new ValidateTokenUseCase(new AuthenticationApiRepository());
+const validateTokenUseCase = new ValidateTokenUseCase(new AuthenticationServiceRepository());
 
 const fetcher = async (token: string) => {
   return await validateTokenUseCase.execute(token);

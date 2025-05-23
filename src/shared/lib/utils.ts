@@ -10,9 +10,8 @@ export function cn(...inputs: ClassValue[]) {
 
 export function convertAxiosErrorToBaseResponse<T>(
   err: unknown,
-  fallbackMessage = "Request failed"
 ): BaseResponse<T> {
-  let message = fallbackMessage;
+  let message = ""
 
   if (axios.isAxiosError(err)) {
     const errorResponse = err.response?.data as { message?: string };
@@ -20,7 +19,7 @@ export function convertAxiosErrorToBaseResponse<T>(
   }
 
   return {
-    status: 500,
+    status: "error",
     message,
     data: {} as T,
   };

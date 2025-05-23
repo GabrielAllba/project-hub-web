@@ -36,7 +36,7 @@ const navMain = [
   },
   {
     title: "Proyek",
-    url: "/projects",
+    url: "/dashboard/proyek",
     icon: IconFolder,
   },
   {

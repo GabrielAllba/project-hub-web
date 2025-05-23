@@ -1,14 +1,16 @@
+"use client"
+
 import {
   IconDotsVertical,
   IconLogout,
-  IconUserCircle
-} from "@tabler/icons-react"
+  IconUserCircle,
+} from "@tabler/icons-react";
 
 import {
   Avatar,
   AvatarFallback,
   AvatarImage,
-} from "@/presentation/components/ui/avatar"
+} from "@/presentation/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -17,24 +19,42 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/presentation/components/ui/dropdown-menu"
+} from "@/presentation/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/presentation/components/ui/sidebar"
+} from "@/presentation/components/ui/sidebar";
+
+import { useLogout } from "@/shared/hooks/use-logout";
+import { useNavigate } from "react-router-dom";
 
 export function NavUser({
   user,
 }: {
   user: {
-    username: string
-    email: string
-    avatar: string
-  }
+    username: string;
+    email: string;
+    avatar: string;
+  };
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile } = useSidebar();
+
+
+  const { triggerLogout, triggerLogoutloading } = useLogout();
+
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await triggerLogout();
+      localStorage.removeItem("accessToken");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed", error);
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -58,8 +78,9 @@ export function NavUser({
               <IconDotsVertical className="ml-auto size-4" />
             </SidebarMenuButton>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
-            className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+            className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
             side={isMobile ? "bottom" : "right"}
             align="end"
             sideOffset={4}
@@ -78,15 +99,22 @@ export function NavUser({
                 </div>
               </div>
             </DropdownMenuLabel>
+
             <DropdownMenuSeparator />
+
             <DropdownMenuGroup>
               <DropdownMenuItem>
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
             </DropdownMenuGroup>
+
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+
+            <DropdownMenuItem
+              disabled={triggerLogoutloading}
+              onClick={handleLogout}
+            >
               <IconLogout />
               Log out
             </DropdownMenuItem>
@@ -94,5 +122,5 @@ export function NavUser({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

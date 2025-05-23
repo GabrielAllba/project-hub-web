@@ -1,31 +1,30 @@
-import { GetMeUseCase } from "@/application/usecases/get-me-usecase";
 import type { BaseResponse } from "@/domain/dto/base-response";
-import type { GetMeResponseDTO } from "@/domain/dto/res/get-me-res";
 import { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import useSWRMutation from "swr/mutation";
+import { LogoutUseCase } from '../../application/usecases/logout-usecase';
 import { convertAxiosErrorToBaseResponse } from "../lib/utils";
 
-const getMeUseCase = new GetMeUseCase(new AuthenticationServiceRepository());
+const logoutUseCase = new LogoutUseCase(new AuthenticationServiceRepository());
 
 async function fetcher(
     _: string,
     { arg: token }: { arg: string }
-): Promise<BaseResponse<GetMeResponseDTO>> {
+): Promise<BaseResponse<{ message: string }>> {
     try {
-        const result = await getMeUseCase.execute(token);
+        const result = await logoutUseCase.execute(token);
         return result;
     } catch (err) {
-        return convertAxiosErrorToBaseResponse<GetMeResponseDTO>(err);
+        return convertAxiosErrorToBaseResponse<{ message: string }>(err);
     }
 }
 
-export function useGetMe() {
+export function useLogout() {
     const { trigger, data, isMutating } = useSWRMutation(
-        "/auth/me",
+        "/auth/logout",
         fetcher
     );
 
-    const triggerGetMe = async (): Promise<BaseResponse<GetMeResponseDTO>> => {
+    const triggerLogout = async (): Promise<BaseResponse<{ message: string }>> => {
         const token = localStorage.getItem("accessToken");
         if (!token) {
             throw new Error("No access token found");
@@ -34,8 +33,8 @@ export function useGetMe() {
     };
 
     return {
-        triggerGetMe,
-        triggerGetMeResponse: data,
-        triggerGetMeloading: isMutating,
+        triggerLogout,
+        triggerLogoutResponse: data,
+        triggerLogoutloading: isMutating,
     };
 }

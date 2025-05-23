@@ -1,10 +1,10 @@
 import type { BaseResponse } from "@/domain/dto/base-response";
-import { AuthenticationApiRepository } from "@/domain/repositories/authentication-api-repository";
+import type { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 
 export class ValidateTokenUseCase {
-  private authRepo: AuthenticationApiRepository;
+  private authRepo: AuthenticationServiceRepository;
 
-  constructor(authRepo: AuthenticationApiRepository) {
+  constructor(authRepo: AuthenticationServiceRepository) {
     this.authRepo = authRepo;
   }
 

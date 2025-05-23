@@ -1,4 +1,10 @@
 import type { LoginRequestDTO } from "@/domain/dto/req/login-req";
+
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+import type { BaseResponse } from "@/domain/dto/base-response";
 import { Button } from "@/presentation/components/ui/button";
 import {
   Card,
@@ -11,35 +17,42 @@ import { Input } from "@/presentation/components/ui/input";
 import { Label } from "@/presentation/components/ui/label";
 import { useLogin } from "@/shared/hooks/use-login";
 import { cn } from "@/shared/lib/utils";
-import { useState } from "react";
-import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
 
 export function LoginForm() {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
   const navigate = useNavigate();
-  
+
   const { triggerLogin, triggerLoginLoading } = useLogin();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setErrorMessage(null);
+    setErrorMessage("");
 
-    const payload: LoginRequestDTO = { email, password };
-    const response = await triggerLogin(payload);
+    try {
+      const payload: LoginRequestDTO = { email, password };
+      const response = await triggerLogin(payload);
 
-    if (response.status === 200) {
-      localStorage.setItem("accessToken", response.data.accessToken);
-      toast.success("Login successful", {
-        description: "Welcome back!",
-      });
-      navigate("/dashboard"); 
-    } else {
-      setErrorMessage(response.message || "Login failed");
-      toast.error("Login failed", {
-        description: response.message,
+      if (response.status === "success" && response.data?.accessToken) {
+        localStorage.setItem("accessToken", response.data.accessToken);
+
+        toast.success("Login berhasil", {
+          description: response.message,
+        });
+        navigate("/dashboard");
+      } else {
+        setErrorMessage(response.message);
+        toast.error("Gagal login", {
+          description: response.message,
+        });
+      }
+    } catch (err) {
+      const baseError = err as BaseResponse<null>
+      setErrorMessage(baseError.message);
+      toast.error("Gagal login", {
+        description: baseError.message,
       });
     }
   };

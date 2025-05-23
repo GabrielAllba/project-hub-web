@@ -1,15 +1,14 @@
-import type { GetMeResponseDTO } from "@/domain/dto/res/get-me-res";
 import type { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import { type BaseResponse } from '../../domain/dto/base-response';
 
-export class GetMeUseCase {
+export class LogoutUseCase {
   private authRepo: AuthenticationServiceRepository;
 
   constructor(authRepo: AuthenticationServiceRepository) {
     this.authRepo = authRepo;
   }
 
-  async execute(token: string): Promise<BaseResponse<GetMeResponseDTO>> {
-    return await this.authRepo.getMe(token);
+  async execute(token: string): Promise<BaseResponse<{message: string}>> {
+    return await this.authRepo.logout(token);
   }
 }

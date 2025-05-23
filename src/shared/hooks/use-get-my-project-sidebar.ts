@@ -1,36 +1,37 @@
-import { GetMyProjectUseCase } from "@/application/usecases/get-my-project";
+
+import { GetMySidebarProjectUseCase } from "@/application/usecases/get-my-sidebar-projects-usecase";
 import type { BaseResponse } from "@/domain/dto/base-response";
 import type { Page } from "@/domain/dto/page-response";
 import type { ProjectSummary } from "@/domain/entities/project-summary";
-import { ProjectHubApiRepository } from "@/domain/repositories/project-hub-api-repository";
+import { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository";
 import useSWRMutation from "swr/mutation";
 import { convertAxiosErrorToBaseResponse } from "../lib/utils";
 
-const getMyProjectUseCase = new GetMyProjectUseCase(new ProjectHubApiRepository());
+const getMySidebarProjectUseCase = new GetMySidebarProjectUseCase(new ProjectHubServiceRepository());
 
 async function fetcher(
-  _: string,
-  { arg: token }: { arg: string }
+    _: string,
+    { arg: token }: { arg: string }
 ): Promise<BaseResponse<Page<ProjectSummary>>> {
-  try {
-    return await getMyProjectUseCase.getProjectForSidebar(token);
-  } catch (err) {
-    return convertAxiosErrorToBaseResponse<Page<ProjectSummary>>(err, "Failed to fetch sidebar projects");
-  }
+    try {
+        return await getMySidebarProjectUseCase.execute(token);
+    } catch (err) {
+        return convertAxiosErrorToBaseResponse<Page<ProjectSummary>>(err);
+    }
 }
 export function useGetMyProjectSidebar() {
-  const { trigger, data, isMutating } = useSWRMutation("/project/sidebar", fetcher);
+    const { trigger, data, isMutating } = useSWRMutation("/project/sidebar", fetcher);
 
-  const triggerSidebarProjects = async (): Promise<BaseResponse<Page<ProjectSummary>>> => {
-    const token = localStorage.getItem("accessToken");
-    if (!token) throw new Error("No access token found");
+    const triggerSidebarProjects = async (): Promise<BaseResponse<Page<ProjectSummary>>> => {
+        const token = localStorage.getItem("accessToken");
+        if (!token) throw new Error("No access token found");
 
-    return await trigger(token);
-  };
+        return await trigger(token);
+    };
 
-  return {
-    triggerSidebarProjects,
-    sidebarProjectsResponse: data,
-    sidebarProjectsLoading: isMutating,
-  };
+    return {
+        triggerSidebarProjects,
+        sidebarProjectsResponse: data,
+        sidebarProjectsLoading: isMutating,
+    };
 }
