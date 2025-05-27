@@ -1,7 +1,7 @@
 import { useAuthGuard } from "@/shared/hooks/use-auth-guard"
 import { Outlet } from "react-router-dom"
-import { AppSidebar } from "../components/sidebar/app-sidebar"
-import { SiteHeader } from "../components/sidebar/site-header"
+import { AppSidebar } from "../components/ui/sidebar/app-sidebar"
+import { SiteHeader } from "../components/ui/sidebar/site-header"
 import { SidebarInset, SidebarProvider } from "../components/ui/sidebar"
 
 export default function DashboardLayout() {

@@ -1,5 +1,6 @@
 import type { ProjectSummary } from "@/domain/entities/project-summary";
 import { FileText, MoreHorizontal } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
@@ -48,7 +49,7 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         <div className="flex items-center gap-2 font-medium text-sm">
           <FileText className="w-4 h-4" />
           <CardTitle className="text-base font-semibold truncate block">
-            {project.name}
+            <Link to={`/dashboard/project/${project.projectId}`}>{project.name}</Link>
           </CardTitle>
 
         </div>

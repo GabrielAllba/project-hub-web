@@ -1,10 +1,8 @@
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
-import type { User } from "@/domain/entities/user";
 
 import { Button } from "../ui/button";
+import { GreetingSection } from "../ui/greeting";
 import { Input } from "../ui/input";
 import {
   Select,
@@ -14,7 +12,6 @@ import {
   SelectValue,
 } from "../ui/select";
 import { NewProjectModal } from "./new-project-modal";
-import { useGetMe } from "@/shared/hooks/use-get-me";
 
 interface HeaderSectionProps {
   selectedRole?: string;
@@ -27,27 +24,9 @@ export const HeaderSection = ({
   onRoleChange,
   onCreatedProject,
 }: HeaderSectionProps) => {
-  const [today, setToday] = useState<string>("");
-  const [greeting, setGreeting] = useState<string>("");
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
-  const { triggerGetMe, triggerGetMeResponse} = useGetMe();
-
-  const user: User | undefined = triggerGetMeResponse?.data;
-
-  useEffect(() => {
-    const now = new Date();
-    setToday(format(now, "EEEE, dd MMMM yyyy", { locale: id }));
-
-    const hour = now.getHours();
-    if (hour < 11) setGreeting("Selamat pagi");
-    else if (hour < 15) setGreeting("Selamat siang");
-    else if (hour < 18) setGreeting("Selamat sore");
-    else setGreeting("Selamat malam");
-
-    triggerGetMe();
-  }, []);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
@@ -56,12 +35,7 @@ export const HeaderSection = ({
   return (
     <>
       <div className="flex flex-col gap-2">
-        <p className="text-sm text-muted-foreground">{today}</p>
-
-        <h1 className="text-3xl font-semibold">
-          {greeting}, {user?.username ?? "Pengguna"}
-        </h1>
-
+        <GreetingSection></GreetingSection>
         <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
           <div className="flex items-center gap-2">
             <span className="text-base font-medium">📁 Proyek</span>
@@ -91,7 +65,6 @@ export const HeaderSection = ({
           </div>
         </div>
       </div>
-
       <NewProjectModal
         open={openModal}
         onOpenChange={setOpenModal}

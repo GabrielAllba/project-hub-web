@@ -7,6 +7,6 @@ export class GetMyProjectUseCase {
   constructor(private readonly projectHubRepo: ProjectHubServiceRepository) {}
 
   async execute(token: string, page: number, size: number): Promise<BaseResponse<Page<ProjectSummary>>> {
-    return await this.projectHubRepo.getMyProject(token, page, size);
+    return await this.projectHubRepo.getMyProject( token, page, size);
   }
 }

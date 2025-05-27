@@ -3,7 +3,7 @@ import type { BaseResponse } from "@/domain/dto/base-response";
 import type { GetMeResponseDTO } from "@/domain/dto/res/get-me-res";
 import { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import useSWRMutation from "swr/mutation";
-import { convertAxiosErrorToBaseResponse } from "../lib/utils";
+import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils";
 
 const getMeUseCase = new GetMeUseCase(new AuthenticationServiceRepository());
 

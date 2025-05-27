@@ -3,6 +3,10 @@ import DashboardLayout from "./layouts/dashboard-layout";
 import { DashboardPage } from "./pages/dashboard-page";
 import { LoginPage } from "./pages/login-page";
 import { ProyekPage } from "./pages/proyek-page";
+import { TeamPage } from "./pages/team-page";
+import { ProjectDetailPage } from "./pages/project-detail-page";
+
+const NotFoundPage = () => <div>404 Not Found</div>;
 
 export const AppRoutes = () => (
   <BrowserRouter>
@@ -11,10 +15,15 @@ export const AppRoutes = () => (
 
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardPage />} />
-        <Route path="proyek" element={<ProyekPage />} />
+        <Route path="teams" element={<TeamPage />} />
+
+        <Route path="project">
+          <Route index element={<ProyekPage />} />
+          <Route path=":projectId" element={<ProjectDetailPage />} />
+        </Route>
       </Route>
 
-      <Route path="*" element={<div>404 Not Found</div>} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   </BrowserRouter>
 );

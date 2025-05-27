@@ -11,9 +11,9 @@ import * as React from "react"
 
 import type { ProjectSummary } from "@/domain/entities/project-summary"
 import type { User } from "@/domain/entities/user"
-import { NavMain } from "@/presentation/components/sidebar/nav-main"
-import { NavProyek } from "@/presentation/components/sidebar/nav-proyek"
-import { NavUser } from "@/presentation/components/sidebar/nav-user"
+import { NavMain } from "@/presentation/components/ui/sidebar/nav-main"
+import { NavProyek } from "@/presentation/components/ui/sidebar/nav-proyek"
+import { NavUser } from "@/presentation/components/ui/sidebar/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -26,7 +26,7 @@ import {
 import { useGetMe } from "@/shared/hooks/use-get-me"
 import { useGetMyProjectSidebar } from "@/shared/hooks/use-get-my-project-sidebar"
 import { useEffect, useState } from 'react'
-import { LoadingSpinner } from "../ui/loading-spinner"
+import { Skeleton } from "../skeleton"
 
 const navMain = [
   {
@@ -36,7 +36,7 @@ const navMain = [
   },
   {
     title: "Proyek",
-    url: "/dashboard/proyek",
+    url: "/dashboard/project",
     icon: IconFolder,
   },
   {
@@ -46,7 +46,7 @@ const navMain = [
   },
   {
     title: "Tim",
-    url: "/teams",
+    url: "/dashboard/teams",
     icon: IconUsers,
   },
   {
@@ -118,8 +118,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarContent>
         <NavMain items={navMain} />
         {sidebarProjectsLoading ? (
-          <div className="w-full flex justify-center py-4">
-            <LoadingSpinner />
+          <div className="w-full space-y-3 p-4">
+            {[...Array(5)].map((_, i) => (
+              <Skeleton key={i} className="h-6 w-full rounded-md bg-gray-200" />
+            ))}
           </div>
         ) : (
           <NavProyek items={proyekNavItems} />
@@ -128,8 +130,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarFooter>
         {triggerGetMeloading ? (
-          <div className="w-full flex justify-center py-4">
-            <LoadingSpinner />
+          <div className="w-full flex items-center gap-3 py-4 px-4">
+            <Skeleton className="h-10 w-10 rounded-full bg-gray-200" />
+            <div className="flex flex-col flex-1 space-y-2">
+              <Skeleton className="h-4 w-full rounded bg-gray-200" />
+              <Skeleton className="h-3 w-full rounded bg-gray-200" />
+            </div>
           </div>
         ) : user ? (
           <NavUser
@@ -141,6 +147,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           />
         ) : null}
       </SidebarFooter>
+
     </Sidebar>
   )
 }

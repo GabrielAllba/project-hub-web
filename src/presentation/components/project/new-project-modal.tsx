@@ -3,7 +3,6 @@ import { toast } from "sonner";
 
 
 
-import { useCreateProject } from "@/shared/hooks/use-create-project";
 import { Button } from "../ui/button";
 import {
   Dialog,
@@ -13,6 +12,7 @@ import {
   DialogTitle,
 } from "../ui/dialog";
 import { Input } from "../ui/input";
+import { useCreateProject } from "@/shared/hooks/use-create-project";
 
 interface NewProjectModalProps {
   open: boolean;
@@ -44,7 +44,7 @@ export const NewProjectModal = ({
       description,
     });
 
-    if (response.status === "success") {
+    if (response.status=== "success") {
       toast.success("Berhasil membuat proyek", {
         description: response.message,
       });

@@ -16,7 +16,7 @@ import {
 import { Input } from "@/presentation/components/ui/input";
 import { Label } from "@/presentation/components/ui/label";
 import { useLogin } from "@/shared/hooks/use-login";
-import { cn } from "@/shared/lib/utils";
+import { cn } from "@/shared/utils/merge-class";
 
 export function LoginForm() {
   const [email, setEmail] = useState<string>("");

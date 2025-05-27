@@ -5,7 +5,7 @@ import type { Page } from "@/domain/dto/page-response";
 import type { ProjectSummary } from "@/domain/entities/project-summary";
 import { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository";
 import useSWRMutation from "swr/mutation";
-import { convertAxiosErrorToBaseResponse } from "../lib/utils";
+import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils";
 
 const getMySidebarProjectUseCase = new GetMySidebarProjectUseCase(new ProjectHubServiceRepository());
 

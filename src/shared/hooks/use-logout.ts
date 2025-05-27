@@ -2,7 +2,7 @@ import type { BaseResponse } from "@/domain/dto/base-response";
 import { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import useSWRMutation from "swr/mutation";
 import { LogoutUseCase } from '../../application/usecases/logout-usecase';
-import { convertAxiosErrorToBaseResponse } from "../lib/utils";
+import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils";
 
 const logoutUseCase = new LogoutUseCase(new AuthenticationServiceRepository());
 

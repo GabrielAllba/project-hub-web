@@ -4,7 +4,7 @@ import type { CreateProjectRequestDTO } from "@/domain/dto/req/create-project-re
 import type { Project } from "@/domain/entities/project";
 import { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository";
 import useSWRMutation from "swr/mutation";
-import { convertAxiosErrorToBaseResponse } from "../lib/utils";
+import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils";
 
 const createProjectUseCase = new CreateProjectUseCase(new ProjectHubServiceRepository());
 

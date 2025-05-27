@@ -4,7 +4,7 @@ import type { LoginRequestDTO } from "@/domain/dto/req/login-req";
 import type { LoginResponseDTO } from "@/domain/dto/res/login-res";
 import { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import useSWRMutation from "swr/mutation";
-import { convertAxiosErrorToBaseResponse } from "../lib/utils";
+import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils";
 
 const loginUseCase = new LoginUseCase(new AuthenticationServiceRepository());
 
