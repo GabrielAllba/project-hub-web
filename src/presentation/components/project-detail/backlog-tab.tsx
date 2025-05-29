@@ -1,7 +1,6 @@
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { ProductBacklogSection } from "./product-backlog/product-backlog-section"
-import { BacklogSidebar } from "./sidebar/sidebar"
 
 interface BacklogTabProps {
   projectId: string
@@ -11,7 +10,7 @@ export const BacklogTab = ({ projectId }: BacklogTabProps) => {
   console.log(projectId)
   return (
     <div className="flex gap-6">
-      <BacklogSidebar />
+      {/* <BacklogSidebar /> */}
 
       <div className="flex-1 space-y-6">
         <div className="flex flex-wrap justify-between gap-4">

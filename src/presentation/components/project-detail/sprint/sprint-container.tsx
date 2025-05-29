@@ -24,13 +24,12 @@ export const SprintContainer = ({ sprint, productBacklogs, onToggleCollapse }: S
       >
         <div className="flex items-center gap-2">
           {sprint.isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          <CardTitle className="text-lg font-semibold">{sprint.title}</CardTitle>
+          <CardTitle className="text-lg font-semibold">{sprint.name}</CardTitle>
           <Badge variant="secondary">{productBacklogs.length} tugas</Badge>
         </div>
       </CardHeader>
       {!sprint.isCollapsed && (
         <CardContent>
-          <p className="text-sm text-muted-foreground mb-4">{sprint.description}</p>
           <DroppableContainer containerId={sprint.id}>
             <SortableContext items={productBacklogs.map((t) => t.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-2">

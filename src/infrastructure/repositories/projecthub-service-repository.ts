@@ -2,8 +2,11 @@ import type { BaseResponse } from "@/domain/dto/base-response";
 import type { Page } from "@/domain/dto/page-response";
 import type { CreateProductBacklogRequestDTO } from "@/domain/dto/req/create-product-backlog-req";
 import type { CreateProjectRequestDTO } from "@/domain/dto/req/create-project-req";
+import type { CreateSprintRequestDTO } from "@/domain/dto/req/create-sprint-req";
 import type { CreateTeamRequestDTO } from "@/domain/dto/req/create-team-req";
-import type { UpdateProductBacklogPositionRequestDTO } from "@/domain/dto/req/update-product-backlog-position-req";
+import type { MoveBacklogToSprintRequestDTO } from "@/domain/dto/req/move-backlog-to-sprint-req";
+import type { ReorderBacklogRequestDTO } from "@/domain/dto/req/reorder-backlog-req";
+import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
 import type { ProductBacklog } from "@/domain/entities/product-backlog";
 import type { Project } from "@/domain/entities/project";
 import type { ProjectSummary } from "@/domain/entities/project-summary";
@@ -93,11 +96,61 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
 
-  async reorderProductBacklog(token: string, projectId: string, data: UpdateProductBacklogPositionRequestDTO): Promise<BaseResponse<void>> {
-    const response = await projectHubService.patch(`/product_backlog/${projectId}/reorder`,
+  async reorderProductBacklog(token: string, projectId: string, data: ReorderBacklogRequestDTO): Promise<BaseResponse<void>> {
+    const response = await projectHubService.put(`/product_backlog/${projectId}/reorder`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async createSprint(token: string, data: CreateSprintRequestDTO): Promise<BaseResponse<SprintResponseDTO>> {
+    const response = await projectHubService.post(`/sprint`,
+      data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async getProjectSprints(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+    const response = await projectHubService.get(`/project/${projectId}/sprints`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+
+  async moveProductBacklogToSprint(token: string, projectId: string, data: MoveBacklogToSprintRequestDTO): Promise<BaseResponse<void>> {
+    const response = await projectHubService.put(`/product_backlog/${projectId}/move_to_sprint`,
+      data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async getProductBacklogBySprint(token: string, sprintId: string, page: number, size: number): Promise<BaseResponse<Page<ProductBacklog>>> {
+    const response = await projectHubService.get(`/sprint/${sprintId}/product_backlogs`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
       },
     });
 

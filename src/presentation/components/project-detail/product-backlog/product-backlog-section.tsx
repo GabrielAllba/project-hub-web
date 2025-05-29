@@ -2,9 +2,13 @@
 
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/product-backlog-constants"
 import type { ProductBacklogWithContainer } from "@/domain/entities/product-backlog"
-import type { Sprint } from "@/domain/entities/sprint"
+import type { SprintWithIsCollapsed } from "@/domain/entities/sprint"
+import { useCreateSprint } from "@/shared/hooks/use-create-sprint"
 import { useDragAndDropProductBacklog } from "@/shared/hooks/use-drag-and-drop-product-backlog"
 import { useGetProductBacklog } from "@/shared/hooks/use-get-product-backlog"
+import { useGetProjectSprints } from "@/shared/hooks/use-get-project-sprints"
+import { useMoveBacklogToSprint } from "@/shared/hooks/use-move-backlog-to-sprint"
+import { useReorderProductBacklog } from "@/shared/hooks/use-reorder-product-backlog"
 import { getPriorityLabel, getStatusLabel } from "@/shared/utils/product-backlog-utils"
 import { DndContext, DragOverlay, pointerWithin, type DragEndEvent } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
@@ -27,9 +31,11 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
   const [productBacklogs, setProductBacklogs] = useState<ProductBacklogWithContainer[]>([])
   const [priorityFilter, setPriorityFilter] = useState<string>("Semua Prioritas")
   const [statusFilter, setStatusFilter] = useState<string>("Semua Status")
-  const [sprints, setSprints] = useState<Sprint[]>([])
+  const [sprints, setSprints] = useState<SprintWithIsCollapsed[]>([])
   const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
   const [isInitialLoad, setIsInitialLoad] = useState(true)
+
+  const { triggerGetProjectSprints } = useGetProjectSprints(projectId)
 
   const {
     triggerGetProductBacklog,
@@ -38,12 +44,30 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
     triggerGetProductBacklogError,
   } = useGetProductBacklog(projectId)
 
+  const {
+    sensors,
+    activeProductBacklog,
+    handleDragStart,
+    handleDragOver,
+    handleDragEnd
+  } = useDragAndDropProductBacklog(productBacklogs, setProductBacklogs)
 
-  const { sensors, activeProductBacklog, handleDragStart, handleDragOver, handleDragEnd } = useDragAndDropProductBacklog(productBacklogs, setProductBacklogs)
+  const {
+    triggerReorderProductBacklog
+  } = useReorderProductBacklog(projectId)
+
+  const {
+    triggerMoveBacklogToSprint
+  } = useMoveBacklogToSprint(projectId);
+
+
+  const { triggerCreateSprint } = useCreateSprint();
+
 
   useEffect(() => {
     const loadInitialData = async () => {
       try {
+        // Fetch product backlog
         await triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
           if (response.status === "success" && response.data) {
             const backlogItems = response.data.content.map((item) => ({
@@ -51,13 +75,24 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
               containerId: "backlog",
             }))
             setProductBacklogs(backlogItems)
+          }
+        })
 
+        // Fetch sprints
+        await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
+          if (response.status === "success" && response.data) {
+            const sprintItems: SprintWithIsCollapsed[] = response.data.content.map((sprint) => ({
+              ...sprint,
+              isCollapsed: false, // Add collapsed UI falseg
+            }))
+            console.log(sprintItems)
+            setSprints(sprintItems)
           }
         })
 
         setIsInitialLoad(false)
       } catch (error) {
-        console.error("Failed to load product backlog:", error)
+        console.error("Failed to load initial data:", error)
         setIsInitialLoad(false)
       }
     }
@@ -67,16 +102,35 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
     }
   }, [projectId])
 
-  const addSprint = () => {
-    const newSprintNumber = sprints.length + 1
-    const newSprint: Sprint = {
-      id: `sprint-${Date.now()}`,
-      title: `Sprint ${newSprintNumber}`,
-      description: `Sprint ${newSprintNumber}: Fokus pada tugas prioritas tinggi`,
-      isCollapsed: false,
+
+
+
+  const addSprint = async () => {
+    try {
+      const newSprintNumber = sprints.length + 1;
+
+      const response = await triggerCreateSprint({
+        projectId,
+        name: `Sprint ${newSprintNumber}`,
+      });
+
+      if (response.status === "success" && response.data) {
+        const createdSprint: SprintWithIsCollapsed = {
+          ...response.data,
+          isCollapsed: false,
+        };
+        setSprints((prev) => [createdSprint, ...prev]);
+      } else {
+        console.error("Failed to create sprint:", response.message);
+        alert("Gagal membuat sprint. Silakan coba lagi.");
+      }
+    } catch (error) {
+      console.error("Error creating sprint:", error);
+      alert("Terjadi kesalahan saat membuat sprint.");
     }
-    setSprints((prev) => [...prev, newSprint])
-  }
+  };
+
+
 
   const toggleSprintCollapse = (sprintId: string) => {
     setSprints((prev) =>
@@ -102,13 +156,22 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
     if (triggerGetProductBacklogResponse?.data && !triggerGetProductBacklogResponse.data.last) {
       try {
         const nextPage = currentPage + 1
-        await triggerGetProductBacklog(nextPage, DEFAULT_PAGE_SIZE)
+        await triggerGetProductBacklog(nextPage, DEFAULT_PAGE_SIZE).then((response) => {
+          if (response.status === "success" && response.data) {
+            const backlogItems = response.data.content.map((item) => ({
+              ...item,
+              containerId: "backlog",
+            }))
+            setProductBacklogs((prev) => [...prev, ...backlogItems])
+          }
+        })
         setCurrentPage(nextPage)
       } catch (error) {
         console.error("Failed to load more product backlogs:", error)
       }
     }
   }
+
 
   if (isInitialLoad && triggerGetProductBacklogLoading) {
     return (
@@ -144,9 +207,77 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
     }
   };
 
-  const handleDropBacklog = (event: DragEndEvent) => {
-    handleDragEnd(event)
-  }
+  const handleDropBacklog = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    const activeItem = productBacklogs.find((item) => item.id === activeId);
+    const overItem = productBacklogs.find((item) => item.id === overId);
+
+    const sourceContainerId = activeItem?.containerId;
+    const targetContainerId = overItem?.containerId || overId;
+
+    // Tidak berubah kontainer, hanya reorder
+    if (sourceContainerId === targetContainerId) {
+      const previousBacklogs = [...productBacklogs];
+      handleDragEnd(event); // Optimistic UI update
+      try {
+        await triggerReorderProductBacklog({ draggedId: activeId, targetId: overId });
+      } catch (error) {
+        console.error("Failed to reorder product backlog:", error);
+        setProductBacklogs(previousBacklogs);
+        alert("Gagal menyimpan urutan backlog. Silakan coba lagi.");
+      }
+    } else {
+      // Perpindahan dari backlog ke sprint
+      if (targetContainerId !== "backlog") {
+        const previousBacklogs = [...productBacklogs];
+        handleDragEnd(event); // Optimistic UI update
+
+        try {
+          const moveResponse = await triggerMoveBacklogToSprint({
+            backlogId: activeId,
+            sprintId: targetContainerId,
+          });
+
+          if (moveResponse.status !== "success") {
+            throw new Error(moveResponse.message);
+          }
+
+          // Refresh backlog dan sprint
+          await triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
+            if (response.status === "success" && response.data) {
+              const backlogItems = response.data.content.map((item) => ({
+                ...item,
+                containerId: "backlog",
+              }));
+              setProductBacklogs(backlogItems);
+            }
+          });
+
+          await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
+            if (response.status === "success" && response.data) {
+              const sprintItems: SprintWithIsCollapsed[] = response.data.content.map((sprint) => ({
+                ...sprint,
+                isCollapsed: false,
+              }));
+              setSprints(sprintItems);
+            }
+          });
+
+        } catch (error) {
+          console.error("Gagal memindahkan backlog ke sprint:", error);
+          setProductBacklogs(previousBacklogs);
+          alert("Gagal memindahkan backlog ke sprint. Silakan coba lagi.");
+        }
+      }
+    }
+  };
+
+
 
   return (
     <div className="space-y-6">
@@ -170,9 +301,9 @@ export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps)
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
             <div className="flex items-center gap-4">
               <CardTitle className="text-lg font-semibold">Backlog</CardTitle>
-              {triggerGetProductBacklogResponse?.data && (
+              {triggerGetProductBacklogResponse && (
                 <span className="text-sm text-muted-foreground">
-                  {triggerGetProductBacklogResponse.data.totalElements} total product backlogs
+                  {triggerGetProductBacklogResponse?.data.totalElements} total product backlogs
                 </span>
               )}
             </div>

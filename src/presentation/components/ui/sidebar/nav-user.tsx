@@ -2,8 +2,7 @@
 
 import {
   IconDotsVertical,
-  IconLogout,
-  IconUserCircle,
+  IconLogout
 } from "@tabler/icons-react";
 
 import {
@@ -14,11 +13,10 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuTrigger
 } from "@/presentation/components/ui/dropdown-menu";
 import {
   SidebarMenu,
@@ -99,15 +97,6 @@ export function NavUser({
                 </div>
               </div>
             </DropdownMenuLabel>
-
-            <DropdownMenuSeparator />
-
-            <DropdownMenuGroup>
-              <DropdownMenuItem>
-                <IconUserCircle />
-                Account
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
 
             <DropdownMenuSeparator />
 

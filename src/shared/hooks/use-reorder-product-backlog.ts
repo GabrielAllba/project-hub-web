@@ -1,6 +1,6 @@
 import { ReorderProductBacklogUseCase } from "@/application/usecases/reorder-product-backlog-usecase";
 import type { BaseResponse } from "@/domain/dto/base-response";
-import type { UpdateProductBacklogPositionRequestDTO } from "@/domain/dto/req/update-product-backlog-position-req";
+import type { ReorderBacklogRequestDTO } from "@/domain/dto/req/reorder-backlog-req";
 import { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository";
 import useSWRMutation from "swr/mutation";
 import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils";
@@ -9,7 +9,7 @@ const reorderProductBacklogUseCase = new ReorderProductBacklogUseCase(new Projec
 
 async function fetcher(
     _: string,
-    { arg }: { arg: { dto: UpdateProductBacklogPositionRequestDTO; projectId: string } }
+    { arg }: { arg: { dto: ReorderBacklogRequestDTO; projectId: string } }
 ): Promise<BaseResponse<void>> {
     try {
         const token = localStorage.getItem("accessToken");
@@ -28,7 +28,7 @@ export function useReorderProductBacklog(projectId: string) {
     const { trigger, data, isMutating } = useSWRMutation(`/product_backlog/${projectId}/reorder`, fetcher);
 
     const triggerReorderProductBacklog = async (
-        dto: UpdateProductBacklogPositionRequestDTO,
+        dto: ReorderBacklogRequestDTO,
     ): Promise<BaseResponse<void>> => {
         return await trigger({ dto, projectId });
     };
