@@ -1,365 +1,313 @@
 "use client"
 
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/product-backlog-constants"
-import type { ProductBacklogWithContainer } from "@/domain/entities/product-backlog"
-import type { SprintWithIsCollapsed } from "@/domain/entities/sprint"
-import { useCreateSprint } from "@/shared/hooks/use-create-sprint"
-import { useDragAndDropProductBacklog } from "@/shared/hooks/use-drag-and-drop-product-backlog"
-import { useGetProductBacklog } from "@/shared/hooks/use-get-product-backlog"
-import { useGetProjectSprints } from "@/shared/hooks/use-get-project-sprints"
-import { useMoveBacklogToSprint } from "@/shared/hooks/use-move-backlog-to-sprint"
-import { useReorderProductBacklog } from "@/shared/hooks/use-reorder-product-backlog"
-import { getPriorityLabel, getStatusLabel } from "@/shared/utils/product-backlog-utils"
-import { DndContext, DragOverlay, pointerWithin, type DragEndEvent } from "@dnd-kit/core"
-import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
-import { useEffect, useState } from "react"
-import { DroppableContainer } from "../../containers/droppable-container"
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragOverEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  closestCorners,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core"
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import { GripVertical, Plus } from "lucide-react"
+import { useState } from "react"
+import { Badge } from "../../ui/badge"
 import { Button } from "../../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"
-import { LoadingSpinner } from "../../ui/loading-spinner"
-import { ProductBacklogFilters } from "../filters/product-backlog-filter"
-import { SprintContainer } from "../sprint/sprint-container"
-import { AddTaskInput } from "./add-product-backlog-input"
-import { ProductBacklogItem } from "./product-backlog-item"
-import { SortableProductBacklogItem } from "./sortable-product-backlog-item"
 
-interface ProductBacklogSectionProps {
-  projectId: string
+
+// Types
+interface Item {
+  id: string
+  content: string
+  type: "task" | "bug" | "feature"
 }
 
-export const ProductBacklogSection = ({ projectId }: ProductBacklogSectionProps) => {
-  const [productBacklogs, setProductBacklogs] = useState<ProductBacklogWithContainer[]>([])
-  const [priorityFilter, setPriorityFilter] = useState<string>("Semua Prioritas")
-  const [statusFilter, setStatusFilter] = useState<string>("Semua Status")
-  const [sprints, setSprints] = useState<SprintWithIsCollapsed[]>([])
-  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
+interface Container {
+  id: string
+  title: string
+  items: Item[]
+}
 
-  const { triggerGetProjectSprints } = useGetProjectSprints(projectId)
+// Sample data
+const initialContainers: Container[] = [
+  {
+    id: "todo",
+    title: "To Do",
+    items: [
+      { id: "1", content: "Design user interface", type: "task" },
+      { id: "2", content: "Fix login bug", type: "bug" },
+      { id: "3", content: "Add dark mode", type: "feature" },
+    ],
+  },
+  {
+    id: "inprogress",
+    title: "In Progress",
+    items: [
+      { id: "4", content: "Implement authentication", type: "task" },
+      { id: "5", content: "Database optimization", type: "feature" },
+    ],
+  },
+  {
+    id: "review",
+    title: "Review",
+    items: [{ id: "6", content: "Code review for API", type: "task" }],
+  },
+  {
+    id: "done",
+    title: "Done",
+    items: [
+      { id: "7", content: "Setup project structure", type: "task" },
+      { id: "8", content: "Configure CI/CD", type: "feature" },
+    ],
+  },
+]
 
-  const {
-    triggerGetProductBacklog,
-    triggerGetProductBacklogResponse,
-    triggerGetProductBacklogLoading,
-    triggerGetProductBacklogError,
-  } = useGetProductBacklog(projectId)
+// Sortable Item Component
+function SortableItem({ item }: { item: Item }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id })
 
-  const {
-    sensors,
-    activeProductBacklog,
-    handleDragStart,
-    handleDragOver,
-    handleDragEnd
-  } = useDragAndDropProductBacklog(productBacklogs, setProductBacklogs)
-
-  const {
-    triggerReorderProductBacklog
-  } = useReorderProductBacklog(projectId)
-
-  const {
-    triggerMoveBacklogToSprint
-  } = useMoveBacklogToSprint(projectId);
-
-
-  const { triggerCreateSprint } = useCreateSprint();
-
-
-  useEffect(() => {
-    const loadInitialData = async () => {
-      try {
-        // Fetch product backlog
-        await triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
-          if (response.status === "success" && response.data) {
-            const backlogItems = response.data.content.map((item) => ({
-              ...item,
-              containerId: "backlog",
-            }))
-            setProductBacklogs(backlogItems)
-          }
-        })
-
-        // Fetch sprints
-        await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
-          if (response.status === "success" && response.data) {
-            const sprintItems: SprintWithIsCollapsed[] = response.data.content.map((sprint) => ({
-              ...sprint,
-              isCollapsed: false, // Add collapsed UI falseg
-            }))
-            console.log(sprintItems)
-            setSprints(sprintItems)
-          }
-        })
-
-        setIsInitialLoad(false)
-      } catch (error) {
-        console.error("Failed to load initial data:", error)
-        setIsInitialLoad(false)
-      }
-    }
-
-    if (projectId) {
-      loadInitialData()
-    }
-  }, [projectId])
-
-
-
-
-  const addSprint = async () => {
-    try {
-      const newSprintNumber = sprints.length + 1;
-
-      const response = await triggerCreateSprint({
-        projectId,
-        name: `Sprint ${newSprintNumber}`,
-      });
-
-      if (response.status === "success" && response.data) {
-        const createdSprint: SprintWithIsCollapsed = {
-          ...response.data,
-          isCollapsed: false,
-        };
-        setSprints((prev) => [createdSprint, ...prev]);
-      } else {
-        console.error("Failed to create sprint:", response.message);
-        alert("Gagal membuat sprint. Silakan coba lagi.");
-      }
-    } catch (error) {
-      console.error("Error creating sprint:", error);
-      alert("Terjadi kesalahan saat membuat sprint.");
-    }
-  };
-
-
-
-  const toggleSprintCollapse = (sprintId: string) => {
-    setSprints((prev) =>
-      prev.map((sprint) => (sprint.id === sprintId ? { ...sprint, isCollapsed: !sprint.isCollapsed } : sprint)),
-    )
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   }
 
-  const getProductBacklogsByContainer = (containerId: string) => {
-    return productBacklogs.filter((productBacklog) => productBacklog.containerId === containerId)
+  const getTypeColor = (type: Item["type"]) => {
+    switch (type) {
+      case "task":
+        return "bg-blue-100 text-blue-800 border-blue-200"
+      case "bug":
+        return "bg-red-100 text-red-800 border-red-200"
+      case "feature":
+        return "bg-green-100 text-green-800 border-green-200"
+      default:
+        return "bg-gray-100 text-gray-800 border-gray-200"
+    }
   }
 
-  const getFilteredProductBacklog = () => {
-    const productBacklogs = getProductBacklogsByContainer("backlog")
-    return productBacklogs.filter((productBacklog) => {
-      const matchPriority =
-        priorityFilter !== "Semua Prioritas" ? getPriorityLabel(productBacklog.priority) === priorityFilter : true
-      const matchStatus = statusFilter !== "Semua Status" ? getStatusLabel(productBacklog.status) === statusFilter : true
-      return matchPriority && matchStatus
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`group cursor-grab active:cursor-grabbing ${isDragging ? "opacity-50" : ""}`}
+      {...attributes}
+      {...listeners}
+    >
+      <Card className="mb-2 hover:shadow-md transition-shadow rounded-sm">
+        <CardContent className="p-3">
+          <div className="flex items-start gap-2">
+            <GripVertical className="h-4 w-4 text-gray-400 mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-900 mb-2">{item.content}</p>
+              <Badge variant="outline" className={`text-xs ${getTypeColor(item.type)}`}>
+                {item.type}
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+// Container Component
+function SortableContainer({ container }: { container: Container }) {
+  return (
+    <Card className="w-full rounded-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold">{container.title}</CardTitle>
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="text-xs">
+              {container.items.length}
+            </Badge>
+            <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+              <Plus className="h-3 w-3" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <SortableContext items={container.items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+          <div className="min-h-[100px] space-y-0">
+            {container.items.map((item) => (
+              <SortableItem key={item.id} item={item} />
+            ))}
+            {container.items.length === 0 && (
+              <div className="flex items-center justify-center h-20 text-gray-400 text-sm border-2 border-dashed border-gray-200 rounded-lg">
+                Drop items here
+              </div>
+            )}
+          </div>
+        </SortableContext>
+      </CardContent>
+    </Card>
+  )
+}
+
+// Main Component
+interface Props {
+    projectId: string
+}
+
+export default function ProductBacklogSection({projectId}: Props) {
+  const [containers, setContainers] = useState<Container[]>(initialContainers)
+  const [activeItem, setActiveItem] = useState<Item | null>(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+  )
+
+  const findContainer = (id: string) => {
+    for (const container of containers) {
+      if (container.items.find((item) => item.id === id)) {
+        return container.id
+      }
+    }
+    return null
+  }
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event
+    const activeContainer = findContainer(active.id as string)
+
+    if (activeContainer) {
+      const container = containers.find((c) => c.id === activeContainer)
+      const item = container?.items.find((item) => item.id === active.id)
+      setActiveItem(item || null)
+    }
+  }
+
+  const handleDragOver = (event: DragOverEvent) => {
+    const { active, over } = event
+
+    if (!over) return
+
+    const activeId = active.id as string
+    const overId = over.id as string
+
+    const activeContainer = findContainer(activeId)
+    const overContainer = findContainer(overId) || overId
+
+    if (!activeContainer || !overContainer || activeContainer === overContainer) {
+      return
+    }
+
+    setContainers((containers) => {
+      const activeContainerIndex = containers.findIndex((c) => c.id === activeContainer)
+      const overContainerIndex = containers.findIndex((c) => c.id === overContainer)
+
+      const activeItems = containers[activeContainerIndex].items
+      const overItems = containers[overContainerIndex].items
+
+      const activeItemIndex = activeItems.findIndex((item) => item.id === activeId)
+      const activeItem = activeItems[activeItemIndex]
+
+      const newContainers = [...containers]
+
+      // Remove item from active container
+      newContainers[activeContainerIndex] = {
+        ...newContainers[activeContainerIndex],
+        items: activeItems.filter((item) => item.id !== activeId),
+      }
+
+      // Add item to over container
+      newContainers[overContainerIndex] = {
+        ...newContainers[overContainerIndex],
+        items: [...overItems, activeItem],
+      }
+
+      return newContainers
     })
   }
 
-  const loadMoreProductBacklogs = async () => {
-    if (triggerGetProductBacklogResponse?.data && !triggerGetProductBacklogResponse.data.last) {
-      try {
-        const nextPage = currentPage + 1
-        await triggerGetProductBacklog(nextPage, DEFAULT_PAGE_SIZE).then((response) => {
-          if (response.status === "success" && response.data) {
-            const backlogItems = response.data.content.map((item) => ({
-              ...item,
-              containerId: "backlog",
-            }))
-            setProductBacklogs((prev) => [...prev, ...backlogItems])
-          }
-        })
-        setCurrentPage(nextPage)
-      } catch (error) {
-        console.error("Failed to load more product backlogs:", error)
-      }
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event
+
+    if (!over) {
+      setActiveItem(null)
+      return
     }
-  }
 
+    const activeId = active.id as string
+    const overId = over.id as string
 
-  if (isInitialLoad && triggerGetProductBacklogLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinner size="lg" />
-        <span className="ml-2 text-muted-foreground">Loading backlog...</span>
-      </div>
-    )
-  }
+    const activeContainer = findContainer(activeId)
+    const overContainer = findContainer(overId) || overId
 
-  if (triggerGetProductBacklogError || triggerGetProductBacklogResponse?.status === "error") {
-    return (
-      <p>
-        Failed to load product backlog. {triggerGetProductBacklogResponse?.message || "Please try again."}
-      </p>
-
-    )
-  }
-
-  const handleTaskCreated = async () => {
-    try {
-      const response = await triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE);
-      if (response.status === "success" && response.data) {
-        const backlogItems = response.data.content.map((item) => ({
-          ...item,
-          containerId: "backlog",
-        }));
-        setProductBacklogs(backlogItems);
-        setCurrentPage(DEFAULT_PAGE);
-      }
-    } catch (error) {
-      console.error("Failed to refresh product backlog:", error);
+    if (!activeContainer || !overContainer) {
+      setActiveItem(null)
+      return
     }
-  };
 
-  const handleDropBacklog = async (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
+    if (activeContainer === overContainer) {
+      setContainers((containers) => {
+        const containerIndex = containers.findIndex((c) => c.id === activeContainer)
+        const items = containers[containerIndex].items
 
-    const activeId = active.id as string;
-    const overId = over.id as string;
+        const activeIndex = items.findIndex((item) => item.id === activeId)
+        const overIndex = items.findIndex((item) => item.id === overId)
 
-    const activeItem = productBacklogs.find((item) => item.id === activeId);
-    const overItem = productBacklogs.find((item) => item.id === overId);
-
-    const sourceContainerId = activeItem?.containerId;
-    const targetContainerId = overItem?.containerId || overId;
-
-    // Tidak berubah kontainer, hanya reorder
-    if (sourceContainerId === targetContainerId) {
-      const previousBacklogs = [...productBacklogs];
-      handleDragEnd(event); // Optimistic UI update
-      try {
-        await triggerReorderProductBacklog({ draggedId: activeId, targetId: overId });
-      } catch (error) {
-        console.error("Failed to reorder product backlog:", error);
-        setProductBacklogs(previousBacklogs);
-        alert("Gagal menyimpan urutan backlog. Silakan coba lagi.");
-      }
-    } else {
-      // Perpindahan dari backlog ke sprint
-      if (targetContainerId !== "backlog") {
-        const previousBacklogs = [...productBacklogs];
-        handleDragEnd(event); // Optimistic UI update
-
-        try {
-          const moveResponse = await triggerMoveBacklogToSprint({
-            backlogId: activeId,
-            sprintId: targetContainerId,
-          });
-
-          if (moveResponse.status !== "success") {
-            throw new Error(moveResponse.message);
-          }
-
-          // Refresh backlog dan sprint
-          await triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
-            if (response.status === "success" && response.data) {
-              const backlogItems = response.data.content.map((item) => ({
-                ...item,
-                containerId: "backlog",
-              }));
-              setProductBacklogs(backlogItems);
-            }
-          });
-
-          await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((response) => {
-            if (response.status === "success" && response.data) {
-              const sprintItems: SprintWithIsCollapsed[] = response.data.content.map((sprint) => ({
-                ...sprint,
-                isCollapsed: false,
-              }));
-              setSprints(sprintItems);
-            }
-          });
-
-        } catch (error) {
-          console.error("Gagal memindahkan backlog ke sprint:", error);
-          setProductBacklogs(previousBacklogs);
-          alert("Gagal memindahkan backlog ke sprint. Silakan coba lagi.");
+        const newContainers = [...containers]
+        newContainers[containerIndex] = {
+          ...newContainers[containerIndex],
+          items: arrayMove(items, activeIndex, overIndex),
         }
-      }
+
+        return newContainers
+      })
     }
-  };
 
-
+    setActiveItem(null)
+  }
 
   return (
-    <div className="space-y-6">
-      <DndContext
-        sensors={sensors}
-        collisionDetection={pointerWithin}
-        onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
-        onDragEnd={handleDropBacklog}
-      >
-        {sprints.map((sprint) => (
-          <SprintContainer
-            key={sprint.id}
-            sprint={sprint}
-            productBacklogs={getProductBacklogsByContainer(sprint.id)}
-            onToggleCollapse={toggleSprintCollapse}
-          />
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCorners}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+    >
+      <div className="space-y-4">
+        {containers.map((container) => (
+          <SortableContainer key={container.id} container={container} />
         ))}
+      </div>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-            <div className="flex items-center gap-4">
-              <CardTitle className="text-lg font-semibold">Backlog</CardTitle>
-              {triggerGetProductBacklogResponse && (
-                <span className="text-sm text-muted-foreground">
-                  {triggerGetProductBacklogResponse?.data.totalElements} total product backlogs
-                </span>
-              )}
-            </div>
-            <Button size="sm" onClick={addSprint}>
-              Buat sprint
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <ProductBacklogFilters
-              priorityFilter={priorityFilter}
-              statusFilter={statusFilter}
-              onPriorityChange={setPriorityFilter}
-              onStatusChange={setStatusFilter}
-            />
-
-            <DroppableContainer containerId="backlog">
-              <SortableContext
-                items={getFilteredProductBacklog().map((t) => t.id)}
-                strategy={verticalListSortingStrategy}
-              >
-                <div className="space-y-2">
-                  {getFilteredProductBacklog().map((productBacklog) => (
-                    <SortableProductBacklogItem key={productBacklog.id} productBacklog={productBacklog} />
-                  ))}
-
-                  {getFilteredProductBacklog().length === 0 && !triggerGetProductBacklogLoading && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      No product backlogs found matching the current filters.
-                    </div>
-                  )}
+      <DragOverlay>
+        {activeItem ? (
+          <Card className="shadow-lg">
+            <CardContent className="p-3">
+              <div className="flex items-start gap-2">
+                <GripVertical className="h-4 w-4 text-gray-400 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 mb-2">{activeItem.content}</p>
+                  <Badge
+                    variant="outline"
+                    className={`text-xs ${activeItem.type === "task"
+                      ? "bg-blue-100 text-blue-800 border-blue-200"
+                      : activeItem.type === "bug"
+                        ? "bg-red-100 text-red-800 border-red-200"
+                        : "bg-green-100 text-green-800 border-green-200"
+                      }`}
+                  >
+                    {activeItem.type}
+                  </Badge>
                 </div>
-              </SortableContext>
-            </DroppableContainer>
-
-            {triggerGetProductBacklogResponse?.data && !triggerGetProductBacklogResponse.data.last && (
-              <div className="flex justify-center pt-4">
-                <Button variant="outline" onClick={loadMoreProductBacklogs} disabled={triggerGetProductBacklogLoading}>
-                  {triggerGetProductBacklogLoading ? (
-                    <>
-                      <LoadingSpinner size="sm" className="mr-2" />
-                      Loading...
-                    </>
-                  ) : (
-                    "Load More Product Backlogs"
-                  )}
-                </Button>
               </div>
-            )}
-            <div className="pt-4 border-t">
-              <AddTaskInput projectId={projectId} onTaskCreated={handleTaskCreated} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <DragOverlay>{activeProductBacklog ? <ProductBacklogItem productBacklog={activeProductBacklog} isDragging /> : null}</DragOverlay>
-      </DndContext>
-    </div>
+            </CardContent>
+          </Card>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   )
 }

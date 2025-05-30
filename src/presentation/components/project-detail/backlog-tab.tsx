@@ -1,6 +1,6 @@
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
-import { ProductBacklogSection } from "./product-backlog/product-backlog-section"
+import ProductBacklogSection from "./product-backlog/product-backlog-section"
 
 interface BacklogTabProps {
   projectId: string
@@ -25,7 +25,7 @@ export const BacklogTab = ({ projectId }: BacklogTabProps) => {
           </div>
         </div>
 
-        <ProductBacklogSection projectId={projectId} />
+        <ProductBacklogSection projectId={projectId}/>
       </div>
     </div>
   )
