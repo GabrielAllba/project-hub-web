@@ -11,10 +11,10 @@ import { LoadingSpinner } from "../../ui/loading-spinner"
 
 interface AddProductBacklogInputProps {
     projectId: string
-    onTaskCreated: () => void
+    onProductBacklogCreated: () => void
 }
 
-export const AddTaskInput = ({ projectId, onTaskCreated }: AddProductBacklogInputProps) => {
+export const AddProductBacklogInput = ({ projectId, onProductBacklogCreated }: AddProductBacklogInputProps) => {
     const [isInputVisible, setIsInputVisible] = useState(false)
     const [taskTitle, setTaskTitle] = useState("")
     const inputRef = useRef<HTMLInputElement>(null)
@@ -56,7 +56,7 @@ export const AddTaskInput = ({ projectId, onTaskCreated }: AddProductBacklogInpu
 
             if (response.status === "success") {
                 handleHideInput()
-                onTaskCreated()
+                onProductBacklogCreated()
             } else {
                 console.error("Failed to create task:", response.message)
             }

@@ -22,7 +22,7 @@ async function fetcher(
 export function useGetProductBacklogBySprint(sprintId: string) {
     const { trigger, data, isMutating, error } = useSWRMutation(`/sprint/${sprintId}/product_backlogs`, fetcher)
 
-    const triggerGetProductBacklogBySprint = async (page: number, size: number): Promise<BaseResponse<Page<ProductBacklog>>> => {
+    const triggerGetProductBacklogBySprint = async (sprintId: string, page: number, size: number): Promise<BaseResponse<Page<ProductBacklog>>> => {
         const token = localStorage.getItem("accessToken")
         if (!token) throw new Error("No access token found")
 
