@@ -3,9 +3,11 @@
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/product-backlog-constants"
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import type { Sprint } from "@/domain/entities/sprint"
+import { useCreateSprint } from "@/shared/hooks/use-create-sprint"
 import { useGetProductBacklog } from "@/shared/hooks/use-get-product-backlog"
 import { useGetProductBacklogBySprint } from "@/shared/hooks/use-get-product-backlog-by-sprint"
 import { useGetProjectSprints } from "@/shared/hooks/use-get-project-sprints"
+import { useReorderProductBacklog } from "@/shared/hooks/use-reorder-product-backlog"
 import {
   DndContext,
   type DragEndEvent,
@@ -19,7 +21,6 @@ import {
 } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { useEffect, useState } from 'react'
-import { AddProductBacklogInput } from "./add-product-backlog-input"
 import { ProductBacklogContainer } from "./product-backlog-container"
 import { ProductBacklogItem } from "./product-backlog-item"
 import { SortableContainer } from "./sortable-container"
@@ -41,12 +42,17 @@ export default function ProductBacklogSection({ projectId }: Props) {
   const [sprintBacklogItems, setSprintBacklogItems] = useState<Record<string, ProductBacklog[]>>({})
   const [sprintItemsLoading, setSprintItemsLoading] = useState<Record<string, boolean>>({})
 
+  // State for total element sprint
+  const [totalSprint, setTotalSprint] = useState<number>(0)
+
   const {
-    triggerGetProductBacklog
+    triggerGetProductBacklog,
+    triggerGetProductBacklogResponse,
+
   } = useGetProductBacklog(projectId)
 
   const {
-    triggerGetProjectSprints
+    triggerGetProjectSprints,
   } = useGetProjectSprints(projectId)
 
   const {
@@ -73,12 +79,8 @@ export default function ProductBacklogSection({ projectId }: Props) {
       try {
         triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
           setSprints(res.data.content)
-          // Initialize loading state for each sprint
-          const loadingState: Record<string, boolean> = {}
-          res.data.content.forEach((sprint) => {
-            loadingState[sprint.id] = true
-          })
-          setSprintItemsLoading(loadingState)
+          setTotalSprint(res.data.totalElements)
+
           // Fetch backlog items for each sprint
           const sprintItems: Record<string, ProductBacklog[]> = {}
           for (const sprint of res.data.content) {
@@ -219,6 +221,10 @@ export default function ProductBacklogSection({ projectId }: Props) {
     }
   }
 
+  const {
+    triggerReorderProductBacklog
+  } = useReorderProductBacklog(projectId);
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
@@ -249,6 +255,8 @@ export default function ProductBacklogSection({ projectId }: Props) {
           const reorderedItems = arrayMove([...unassignedBacklog], activeIndex, overIndex)
           setUnassignedBacklog(reorderedItems)
         }
+
+        triggerReorderProductBacklog({ draggedId: activeId, targetId: overId })
       } else {
         // Reorder within a sprint
         const sprintItems = sprintBacklogItems[activeSprintId]
@@ -270,13 +278,68 @@ export default function ProductBacklogSection({ projectId }: Props) {
 
   const handleProductBacklogCreated = async () => {
     try {
-      triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
-        setUnassignedBacklog(res.data.content)
-      })
+      if (currentPage == DEFAULT_PAGE) {
+        triggerGetProductBacklog(currentPage, DEFAULT_PAGE_SIZE).then((res) => {
+          setUnassignedBacklog(res.data.content)
+        })
+      } else {
+        triggerGetProductBacklog(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
+          setUnassignedBacklog(res.data.content)
+          setCurrentPage(DEFAULT_PAGE)
+        })
+      }
     } catch (error) {
       console.error("Failed to refresh product backlog:", error);
     }
   };
+
+  const {
+    triggerCreateSprint
+  } = useCreateSprint()
+
+  const handleCreateSprint = () => {
+    triggerCreateSprint({ projectId: projectId, name: "Sprint " + (totalSprint + 1) }).then(() => {
+      triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
+        setSprints(res.data.content)
+        setTotalSprint(res.data.totalElements)
+
+        // Fetch backlog items for each sprint
+        const sprintItems: Record<string, ProductBacklog[]> = {}
+        for (const sprint of res.data.content) {
+          triggerGetProductBacklogBySprint(sprint.id, DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
+
+            sprintItems[sprint.id] = res.data.content
+            setSprintItemsLoading((prev) => ({ ...prev, [sprint.id]: false }))
+            // Update state immediately for each sprint
+            setSprintBacklogItems((prev) => ({ ...prev, [sprint.id]: res.data.content }))
+          })
+        }
+      })
+    })
+  }
+
+  const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
+
+
+  const loadMoreProductBacklogs = async () => {
+    if (triggerGetProductBacklogResponse?.data && !triggerGetProductBacklogResponse.data.last) {
+      try {
+        const nextPage = currentPage + 1
+        await triggerGetProductBacklog(nextPage, DEFAULT_PAGE_SIZE).then((response) => {
+          if (response.status === "success" && response.data) {
+            const backlogItems = response.data.content.map((item) => ({
+              ...item,
+              containerId: "backlog",
+            }))
+            setUnassignedBacklog((prev) => [...prev, ...backlogItems])
+          }
+        })
+        setCurrentPage(nextPage)
+      } catch (error) {
+        console.error("Failed to load more product backlogs:", error)
+      }
+    }
+  }
 
   return (
     <DndContext
@@ -304,16 +367,18 @@ export default function ProductBacklogSection({ projectId }: Props) {
         )}
 
         {/* Product Backlog Section */}
-        <div>
+        {triggerGetProductBacklogResponse && <div>
           <ProductBacklogContainer
+            projectId={projectId}
             items={unassignedBacklog}
-            isLoading={unassignedLoading} />
-          <div className="pt-4 border-t">
-            <AddProductBacklogInput
-              projectId={projectId}
-              onProductBacklogCreated={handleProductBacklogCreated} />
-          </div>
-        </div>
+            isLoading={unassignedLoading}
+            onClickLoadMore={loadMoreProductBacklogs}
+            isLast={triggerGetProductBacklogResponse?.data.last}
+            onProductBacklogCreated={handleProductBacklogCreated}
+            onCreateSprint={handleCreateSprint}
+          />
+        </div>}
+
       </div>
 
       <DragOverlay>

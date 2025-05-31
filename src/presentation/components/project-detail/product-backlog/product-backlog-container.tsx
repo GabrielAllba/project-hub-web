@@ -5,14 +5,26 @@ import { DroppableContainer } from "../../containers/droppable-container"
 import { Badge } from "../../ui/badge"
 import { Button } from "../../ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card"
+import { LoadingSpinner } from "../../ui/loading-spinner"
+import { AddProductBacklogInput } from "./add-product-backlog-input"
 import { ProductBacklogItem } from "./product-backlog-item"
 
 export function ProductBacklogContainer({
     items,
     isLoading,
+    onClickLoadMore,
+    onProductBacklogCreated,
+    onCreateSprint,
+    isLast,
+    projectId
 }: {
     items: ProductBacklog[]
     isLoading: boolean
+    onClickLoadMore: () => void
+    onProductBacklogCreated: () => void
+    onCreateSprint: () => void
+    isLast: boolean
+    projectId: string
 }) {
     return (
         <Card className="w-full rounded-sm ">
@@ -23,9 +35,15 @@ export function ProductBacklogContainer({
                         <Badge variant="secondary" className="text-xs">
                             {isLoading ? "..." : items.length}
                         </Badge>
-                        <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
+                        <Button
+                            size="sm" 
+                            variant="outline" 
+                            className="h-7 px-1 gap-1 text-xs rounded hover:cursor-pointer"
+                            onClick={onCreateSprint}>
                             <Plus className="h-3 w-3" />
+                            Buat Sprint
                         </Button>
+
                     </div>
                 </div>
             </CardHeader>
@@ -52,6 +70,26 @@ export function ProductBacklogContainer({
                         </SortableContext>
                     </DroppableContainer>
                 )}
+                {!isLast &&
+                    <div className="flex justify-center pt-2">
+                        <Button
+                            variant="outline"
+                            onClick={onClickLoadMore}
+                            disabled={isLoading}>
+                            {isLoading ? (
+                                <>
+                                    <LoadingSpinner size="sm" className="mr-2" />
+                                    Loading...
+                                </>
+                            ) : (
+                                "Load More Product Backlogs"
+                            )}
+                        </Button>
+                    </div>}
+                <AddProductBacklogInput
+                    projectId={projectId}
+                    onProductBacklogCreated={onProductBacklogCreated} />
+
             </CardContent>
         </Card>
     )
