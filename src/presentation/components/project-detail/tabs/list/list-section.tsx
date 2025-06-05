@@ -797,6 +797,49 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                             onDeleteBacklog={(backlog) => {
                                                 handleDeleteBacklog(backlog)
                                             }}
+                                            onEditBacklogPoint={async () => {
+                                                // Refresh sprint backlog data after editing a backlog item while preserving pagination
+                                                try {
+                                                    setLoadingSprintItems((prev) => ({ ...prev, [sprint.id]: true }))
+
+                                                    const currentPage = sprintPages[sprint.id] || DEFAULT_PAGE
+                                                    const allItems: ProductBacklog[] = []
+
+                                                    // Load all pages from 1 to current page to maintain all loaded items
+                                                    for (let page = DEFAULT_PAGE; page <= currentPage; page++) {
+                                                        const response = await triggerGetProductBacklogBySprint(
+                                                            sprint.id,
+                                                            page,
+                                                            DEFAULT_PAGE_SIZE,
+                                                        )
+
+                                                        if (response.status === "success" && response.data) {
+                                                            allItems.push(...response.data.content)
+
+                                                            // Update has more state based on the last page loaded
+                                                            if (page === currentPage) {
+                                                                setSprintHasMore((prev) => ({
+                                                                    ...prev,
+                                                                    [sprint.id]: !response.data.last,
+                                                                }))
+                                                            }
+                                                        }
+                                                    }
+
+                                                    // Update sprint backlog items with all loaded data
+                                                    setSprintBacklogItems((prev) => ({
+                                                        ...prev,
+                                                        [sprint.id]: allItems,
+                                                    }))
+
+                                                    // Keep the current pagination state (don't reset)
+                                                    // sprintPages[sprint.id] remains the same
+                                                } catch (error) {
+                                                    console.error(`Failed to reload backlog items for sprint ${sprint.id} after edit:`, error)
+                                                } finally {
+                                                    setLoadingSprintItems((prev) => ({ ...prev, [sprint.id]: false }))
+                                                }
+                                            }}
                                             onEditSprint={async () => {
                                                 try {
                                                     const sprintsData = await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
@@ -918,6 +961,33 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                     onDeleteBacklog={(backlog) => {
                                         handleDeleteBacklog(backlog)
                                     }}
+                                    onEditBacklogPoint={async () => {
+                                        // Refresh unassigned backlog data after editing a backlog item while preserving pagination
+                                        try {
+                                            setLoadingUnassigned(true)
+
+                                            const allItems: ProductBacklog[] = []
+
+                                            // Load all pages from 1 to current page to maintain all loaded items
+                                            for (let page = DEFAULT_PAGE; page <= currentPageProductBacklog; page++) {
+                                                const response = await triggerGetProductBacklog(page, DEFAULT_PAGE_SIZE)
+
+                                                if (response.status === "success" && response.data) {
+                                                    allItems.push(...response.data.content)
+                                                }
+                                            }
+
+                                            // Update unassigned backlog with all loaded data
+                                            setUnassignedBacklog(allItems)
+
+                                            // Keep the current pagination state (don't reset)
+                                            // currentPageProductBacklog remains the same
+                                        } catch (error) {
+                                            console.error("Failed to reload unassigned backlog after edit:", error)
+                                        } finally {
+                                            setLoadingUnassigned(false)
+                                        }
+                                    }}
                                     loadingUnassigned={loadingUnassigned}
                                     onCreateSprint={handleCreateSprint}
                                     totalElement={triggerGetProductBacklogResponse?.data.totalElements || 0}
@@ -951,7 +1021,12 @@ export default function ListSection({ projectId }: { projectId: string }) {
                     {/* Show loading overlay when reordering */}
 
                     <DragOverlay>
-                        {activeId && activeItem ? <Backlog id={activeId} backlog={activeItem} onDeleteBacklog={() => { }} /> : null}
+                        {activeId && activeItem ? <Backlog
+                            id={activeId}
+                            backlog={activeItem}
+                            onDeleteBacklog={() => { }}
+                            onEditBacklogPoint={() => { }}
+                        /> : null}
                     </DragOverlay>
                 </DndContext>
             </div>

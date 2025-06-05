@@ -17,6 +17,7 @@ interface DroppableContainerSprintProps {
   items: ProductBacklog[]
   onDeleteBacklog: (backlog: ProductBacklog) => void
   onEditSprint: () => void
+  onEditBacklogPoint: () => void
   loadingBacklog: boolean
   isDraggedOver: boolean
 }
@@ -68,10 +69,18 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
         )}
         data-container-id={props.sprint.id}
       >
-        <SortableContext items={props.items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={props.items.map((item) => item.id)}
+          strategy={verticalListSortingStrategy}>
           <div className="flex flex-col flex-1">
             {props.items.map((item) => (
-              <SortableBacklog key={item.id} id={item.id} backlog={item} onDeleteBacklog={props.onDeleteBacklog} />
+              <SortableBacklog
+                key={item.id}
+                id={item.id}
+                backlog={item}
+                onDeleteBacklog={props.onDeleteBacklog}
+                onEditBacklogPoint={props.onEditBacklogPoint}
+              />
             ))}
             {props.items.length === 0 && (
               <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px]">

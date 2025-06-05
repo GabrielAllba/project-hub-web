@@ -4,6 +4,7 @@ export type ProductBacklogStatus = "TODO" | "IN_PROGRESS" | "DONE"
 export interface ProductBacklog  {
   id: string
   projectId: string
+  point: number;
   sprintId: string | null;
   title: string
   priority: ProductBacklogPriority

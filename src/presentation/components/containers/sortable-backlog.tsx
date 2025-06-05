@@ -9,13 +9,14 @@ interface SortableBacklogProps {
     id: string
     backlog: ProductBacklog
     onDeleteBacklog: (backlog: ProductBacklog) => void
+    onEditBacklogPoint: () => void
 }
 
-export function SortableBacklog({ id, backlog, onDeleteBacklog }: SortableBacklogProps) {
+export function SortableBacklog(props: SortableBacklogProps) {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-        id,
+        id: props.id,
         data: {
-            backlog: backlog
+            backlog: props.backlog
         }
     })
 
@@ -28,11 +29,13 @@ export function SortableBacklog({ id, backlog, onDeleteBacklog }: SortableBacklo
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <Backlog
-                id={id}
-                backlog={backlog} 
+                id={props.id}
+                backlog={props.backlog}
                 onDeleteBacklog={(backlog: ProductBacklog) => {
-                    onDeleteBacklog(backlog)
-                }}/>
+                    props.onDeleteBacklog(backlog)
+                }}
+                onEditBacklogPoint={props.onEditBacklogPoint}
+            />
         </div>
     )
 }

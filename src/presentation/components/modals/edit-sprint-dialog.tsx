@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
+import { format, subDays } from "date-fns"
 import { CalendarIcon, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -50,7 +50,7 @@ export function EditSprintDialog(props: EditSprintDialogProps) {
     const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
     const [open, setOpen] = useState(false)
 
-    const today = new Date()
+    const today = subDays(new Date(), 1)
 
     const form = useForm<SprintFormValues>({
         resolver: zodResolver(sprintSchema),

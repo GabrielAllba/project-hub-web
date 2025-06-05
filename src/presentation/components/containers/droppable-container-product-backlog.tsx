@@ -15,6 +15,7 @@ interface DroppableContainerProductBacklogProps {
   loadingUnassigned: boolean
   totalElement: number
   onCreateSprint: () => void
+  onEditBacklogPoint: () => void
   isDraggedOver: boolean
 }
 
@@ -54,7 +55,13 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
         <SortableContext items={props.items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
           <div className="flex flex-col flex-1">
             {props.items.map((item) => (
-              <SortableBacklog key={item.id} id={item.id} backlog={item} onDeleteBacklog={props.onDeleteBacklog} />
+              <SortableBacklog
+                key={item.id}
+                id={item.id}
+                backlog={item}
+                onDeleteBacklog={props.onDeleteBacklog}
+                onEditBacklogPoint={props.onEditBacklogPoint}
+              />
             ))}
             {/* Empty state */}
             {props.items.length === 0 && (

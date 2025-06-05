@@ -4,6 +4,7 @@ import type { CreateProductBacklogRequestDTO } from "@/domain/dto/req/create-pro
 import type { CreateProjectRequestDTO } from "@/domain/dto/req/create-project-req";
 import type { CreateSprintRequestDTO } from "@/domain/dto/req/create-sprint-req";
 import type { CreateTeamRequestDTO } from "@/domain/dto/req/create-team-req";
+import type { EditBacklogPointRequestDTO } from "@/domain/dto/req/edit-backlog-point-req";
 import type { EditSprintGoalAndDatesRequestDTO } from "@/domain/dto/req/edit-sprint-goal-and-dates-req";
 import type { ReorderProductBacklogRequestDTO } from "@/domain/dto/req/reorder-product-backlog-req";
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
@@ -158,6 +159,17 @@ export class ProjectHubServiceRepository {
 
   async editSprintGoalAndDates(token: string, data: EditSprintGoalAndDatesRequestDTO): Promise<BaseResponse<SprintResponseDTO>> {
     const response = await projectHubService.put(`/sprint/edit_goal_and_dates`,
+      data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async editBacklogPoint(token: string, data: EditBacklogPointRequestDTO): Promise<BaseResponse<ProductBacklog>> {
+    const response = await projectHubService.put(`/product_backlog/edit_backlog_point`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
