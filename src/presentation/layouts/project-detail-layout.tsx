@@ -1,5 +1,5 @@
 import { type ReactNode } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../components/ui/avatar";
 
 interface Props {
     children: ReactNode;

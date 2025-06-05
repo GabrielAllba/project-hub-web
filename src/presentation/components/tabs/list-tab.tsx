@@ -1,6 +1,6 @@
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
-import ListSection from "./tabs/list/list-section"
+import ListSection from "../section/list-section"
 
 interface ListTabProps {
   projectId: string

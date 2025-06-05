@@ -11,19 +11,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
-import { NewProjectModal } from "./new-project-modal";
+import { NewProjectModal } from "../modal/new-project-modal";
 
-interface HeaderSectionProps {
+interface ProjectHeaderSectionProps {
   selectedRole?: string;
   onRoleChange: (val: string) => void;
   onCreatedProject: () => void;
 }
 
-export const HeaderSection = ({
+export const ProjectHeaderSection = ({
   selectedRole,
   onRoleChange,
   onCreatedProject,
-}: HeaderSectionProps) => {
+}: ProjectHeaderSectionProps) => {
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
 

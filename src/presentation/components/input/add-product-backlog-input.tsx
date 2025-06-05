@@ -5,9 +5,9 @@ import type React from "react"
 import type { CreateProductBacklogRequestDTO } from "@/domain/dto/req/create-product-backlog-req"
 import { useCreateProductBacklog } from "@/shared/hooks/use-create-product-backlog"
 import { useEffect, useRef, useState } from "react"
-import { Button } from "../../../ui/button"
-import { Input } from "../../../ui/input"
-import { LoadingSpinner } from "../../../ui/loading-spinner"
+import { Button } from "../ui/button"
+import { Input } from "../ui/input"
+import { LoadingSpinner } from "../ui/loading-spinner"
 
 interface AddProductBacklogInputProps {
     projectId: string

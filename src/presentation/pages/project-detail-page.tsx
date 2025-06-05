@@ -1,9 +1,9 @@
 "use client"
 
 import { useParams } from "react-router-dom"
-import { ProjectLayout } from "../components/project-detail/layout/project-detail-layout"
-import { ListTab } from "../components/project-detail/list-tab"
+import { ListTab } from "../components/tabs/list-tab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
+import { ProjectLayout } from "../layouts/project-detail-layout"
 
 export const ProjectDetailPage = () => {
   const { projectId } = useParams<{ projectId: string }>()

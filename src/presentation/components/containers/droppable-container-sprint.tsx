@@ -6,7 +6,7 @@ import { cn } from "@/shared/utils/merge-class"
 import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
-import { EditSprintDialog } from "../modals/edit-sprint-dialog"
+import { EditSprintModal } from "../modal/edit-sprint-modal"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { SortableBacklog } from "./sortable-backlog"
@@ -41,7 +41,7 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
                 </div>
               }
             </div>
-            <EditSprintDialog
+            <EditSprintModal
               sprint={props.sprint}
               onEditSprint={props.onEditSprint}
             />

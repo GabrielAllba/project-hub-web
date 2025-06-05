@@ -41,12 +41,12 @@ const sprintSchema = z.object({
 
 type SprintFormValues = z.infer<typeof sprintSchema>
 
-interface EditSprintDialogProps {
+interface EditSprintModalProps {
     sprint: Sprint
     onEditSprint: () => void
 }
 
-export function EditSprintDialog(props: EditSprintDialogProps) {
+export function EditSprintModal(props: EditSprintModalProps) {
     const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
     const [open, setOpen] = useState(false)
 

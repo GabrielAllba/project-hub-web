@@ -1,8 +1,8 @@
 import type { ProjectSummary } from '@/domain/entities/project-summary';
 import { useGetMyProject } from '@/shared/hooks/use-get-my-project';
 import { useEffect, useState } from 'react';
-import { HeaderSection } from "../components/project/header-section";
-import { ProjectList } from '../components/project/project-list';
+import { ProjectHeaderSection } from '../components/section/project-header-section';
+import { ProjectSection } from '../components/section/project-section';
 import { PaginationSection } from '../components/ui/pagination-section';
 
 
@@ -44,7 +44,7 @@ export const ProyekPage = () => {
 
   return (
     <div className="space-y-6">
-      <HeaderSection
+      <ProjectHeaderSection
         selectedRole={selectedRole}
         onRoleChange={setSelectedRole}
         onCreatedProject={() => {
@@ -56,7 +56,7 @@ export const ProyekPage = () => {
         <div className="text-red-600 text-center">{errorMessage}</div>
       )}
 
-      <ProjectList projects={projects} isLoading={triggerGetMyProjectLoading} />
+      <ProjectSection projects={projects} isLoading={triggerGetMyProjectLoading} />
 
       <PaginationSection
         page={page}

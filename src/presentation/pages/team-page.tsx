@@ -1,8 +1,8 @@
 import type { TeamSummary } from '@/domain/entities/team-summary';
 import { useGetMyTeams } from '@/shared/hooks/use-get-my-teams';
 import { useEffect, useState } from 'react';
-import { NewTeamModal } from '../components/teams/new-teams-modal';
-import { TeamList } from '../components/teams/team-list';
+import { NewTeamModal } from '../components/modal/new-teams-modal';
+import { TeamSection } from '../components/section/team-section';
 import { Button } from '../components/ui/button';
 import { GreetingSection } from '../components/ui/greeting';
 import { Input } from '../components/ui/input';
@@ -71,7 +71,7 @@ export const TeamPage = () => {
           <div className="text-red-600 text-center">{errorMessage}</div>
         )}
 
-        <TeamList teams={teams} isLoading={triggerGetMyTeamsLoading} />
+        <TeamSection teams={teams} isLoading={triggerGetMyTeamsLoading} />
 
         <PaginationSection
           page={page}
@@ -87,7 +87,7 @@ export const TeamPage = () => {
         <NewTeamModal
           open={openModal}
           onOpenChange={setOpenModal}
-          onCreated={() => { 
+          onCreated={() => {
             triggerGetMyTeams(page, itemsPerPage)
           }}
         />

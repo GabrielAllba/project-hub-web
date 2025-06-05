@@ -29,7 +29,7 @@ import {
 } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { AddProductBacklogInput } from "./add-product-backlog-input"
+import { AddProductBacklogInput } from "../input/add-product-backlog-input"
 
 export default function ListSection({ projectId }: { projectId: string }) {
     const [sprints, setSprints] = useState<Sprint[]>([])

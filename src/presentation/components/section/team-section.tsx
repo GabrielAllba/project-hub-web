@@ -1,13 +1,13 @@
-import type { ProjectSummary } from "@/domain/entities/project-summary";
+import type { TeamSummary } from "@/domain/entities/team-summary";
 import { Skeleton } from "../ui/skeleton";
-import { ProjectCard } from "./project-card";
+import { TeamCard } from "../card/team-card";
 
-interface ProjectListProps {
-  projects: ProjectSummary[];
+interface TeamSectionProps {
+  teams: TeamSummary[];
   isLoading: boolean;
 }
 
-export const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
+export const TeamSection = ({ teams, isLoading }: TeamSectionProps) => {
   if (isLoading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
@@ -23,14 +23,14 @@ export const ProjectList = ({ projects, isLoading }: ProjectListProps) => {
     );
   }
 
-  if (projects.length === 0) {
-    return <div className="text-muted-foreground">Belum ada proyek.</div>;
+  if (teams.length === 0) {
+    return <div className="text-muted-foreground">Belum ada team.</div>;
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {projects.map((project) => (
-        <ProjectCard key={project.projectId} project={project} />
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-4">
+      {teams.map((team) => (
+        <TeamCard key={team.teamId} team={team} />
       ))}
     </div>
   );

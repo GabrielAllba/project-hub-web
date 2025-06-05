@@ -51,11 +51,3 @@ export const getStatusColor = (status: ProductBacklogStatus): string => {
             return "bg-gray-100 text-gray-800"
     }
 }
-
-export const formatDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString("id-ID", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-    })
-}
