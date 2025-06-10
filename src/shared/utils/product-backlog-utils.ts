@@ -3,11 +3,11 @@ import type { ProductBacklogPriority, ProductBacklogStatus } from "@/domain/enti
 export const getPriorityLabel = (priority: ProductBacklogPriority): string => {
     switch (priority) {
         case "HIGH":
-            return "Prioritas Tinggi"
+            return "HIGH"
         case "MEDIUM":
-            return "Prioritas Tengah"
+            return "MEDIUM"
         case "LOW":
-            return "Prioritas Rendah"
+            return "LOW"
         default:
             return priority
     }
@@ -16,11 +16,11 @@ export const getPriorityLabel = (priority: ProductBacklogPriority): string => {
 export const getStatusLabel = (status: ProductBacklogStatus): string => {
     switch (status) {
         case "TODO":
-            return "Ditugaskan"
-        case "IN_PROGRESS":
-            return "Di Proses"
+            return "TODO"
+        case "INPROGRESS":
+            return "INPROGRESS"
         case "DONE":
-            return "Selesai"
+            return "DONE"
         default:
             return status
     }
@@ -41,7 +41,7 @@ export const getPriorityColor = (priority: ProductBacklogPriority): string => {
 
 export const getStatusColor = (status: ProductBacklogStatus): string => {
     switch (status) {
-        case "IN_PROGRESS":
+        case "INPROGRESS":
             return "bg-blue-100 text-blue-800"
         case "TODO":
             return "bg-purple-100 text-purple-800"

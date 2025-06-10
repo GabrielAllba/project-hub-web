@@ -3,13 +3,13 @@
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import { useSortable } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
-import { Backlog } from "./backlog"
+import { BacklogItem } from "../items/backlog-item"
 
 interface SortableBacklogProps {
     id: string
     backlog: ProductBacklog
     onDeleteBacklog: (backlog: ProductBacklog) => void
-    onEditBacklogPoint: () => void
+    onEditBacklog: (backlogId: string) => void
 }
 
 export function SortableBacklog(props: SortableBacklogProps) {
@@ -28,13 +28,13 @@ export function SortableBacklog(props: SortableBacklogProps) {
 
     return (
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            <Backlog
+            <BacklogItem
                 id={props.id}
                 backlog={props.backlog}
                 onDeleteBacklog={(backlog: ProductBacklog) => {
                     props.onDeleteBacklog(backlog)
                 }}
-                onEditBacklogPoint={props.onEditBacklogPoint}
+                onEditBacklog={props.onEditBacklog}
             />
         </div>
     )

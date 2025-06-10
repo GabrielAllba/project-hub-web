@@ -31,69 +31,85 @@ import {
     FormMessage,
 } from "../ui/form"
 import { Input } from "../ui/input"
-import { PopoverDialog, PopoverDialogContent, PopoverDialogTrigger } from "../ui/popover-dialog"
+import {
+    PopoverDialog,
+    PopoverDialogContent,
+    PopoverDialogTrigger,
+} from "../ui/popover-dialog"
 
 const sprintSchema = z.object({
-    goal: z.string().min(0, "Sprint goal is required."),
-    startDate: z.date({ required_error: "Start date is required" }),
-    endDate: z.date({ required_error: "End date is required" }),
+    goal: z.string().min(0, "Sprint goal is required"),
+    startDate: z.date().nullable().optional(),
+    endDate: z.date().nullable().optional(),
 })
 
 type SprintFormValues = z.infer<typeof sprintSchema>
 
 interface EditSprintModalProps {
     sprint: Sprint
-    onEditSprint: () => void
+    onEditSprint: (sprintId: string) => void
 }
 
-export function EditSprintModal(props: EditSprintModalProps) {
+export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) {
     const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
     const [open, setOpen] = useState(false)
-
     const today = subDays(new Date(), 1)
+
+    const initialValues = {
+        goal: sprint.sprintGoal || "",
+        startDate: sprint.startDate ? new Date(sprint.startDate) : null,
+        endDate: sprint.endDate ? new Date(sprint.endDate) : null,
+    }
 
     const form = useForm<SprintFormValues>({
         resolver: zodResolver(sprintSchema),
-        defaultValues: {
-            goal: props.sprint.sprintGoal || "",
-            startDate: props.sprint.startDate ? new Date(props.sprint.startDate) : undefined,
-            endDate: props.sprint.endDate ? new Date(props.sprint.endDate) : undefined,
-        },
+        defaultValues: initialValues,
     })
+
+    const watchGoal = form.watch("goal")
+    const watchStartDate = form.watch("startDate")
+    const watchEndDate = form.watch("endDate")
+
+    const hasChanges =
+        watchGoal !== initialValues.goal ||
+        watchStartDate?.toISOString() !== initialValues.startDate?.toISOString() ||
+        watchEndDate?.toISOString() !== initialValues.endDate?.toISOString()
 
     const onSubmit = async (data: SprintFormValues) => {
         const { startDate, endDate } = data
 
-        if (startDate > endDate) {
-            toast.error("Start date cannot be after end date.")
-            return
+        if (startDate && endDate) {
+            if (startDate > endDate) {
+                toast.error("Start date cannot be after end date.")
+                return
+            }
+
+            if (startDate < today || endDate < today) {
+                toast.error("Start and end date cannot be before today.")
+                return
+            }
         }
 
-        if (startDate < today || endDate < today) {
-            toast.error("Start and end date cannot be before today.")
-            return
-        }
-
-        // Call mutation
         try {
             await triggerEditSprintGoalAndDates({
-                sprintId: props.sprint.id,
-                sprintGoal: data.goal,
-                startDate: format(startDate, "yyyy-MM-dd HH:mm:ss.SSS"),
-                endDate: format(endDate, "yyyy-MM-dd HH:mm:ss.SSS"),
+                sprintId: sprint.id,
+                sprintGoal: data.goal?.trim() ?? null,
+                startDate: startDate ? format(startDate, "yyyy-MM-dd HH:mm:ss.SSS") : null,
+                endDate: endDate ? format(endDate, "yyyy-MM-dd HH:mm:ss.SSS") : null,
             })
+
             toast.success("Sprint updated successfully!")
-            props.onEditSprint()
+            onEditSprint(sprint.id)
             setOpen(false)
         } catch (err) {
-            toast.error("Failed to update sprint." + err)
+            toast.error("Failed to update sprint. " + err)
         }
     }
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:cursor-pointer ">
+                <Button variant="ghost" size="icon" className="hover:cursor-pointer">
                     <Pencil className="size-4 text-gray-600" />
                 </Button>
             </DialogTrigger>
@@ -137,11 +153,7 @@ export function EditSprintModal(props: EditSprintModalProps) {
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    {field.value ? (
-                                                        format(field.value, "PPP")
-                                                    ) : (
-                                                        <span>Pick a date</span>
-                                                    )}
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -149,7 +161,7 @@ export function EditSprintModal(props: EditSprintModalProps) {
                                         <PopoverDialogContent className="w-auto p-0 z-50" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value}
+                                                selected={field.value!}
                                                 onSelect={field.onChange}
                                                 disabled={(date) => date < today}
                                                 initialFocus
@@ -179,11 +191,7 @@ export function EditSprintModal(props: EditSprintModalProps) {
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    {field.value ? (
-                                                        format(field.value, "PPP")
-                                                    ) : (
-                                                        <span>Pick a date</span>
-                                                    )}
+                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -191,7 +199,7 @@ export function EditSprintModal(props: EditSprintModalProps) {
                                         <PopoverDialogContent className="flex w-auto p-0 z-50" align="start">
                                             <Calendar
                                                 mode="single"
-                                                selected={field.value}
+                                                selected={field.value!}
                                                 onSelect={field.onChange}
                                                 disabled={(date) => date < today}
                                                 initialFocus
@@ -204,7 +212,7 @@ export function EditSprintModal(props: EditSprintModalProps) {
                             )}
                         />
 
-                        <Button type="submit" className="w-full mt-4">
+                        <Button type="submit" className="w-full mt-4" disabled={!hasChanges}>
                             Save Changes
                         </Button>
                     </form>

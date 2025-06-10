@@ -3,6 +3,7 @@
 import type React from "react"
 
 import type { CreateProductBacklogRequestDTO } from "@/domain/dto/req/create-product-backlog-req"
+import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import { useCreateProductBacklog } from "@/shared/hooks/use-create-product-backlog"
 import { useEffect, useRef, useState } from "react"
 import { Button } from "../ui/button"
@@ -12,7 +13,7 @@ import { LoadingSpinner } from "../ui/loading-spinner"
 interface AddProductBacklogInputProps {
     projectId: string
     sprintId: string | null;
-    onProductBacklogCreated: () => void
+    onProductBacklogCreated: (backlog: ProductBacklog) => void
 }
 
 export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
@@ -57,8 +58,8 @@ export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
             const response = await triggerCreateProductBacklog(createDto, props.projectId)
 
             if (response.status === "success") {
-                handleHideInput()
-                props.onProductBacklogCreated()
+                setTaskTitle("")
+                props.onProductBacklogCreated(response.data)
             } else {
                 console.error("Failed to create task:", response.message)
             }

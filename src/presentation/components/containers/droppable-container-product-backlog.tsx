@@ -15,7 +15,7 @@ interface DroppableContainerProductBacklogProps {
   loadingUnassigned: boolean
   totalElement: number
   onCreateSprint: () => void
-  onEditBacklogPoint: () => void
+  onEditBacklogPoint: (backlogId: string) => void
   isDraggedOver: boolean
 }
 
@@ -24,7 +24,6 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
     id: props.id,
   })
 
-  // Combine both drag over states for enhanced visual feedback
   const isDragActive = isOver || props.isDraggedOver
 
   return (
@@ -60,7 +59,7 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
                 id={item.id}
                 backlog={item}
                 onDeleteBacklog={props.onDeleteBacklog}
-                onEditBacklogPoint={props.onEditBacklogPoint}
+                onEditBacklog={props.onEditBacklogPoint}
               />
             ))}
             {/* Empty state */}

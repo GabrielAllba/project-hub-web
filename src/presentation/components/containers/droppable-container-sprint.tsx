@@ -16,10 +16,11 @@ interface DroppableContainerSprintProps {
   sprint: Sprint
   items: ProductBacklog[]
   onDeleteBacklog: (backlog: ProductBacklog) => void
-  onEditSprint: () => void
-  onEditBacklogPoint: () => void
+  onEditSprint: (sprintId: string) => void
+  onEditBacklog: (backlogId: string) => void
   loadingBacklog: boolean
   isDraggedOver: boolean
+  totalElement: number
 }
 
 export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
@@ -52,7 +53,7 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
         </div>
         <div className="flex items-center gap-2 ">
           <Badge variant="secondary" className="text-xs">
-            {props.loadingBacklog ? "..." : props.items.length}
+            {props.loadingBacklog ? "..." : props.totalElement}
           </Badge>
           <Button size="sm" variant="outline" className="text-xs rounded" onClick={() => { }}>
             <Plus className="w-4 h-4" />
@@ -79,7 +80,7 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
                 id={item.id}
                 backlog={item}
                 onDeleteBacklog={props.onDeleteBacklog}
-                onEditBacklogPoint={props.onEditBacklogPoint}
+                onEditBacklog={props.onEditBacklog}
               />
             ))}
             {props.items.length === 0 && (
