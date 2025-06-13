@@ -1,6 +1,7 @@
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
 import { useEffect, useState } from "react";
+import dayjs from "dayjs";
+import "dayjs/locale/id";
+
 import type { User } from "@/domain/entities/user";
 import { useGetMe } from "@/shared/hooks/use-get-me";
 
@@ -9,14 +10,14 @@ export const GreetingSection = () => {
     const [greeting, setGreeting] = useState<string>("");
 
     const { triggerGetMe, triggerGetMeResponse } = useGetMe();
-
     const user: User | undefined = triggerGetMeResponse?.data;
 
     useEffect(() => {
-        const now = new Date();
-        setToday(format(now, "EEEE, dd MMMM yyyy", { locale: id }));
+        dayjs.locale("id");
+        const now = dayjs();
+        setToday(now.format("dddd, DD MMMM YYYY"));
 
-        const hour = now.getHours();
+        const hour = now.hour();
         if (hour < 11) setGreeting("Selamat pagi");
         else if (hour < 15) setGreeting("Selamat siang");
         else if (hour < 18) setGreeting("Selamat sore");
@@ -24,8 +25,6 @@ export const GreetingSection = () => {
 
         triggerGetMe();
     }, []);
-
-
 
     return (
         <>

@@ -6,17 +6,19 @@ import { useGetProductGoal } from "@/shared/hooks/use-get-product-goal"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 
 interface ProductGoalsContextType {
-    productGoals: ProductGoal[]
+    goals: ProductGoal[]
+    selectedGoalIds: Set<string>
+    setGoals: (goals: ProductGoal[]) => void
+    updateGoal: (updated: ProductGoal) => void
+    deleteGoal: (goalId: string) => void
+    addGoal: (goal: ProductGoal) => void
+    refreshGoals: () => Promise<void>
+    searchGoals: (query: string) => ProductGoal[]
+    loadMoreGoals: () => Promise<void>
+    toggleSelectGoal: (goalId: string) => void
+    clearSelectedGoals: () => void
     isLoading: boolean
     hasMore: boolean
-    searchQuery: string
-    filteredGoals: ProductGoal[]
-    setSearchQuery: (query: string) => void
-    loadMoreGoals: () => Promise<void>
-    refreshGoals: () => Promise<void>
-    updateGoal: (goalId: string, updates: Partial<ProductGoal>) => void
-    removeGoal: (goalId: string) => void
-    addGoal: (goal: ProductGoal) => void
 }
 
 const ProductGoalsContext = createContext<ProductGoalsContextType | undefined>(undefined)
@@ -27,97 +29,110 @@ interface ProductGoalsProviderProps {
 }
 
 export function ProductGoalsProvider({ children, projectId }: ProductGoalsProviderProps) {
-    const [productGoals, setProductGoals] = useState<ProductGoal[]>([])
-    const [page, setPage] = useState(DEFAULT_PAGE)
-    const [hasMore, setHasMore] = useState(true)
+    const [goals, setGoals] = useState<ProductGoal[]>([])
+    const [selectedGoalIds, setSelectedGoalIds] = useState<Set<string>>(new Set())
     const [isLoading, setIsLoading] = useState(false)
-    const [searchQuery, setSearchQuery] = useState("")
-    const [filteredGoals, setFilteredGoals] = useState<ProductGoal[]>([])
+    const [hasMore, setHasMore] = useState(true)
 
     const { triggerGetProductGoal } = useGetProductGoal(projectId)
 
-    // Filter goals when search query changes
     useEffect(() => {
-        if (searchQuery.trim() === "") {
-            setFilteredGoals(productGoals)
-        } else {
-            const query = searchQuery.toLowerCase()
-            setFilteredGoals(productGoals.filter((goal) => goal.title.toLowerCase().includes(query)))
+        if (projectId) {
+            refreshGoals()
         }
-    }, [searchQuery, productGoals])
+    }, [projectId])
 
-    const loadGoals = async (resetPage = false) => {
-        if (isLoading || (!hasMore && !resetPage)) return
-
+    const refreshGoals = async () => {
+        setIsLoading(true)
         try {
-            setIsLoading(true)
-            const currentPage = resetPage ? DEFAULT_PAGE : page
-            const response = await triggerGetProductGoal(projectId, currentPage, DEFAULT_PAGE_SIZE)
-
-            if (response.status === "success") {
-                setProductGoals((prev) => {
-                    if (resetPage) {
-                        return response.data.content
-                    }
-
-                    const newGoals = [...prev]
-                    // Add only unique goals
-                    response.data.content.forEach((goal) => {
-                        if (!newGoals.some((g) => g.id === goal.id)) {
-                            newGoals.push(goal)
-                        }
-                    })
-                    return newGoals
-                })
-
-                setHasMore(!response.data.last)
-                setPage(resetPage ? DEFAULT_PAGE + 1 : page + 1)
+            const res = await triggerGetProductGoal(projectId, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+            if (res.status === "success") {
+                setGoals(res.data.content)
+                setHasMore(!res.data.last)
             }
         } catch (error) {
-            console.error("Failed to load product goals:", error)
+            console.error("Failed to refresh goals:", error)
         } finally {
             setIsLoading(false)
         }
     }
 
-    const loadMoreGoals = () => loadGoals(false)
-    const refreshGoals = () => {
-        setPage(DEFAULT_PAGE)
-        setHasMore(true)
-        return loadGoals(true)
+    const loadMoreGoals = async () => {
+        if (isLoading || !hasMore) return
+
+        setIsLoading(true)
+        try {
+            const nowPage = Math.floor(goals.length / DEFAULT_PAGE_SIZE)
+            const res = await triggerGetProductGoal(projectId, nowPage, DEFAULT_PAGE_SIZE)
+
+            if (res.status === "success") {
+                const uniqueNewGoals = res.data.content.filter(
+                    (newGoal) => !goals.some((existing) => existing.id === newGoal.id),
+                )
+                setGoals((prev) => [...prev, ...uniqueNewGoals])
+                setHasMore(!res.data.last)
+            }
+        } catch (error) {
+            console.error("Failed to load more goals:", error)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
-    const updateGoal = (goalId: string, updates: Partial<ProductGoal>) => {
-        setProductGoals((prev) => prev.map((goal) => (goal.id === goalId ? { ...goal, ...updates } : goal)))
+    const updateGoal = (updated: ProductGoal) => {
+        setGoals((prev) => prev.map((goal) => (goal.id === updated.id ? updated : goal)))
     }
 
-    const removeGoal = (goalId: string) => {
-        setProductGoals((prev) => prev.filter((goal) => goal.id !== goalId))
+    const deleteGoal = (goalId: string) => {
+        setGoals((prev) => prev.filter((goal) => goal.id !== goalId))
+        // Remove from selected goals if it was selected
+        setSelectedGoalIds((prev) => {
+            const newSet = new Set(prev)
+            newSet.delete(goalId)
+            return newSet
+        })
     }
 
     const addGoal = (goal: ProductGoal) => {
-        setProductGoals((prev) => [goal, ...prev])
+        setGoals((prev) => [goal, ...prev])
     }
 
-    // Load initial goals
-    useEffect(() => {
-        if (projectId && productGoals.length === 0) {
-            loadGoals(true)
-        }
-    }, [projectId])
+    const toggleSelectGoal = (goalId: string) => {
+        setSelectedGoalIds((prev) => {
+            const newSet = new Set(prev)
+            if (newSet.has(goalId)) {
+                newSet.delete(goalId)
+            } else {
+                newSet.add(goalId)
+            }
+            return newSet
+        })
+    }
+
+    const clearSelectedGoals = () => {
+        setSelectedGoalIds(new Set())
+    }
+
+    const searchGoals = (query: string) => {
+        if (!query.trim()) return goals
+        const lowercaseQuery = query.toLowerCase()
+        return goals.filter((goal) => goal.title.toLowerCase().includes(lowercaseQuery))
+    }
 
     const value: ProductGoalsContextType = {
-        productGoals,
+        goals,
+        selectedGoalIds,
+        setGoals,
+        updateGoal,
+        deleteGoal,
+        addGoal,
+        refreshGoals,
+        searchGoals,
+        loadMoreGoals,
+        toggleSelectGoal,
+        clearSelectedGoals,
         isLoading,
         hasMore,
-        searchQuery,
-        filteredGoals,
-        setSearchQuery,
-        loadMoreGoals,
-        refreshGoals,
-        updateGoal,
-        removeGoal,
-        addGoal,
     }
 
     return <ProductGoalsContext.Provider value={value}>{children}</ProductGoalsContext.Provider>

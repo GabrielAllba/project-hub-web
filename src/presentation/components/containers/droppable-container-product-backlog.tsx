@@ -56,7 +56,6 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
             {props.items.map((item) => (
               <SortableBacklog
                 key={item.id}
-                id={item.id}
                 backlog={item}
                 onDeleteBacklog={props.onDeleteBacklog}
                 onEditBacklog={props.onEditBacklogPoint}

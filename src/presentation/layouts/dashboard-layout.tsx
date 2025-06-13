@@ -13,11 +13,11 @@ export default function DashboardLayout() {
       <SidebarInset>
         <>
           <SiteHeader />
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <main className="flex-1 overflow-y-auto p-4">
+          <main className="flex-1 overflow-y-auto p-4">
+            <div className="flex flex-1 flex-col gap-2">
               <Outlet />
-            </main>
-          </div>
+            </div>
+          </main>
         </>
       </SidebarInset>
     </SidebarProvider>

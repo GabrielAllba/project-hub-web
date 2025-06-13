@@ -9,6 +9,7 @@ import { DroppableContainerSprint } from "@/presentation/components/containers/d
 import { BacklogItem } from "@/presentation/components/items/backlog-item"
 import { Button } from "@/presentation/components/ui/button"
 import { LoadingSpinner } from "@/presentation/components/ui/loading-spinner"
+import { useProductGoals } from "@/shared/contexts/product-goals-context"
 import { useCreateSprint } from "@/shared/hooks/use-create-sprint"
 import { useGetProductBacklog } from "@/shared/hooks/use-get-product-backlog"
 import { useGetProductBacklogBySprint } from "@/shared/hooks/use-get-product-backlog-by-sprint"
@@ -30,10 +31,22 @@ import {
 } from "@dnd-kit/core"
 import { arrayMove } from "@dnd-kit/sortable"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { useGetProductBacklogById } from '../../../shared/hooks/use-get-product-backlog-by-id'
+import { useGetProductBacklogById } from "../../../shared/hooks/use-get-product-backlog-by-id"
 import { AddProductBacklogInput } from "../input/add-product-backlog-input"
 
-export default function ListSection({ projectId }: { projectId: string }) {
+interface ListSectionProps {
+    projectId: string
+    statusFilter?: string[]
+    priorityFilter?: string[]
+    searchQuery?: string
+}
+
+export default function ListSection({
+    projectId,
+    statusFilter = [],
+    priorityFilter = [],
+    searchQuery = "",
+}: ListSectionProps) {
     const [sprints, setSprints] = useState<Sprint[]>([])
     const [unassignedBacklog, setUnassignedBacklog] = useState<ProductBacklog[]>([])
     const [sprintBacklogItems, setSprintBacklogItems] = useState<Record<string, ProductBacklog[]>>({})
@@ -43,7 +56,6 @@ export default function ListSection({ projectId }: { projectId: string }) {
     const [loadingSprintItems, setLoadingSprintItems] = useState<Record<string, boolean>>({})
     const [sprintTotalElements, setSprintTotalElements] = useState<Record<string, number>>({})
 
-
     const [sprintPages, setSprintPages] = useState<Record<string, number>>({})
     const [sprintHasMore, setSprintHasMore] = useState<Record<string, boolean>>({})
 
@@ -51,6 +63,8 @@ export default function ListSection({ projectId }: { projectId: string }) {
     const [dragOverContainer, setDragOverContainer] = useState<string | null>(null)
     const [unassignedBacklogTotalElements, setUnassignedBacklogTotalElements] = useState<number>(0)
 
+    // Get selected goals from context
+    const { selectedGoalIds } = useProductGoals()
 
     const dragStateRef = useRef<{
         activeId: string | null
@@ -67,7 +81,6 @@ export default function ListSection({ projectId }: { projectId: string }) {
     })
 
     const [currentPageProductBacklog, setCurrentPageProductBacklog] = useState(DEFAULT_PAGE)
-
     const [totalSprint, setTotalSprint] = useState<number>(0)
 
     const { triggerGetProjectSprints } = useGetProjectSprints(projectId)
@@ -78,24 +91,54 @@ export default function ListSection({ projectId }: { projectId: string }) {
     const { triggerGetSprintById } = useGetSprintById("")
     const { triggerGetProductBacklogById } = useGetProductBacklogById("")
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        }),
-        useSensor(MouseSensor, {
-            activationConstraint: {
-                distance: 8,
-            },
-        }),
-        useSensor(TouchSensor, {
-            activationConstraint: {
-                delay: 200,
-                tolerance: 5,
-            },
-        }),
+    // Filter function for backlog items based on all filters
+    const filterBacklogItems = useCallback(
+        (backlogs: ProductBacklog[]) => {
+            return backlogs.filter((backlog) => {
+                // Filter by product goals
+                if (selectedGoalIds.size > 0) {
+                    const hasNoGoalSelected = selectedGoalIds.has("no-goal")
+                    const hasMatchingGoal = backlog.productGoalId && selectedGoalIds.has(backlog.productGoalId)
+                    const hasNoGoal = !backlog.productGoalId && hasNoGoalSelected
+
+                    if (!hasMatchingGoal && !hasNoGoal) {
+                        return false
+                    }
+                }
+
+                // Filter by status
+                if (statusFilter.length > 0 && !statusFilter.includes(backlog.status)) {
+                    return false
+                }
+
+                // Filter by priority
+                if (priorityFilter.length > 0 && !priorityFilter.includes(backlog.priority)) {
+                    return false
+                }
+
+                // Filter by search query
+                if (searchQuery && !backlog.title.toLowerCase().includes(searchQuery.toLowerCase())) {
+                    return false
+                }
+
+                return true
+            })
+        },
+        [selectedGoalIds, statusFilter, priorityFilter, searchQuery],
     )
+
+    // Filtered backlog items
+    const filteredUnassignedBacklog = useMemo(() => {
+        return filterBacklogItems(unassignedBacklog)
+    }, [unassignedBacklog, filterBacklogItems])
+
+    const filteredSprintBacklogItems = useMemo(() => {
+        const filtered: Record<string, ProductBacklog[]> = {}
+        Object.keys(sprintBacklogItems).forEach((sprintId) => {
+            filtered[sprintId] = filterBacklogItems(sprintBacklogItems[sprintId])
+        })
+        return filtered
+    }, [sprintBacklogItems, filterBacklogItems])
 
     const getAllItems = (): ProductBacklog[] => {
         return [...unassignedBacklog, ...Object.values(sprintBacklogItems).flat()]
@@ -124,6 +167,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                     createdAt: dto.createdAt,
                     updatedAt: dto.updatedAt,
                     sprintGoal: dto.sprintGoal,
+                    status: dto.status
                 }),
             )
             setSprints(sprints)
@@ -344,7 +388,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                     originalContainer: null,
                     currentContainer: null,
                     originalPosition: -1,
-                    insertPosition: -1
+                    insertPosition: -1,
                 }
                 return
             }
@@ -359,7 +403,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                     originalContainer: null,
                     currentContainer: null,
                     originalPosition: -1,
-                    insertPosition: -1
+                    insertPosition: -1,
                 }
                 return
             }
@@ -367,87 +411,91 @@ export default function ListSection({ projectId }: { projectId: string }) {
             const targetContainer = dragStateRef.current.currentContainer
 
             // Store the current state before optimistic update for rollback
-            const prevUnassignedBacklog = [...unassignedBacklog];
-            const prevSprintBacklogItems = { ...sprintBacklogItems };
-            const prevUnassignedBacklogTotalElements = unassignedBacklogTotalElements;
-            const prevSprintTotalElements = { ...sprintTotalElements };
+            const prevUnassignedBacklog = [...unassignedBacklog]
+            const prevSprintBacklogItems = { ...sprintBacklogItems }
+            const prevUnassignedBacklogTotalElements = unassignedBacklogTotalElements
+            const prevSprintTotalElements = { ...sprintTotalElements }
 
             // --- OPTIMISTIC UI UPDATE ---
-            let insertIndex = -1;
-            const overItem = getAllItems().find((item) => item.id === overId);
+            let insertIndex = -1
+            const overItem = getAllItems().find((item) => item.id === overId)
             if (overItem && overItem.sprintId === targetContainer) {
-                insertIndex = dragStateRef.current.insertPosition;
+                insertIndex = dragStateRef.current.insertPosition
             }
 
             if (activeItem.sprintId !== targetContainer) {
                 // Case 1: Moving between different containers (Unassigned <-> Sprint, or Sprint <-> Sprint)
 
                 // Remove from original container
-                if (activeItem.sprintId === null) { // From Unassigned
-                    setUnassignedBacklog((prev) => prev.filter((item) => item.id !== activeId));
-                    setUnassignedBacklogTotalElements((prev) => Math.max(0, prev - 1));
-                } else { // From Sprint
+                if (activeItem.sprintId === null) {
+                    // From Unassigned
+                    setUnassignedBacklog((prev) => prev.filter((item) => item.id !== activeId))
+                    setUnassignedBacklogTotalElements((prev) => Math.max(0, prev - 1))
+                } else {
+                    // From Sprint
                     setSprintBacklogItems((prev) => ({
                         ...prev,
                         [activeItem.sprintId!]: prev[activeItem.sprintId!].filter((item) => item.id !== activeId),
-                    }));
+                    }))
                     setSprintTotalElements((prev) => ({
                         ...prev,
                         [activeItem.sprintId!]: Math.max(0, (prev[activeItem.sprintId!] || 0) - 1),
-                    }));
+                    }))
                 }
 
                 // Add to target container
-                const newItem = { ...activeItem, sprintId: targetContainer };
-                if (targetContainer === null) { // To Unassigned
+                const newItem = { ...activeItem, sprintId: targetContainer }
+                if (targetContainer === null) {
+                    // To Unassigned
                     setUnassignedBacklog((prev) => {
-                        const newItems = [...prev];
+                        const newItems = [...prev]
                         if (insertIndex >= 0 && insertIndex <= newItems.length) {
-                            newItems.splice(insertIndex, 0, newItem);
+                            newItems.splice(insertIndex, 0, newItem)
                         } else {
-                            newItems.push(newItem);
+                            newItems.push(newItem)
                         }
-                        return newItems;
-                    });
-                    setUnassignedBacklogTotalElements((prev) => prev + 1);
-                } else { // To Sprint
+                        return newItems
+                    })
+                    setUnassignedBacklogTotalElements((prev) => prev + 1)
+                } else {
+                    // To Sprint
                     setSprintBacklogItems((prev) => {
-                        const targetItems = [...(prev[targetContainer] || [])];
+                        const targetItems = [...(prev[targetContainer] || [])]
                         if (insertIndex >= 0 && insertIndex <= targetItems.length) {
-                            targetItems.splice(insertIndex, 0, newItem);
+                            targetItems.splice(insertIndex, 0, newItem)
                         } else {
-                            targetItems.push(newItem);
+                            targetItems.push(newItem)
                         }
                         return {
                             ...prev,
                             [targetContainer]: targetItems,
-                        };
-                    });
+                        }
+                    })
                     setSprintTotalElements((prev) => ({
                         ...prev,
                         [targetContainer]: (prev[targetContainer] || 0) + 1,
-                    }));
+                    }))
                 }
             } else if (
                 // Case 2: Reordering within the same container
                 activeItem.sprintId === targetContainer
             ) {
-                const containerItems = targetContainer === null ? unassignedBacklog : sprintBacklogItems[targetContainer];
-                const activeIndex = containerItems.findIndex((item) => item.id === activeId);
-                const overIndex = containerItems.findIndex((item) => item.id === overId);
+                const containerItems = targetContainer === null ? unassignedBacklog : sprintBacklogItems[targetContainer]
+                const activeIndex = containerItems.findIndex((item) => item.id === activeId)
+                const overIndex = containerItems.findIndex((item) => item.id === overId)
 
                 if (activeIndex !== -1 && overIndex !== -1 && activeIndex !== overIndex) {
-                    const newItems = arrayMove(containerItems, activeIndex, overIndex);
+                    const newItems = arrayMove(containerItems, activeIndex, overIndex)
 
                     if (targetContainer === null) {
-                        setUnassignedBacklog(newItems);
+                        setUnassignedBacklog(newItems)
                     } else {
                         setSprintBacklogItems((prev) => ({
                             ...prev,
                             [targetContainer]: newItems,
-                        }));
+                        }))
                     }
-                    dragStateRef.current.insertPosition = newItems.findIndex((item) => item.id === activeId);
+                    dragStateRef.current.insertPosition = newItems.findIndex((item) => item.id === activeId)
                 }
             }
 
@@ -458,26 +506,25 @@ export default function ListSection({ projectId }: { projectId: string }) {
                     originalContainer: dragStateRef.current.originalContainer,
                     currentContainer: dragStateRef.current.currentContainer,
                     insertPosition: dragStateRef.current.insertPosition,
-                });
-
+                })
             } catch (error) {
-                console.error("Failed to reorder backlog:", error);
+                console.error("Failed to reorder backlog:", error)
                 // --- ROLLBACK UI ON API FAILURE ---
-                setUnassignedBacklog(prevUnassignedBacklog);
-                setSprintBacklogItems(prevSprintBacklogItems);
-                setUnassignedBacklogTotalElements(prevUnassignedBacklogTotalElements);
-                setSprintTotalElements(prevSprintTotalElements);
-                restoreToOriginalPosition();
+                setUnassignedBacklog(prevUnassignedBacklog)
+                setSprintBacklogItems(prevSprintBacklogItems)
+                setUnassignedBacklogTotalElements(prevUnassignedBacklogTotalElements)
+                setSprintTotalElements(prevSprintTotalElements)
+                restoreToOriginalPosition()
             }
 
-            setActiveId(null);
+            setActiveId(null)
             dragStateRef.current = {
                 activeId: null,
                 originalContainer: null,
                 currentContainer: null,
                 originalPosition: -1,
-                insertPosition: -1
-            };
+                insertPosition: -1,
+            }
         },
         [
             sprints,
@@ -493,29 +540,29 @@ export default function ListSection({ projectId }: { projectId: string }) {
             sprintPages,
             triggerGetProductBacklogBySprint,
             currentPageProductBacklog,
-            triggerGetProductBacklog
+            triggerGetProductBacklog,
         ],
-    );
+    )
+
     const loadMoreProductBacklogs = useCallback(async () => {
         if (triggerGetProductBacklogResponse?.data && !triggerGetProductBacklogResponse.data.last) {
             try {
                 const nowPage = Math.floor(unassignedBacklog.length / DEFAULT_PAGE_SIZE)
-                const response = await triggerGetProductBacklog(nowPage, DEFAULT_PAGE_SIZE);
+                const response = await triggerGetProductBacklog(nowPage, DEFAULT_PAGE_SIZE)
 
                 if (response.status === "success" && response.data) {
-                    const newBacklogItems = response.data.content;
+                    const newBacklogItems = response.data.content
                     setUnassignedBacklog((prev) => {
                         const uniqueNewItems = newBacklogItems.filter(
-                            (newItem) => !prev.some((existingItem) => existingItem.id === newItem.id)
-                        );
-                        return [...prev, ...uniqueNewItems];
-                    });
-                    setCurrentPageProductBacklog(nowPage);
-                    setUnassignedBacklogTotalElements(response.data.totalElements);
+                            (newItem) => !prev.some((existingItem) => existingItem.id === newItem.id),
+                        )
+                        return [...prev, ...uniqueNewItems]
+                    })
+                    setCurrentPageProductBacklog(nowPage)
+                    setUnassignedBacklogTotalElements(response.data.totalElements)
                 }
-
             } catch (error) {
-                console.error("Failed to load more product backlogs:", error);
+                console.error("Failed to load more product backlogs:", error)
             }
         }
     }, [
@@ -523,50 +570,49 @@ export default function ListSection({ projectId }: { projectId: string }) {
         triggerGetProductBacklog,
         triggerGetProductBacklogResponse?.data,
         setUnassignedBacklog,
-        setUnassignedBacklogTotalElements
-    ]);
+        setUnassignedBacklogTotalElements,
+    ])
 
     const loadMoreSprintBacklogs = useCallback(
         async (sprintId: string) => {
-
-            const hasMore = sprintHasMore[sprintId];
+            const hasMore = sprintHasMore[sprintId]
             if (hasMore) {
                 try {
                     const nowPage = Math.floor(sprintBacklogItems[sprintId].length / DEFAULT_PAGE_SIZE)
 
-                    const response = await triggerGetProductBacklogBySprint(sprintId, nowPage, DEFAULT_PAGE_SIZE);
+                    const response = await triggerGetProductBacklogBySprint(sprintId, nowPage, DEFAULT_PAGE_SIZE)
 
                     if (response.status === "success" && response.data) {
-                        const fetchedNewBacklogItems = response.data.content;
+                        const fetchedNewBacklogItems = response.data.content
 
                         setSprintBacklogItems((prev) => {
-                            const currentSprintItems = [...(prev[sprintId] || [])];
+                            const currentSprintItems = [...(prev[sprintId] || [])]
                             const uniqueNewItems = fetchedNewBacklogItems.filter(
-                                (newItem) => !currentSprintItems.some((existingItem) => existingItem.id === newItem.id)
-                            );
+                                (newItem) => !currentSprintItems.some((existingItem) => existingItem.id === newItem.id),
+                            )
                             return {
                                 ...prev,
                                 [sprintId]: [...currentSprintItems, ...uniqueNewItems],
-                            };
-                        });
+                            }
+                        })
 
                         setSprintPages((prev) => ({
                             ...prev,
                             [sprintId]: nowPage,
-                        }));
+                        }))
 
                         setSprintTotalElements((prev) => ({
                             ...prev,
                             [sprintId]: response.data.totalElements,
-                        }));
+                        }))
 
                         setSprintHasMore((prev) => ({
                             ...prev,
                             [sprintId]: !response.data.last,
-                        }));
+                        }))
                     }
                 } catch (error) {
-                    console.error(`Failed to load more sprint backlogs for sprint ${sprintId}:`, error);
+                    console.error(`Failed to load more sprint backlogs for sprint ${sprintId}:`, error)
                 } finally {
                     // setLoadingSprint((prev) => ({ ...prev, [sprintId]: false })); // If you have a loading state
                 }
@@ -582,7 +628,8 @@ export default function ListSection({ projectId }: { projectId: string }) {
             setSprintHasMore,
             // Add sprint specific loading states if you use them
         ],
-    );
+    )
+
     const handleCreateSprint = useCallback(() => {
         triggerCreateSprint({ projectId: projectId, name: "Sprint " + (totalSprint + 1) }).then(() => {
             const reloadAllSprints = async () => {
@@ -602,6 +649,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                             createdAt: dto.createdAt,
                             updatedAt: dto.updatedAt,
                             sprintGoal: dto.sprintGoal,
+                            status: dto.status
                         }),
                     )
 
@@ -654,37 +702,38 @@ export default function ListSection({ projectId }: { projectId: string }) {
         triggerGetProductBacklogBySprint,
     ])
 
-    const handleProductBacklogCreated = useCallback(async (createdBacklog: ProductBacklog) => {
-        const firstPage = DEFAULT_PAGE;
-        let currentPage = firstPage;
-        let allItems: ProductBacklog[] = [];
-        let hasMore = true;
+    const handleProductBacklogCreated = useCallback(
+        async (createdBacklog: ProductBacklog) => {
+            const firstPage = DEFAULT_PAGE
+            let currentPage = firstPage
+            let allItems: ProductBacklog[] = []
+            let hasMore = true
 
-        try {
-            while (hasMore) {
-                const response = await triggerGetProductBacklog(currentPage, DEFAULT_PAGE_SIZE);
+            try {
+                while (hasMore) {
+                    const response = await triggerGetProductBacklog(currentPage, DEFAULT_PAGE_SIZE)
 
-                if (response.status === "success" && response.data) {
-                    allItems = [...allItems, ...response.data.content];
-                    const foundNewItem = response.data.content.some(item => item.id === createdBacklog.id);
-                    if (foundNewItem || response.data.last) {
-                        hasMore = false;
+                    if (response.status === "success" && response.data) {
+                        allItems = [...allItems, ...response.data.content]
+                        const foundNewItem = response.data.content.some((item) => item.id === createdBacklog.id)
+                        if (foundNewItem || response.data.last) {
+                            hasMore = false
+                        } else {
+                            currentPage++
+                        }
                     } else {
-                        currentPage++;
+                        hasMore = false
                     }
-                } else {
-                    hasMore = false;
                 }
+                setUnassignedBacklog(allItems)
+                setUnassignedBacklogTotalElements(allItems.length)
+                setCurrentPageProductBacklog(currentPage)
+            } catch (error) {
+                console.error("Error fetching updated unassigned backlog items:", error)
             }
-            setUnassignedBacklog(allItems);
-            setUnassignedBacklogTotalElements(allItems.length)
-            setCurrentPageProductBacklog(currentPage);
-
-        } catch (error) {
-            console.error("Error fetching updated unassigned backlog items:", error);
-        }
-    }, [triggerGetProductBacklog]);
-
+        },
+        [triggerGetProductBacklog],
+    )
 
     const handleDeleteBacklog = async (backlog: ProductBacklog) => {
         if (backlog.sprintId) {
@@ -701,8 +750,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                 setSprintHasMore((prev) => ({
                     ...prev,
                     [backlog.sprintId!]: !response.data.last,
-                }));
-
+                }))
             } else {
                 setSprintBacklogItems((prev) => ({
                     ...prev,
@@ -744,6 +792,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                             createdAt: dto.createdAt,
                             updatedAt: dto.updatedAt,
                             sprintGoal: dto.sprintGoal,
+                            status: dto.status
                         }),
                     )
 
@@ -783,15 +832,56 @@ export default function ListSection({ projectId }: { projectId: string }) {
         }
     }, [currentPageSprints, hasMoreSprints, triggerGetProjectSprints, triggerGetProductBacklogBySprint])
 
+    // Show a message when no items match the filters
+    // const noItemsMatchFilters = useMemo(() => {
+    //     const hasUnassignedItems = filteredUnassignedBacklog.length > 0
+    //     const hasSprintItems = Object.values(filteredSprintBacklogItems).some((items) => items.length > 0)
+    //     return !hasUnassignedItems && !hasSprintItems && !loadingSprints && !loadingUnassigned
+    // }, [filteredUnassignedBacklog, filteredSprintBacklogItems, loadingSprints, loadingUnassigned])
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(MouseSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 200,
+                tolerance: 5,
+            },
+        }),
+    )
+
     return (
         <main className="container">
             <div className="flex flex-col space-y-4">
+                {/* Show filter indicator when filters are active */}
+                {(selectedGoalIds.size > 0 || statusFilter.length > 0 || priorityFilter.length > 0) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                        <p className="text-sm text-blue-800">
+                            Filtering applied:
+                            {selectedGoalIds.size > 0 &&
+                                ` ${selectedGoalIds.size} product goal${selectedGoalIds.size > 1 ? "s" : ""}`}
+                            {statusFilter.length > 0 && ` ${statusFilter.length} status${statusFilter.length > 1 ? "es" : ""}`}
+                            {priorityFilter.length > 0 &&
+                                ` ${priorityFilter.length} priorit${priorityFilter.length > 1 ? "ies" : "y"}`}
+                        </p>
+                    </div>
+                )}
+
                 <DndContext
                     sensors={sensors}
                     collisionDetection={closestCorners}
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
                     onDragEnd={handleDragEnd}
+
                 >
                     {loadingSprints ? (
                         <div className="bg-gray-50 p-4 rounded-sm border border-gray-200">
@@ -812,7 +902,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                         <DroppableContainerSprint
                                             containerName={sprint.name}
                                             sprint={sprint}
-                                            items={sprintBacklogItems[sprint.id] || []}
+                                            items={filteredSprintBacklogItems[sprint.id] || []}
                                             totalElement={sprintTotalElements[sprint.id] || 0}
                                             onDeleteBacklog={(backlog) => {
                                                 handleDeleteBacklog(backlog)
@@ -825,13 +915,12 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                                     setSprintBacklogItems((prev) => ({
                                                         ...prev,
                                                         [updatedBacklog.sprintId!]: prev[updatedBacklog.sprintId!].map((item) =>
-                                                            item.id === backlogId ? updatedBacklog : item
-                                                        )
+                                                            item.id === backlogId ? updatedBacklog : item,
+                                                        ),
                                                     }))
                                                 }
                                             }}
                                             onEditSprint={async (sprintId: string) => {
-
                                                 const sprintResponse = await triggerGetSprintById(sprintId)
 
                                                 if (sprintResponse.status === "success" && sprintResponse.data) {
@@ -844,6 +933,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                                         createdAt: sprintResponse.data.createdAt,
                                                         updatedAt: sprintResponse.data.updatedAt,
                                                         sprintGoal: sprintResponse.data.sprintGoal,
+                                                        status: sprintResponse.data.status
                                                     }
 
                                                     setSprints((prevSprints) =>
@@ -869,53 +959,55 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                         sprintId={sprint.id}
                                         projectId={projectId}
                                         onProductBacklogCreated={async (createdBacklog: ProductBacklog) => {
-                                            const firstPage = DEFAULT_PAGE;
+                                            const firstPage = DEFAULT_PAGE
 
-                                            let currentPage = firstPage;
-                                            let allItems: ProductBacklog[] = [];
-                                            let hasMore = true;
+                                            let currentPage = firstPage
+                                            let allItems: ProductBacklog[] = []
+                                            let hasMore = true
 
                                             try {
                                                 while (hasMore) {
-                                                    const response = await triggerGetProductBacklogBySprint(sprint.id, currentPage, DEFAULT_PAGE_SIZE);
+                                                    const response = await triggerGetProductBacklogBySprint(
+                                                        sprint.id,
+                                                        currentPage,
+                                                        DEFAULT_PAGE_SIZE,
+                                                    )
 
                                                     if (response.status === "success" && response.data) {
-                                                        allItems = [...allItems, ...response.data.content];
+                                                        allItems = [...allItems, ...response.data.content]
 
-                                                        const foundNewItem = response.data.content.some(item => item.id === createdBacklog.id);
+                                                        const foundNewItem = response.data.content.some((item) => item.id === createdBacklog.id)
 
                                                         if (foundNewItem || response.data.last) {
                                                             setSprintHasMore((prev) => ({
                                                                 ...prev,
                                                                 [sprint.id]: !response.data.last,
-                                                            }));
+                                                            }))
 
-                                                            hasMore = false;
+                                                            hasMore = false
                                                         } else {
-                                                            currentPage++;
+                                                            currentPage++
                                                         }
                                                     } else {
-                                                        hasMore = false;
+                                                        hasMore = false
                                                     }
                                                 }
 
                                                 setSprintBacklogItems((prev) => ({
                                                     ...prev,
                                                     [sprint.id]: allItems,
-                                                }));
+                                                }))
 
                                                 setSprintPages((prev) => ({
                                                     ...prev,
                                                     [sprint.id]: currentPage,
-                                                }));
+                                                }))
                                                 setSprintTotalElements((prev) => ({
                                                     ...prev,
                                                     [sprint.id]: Math.max(0, (prev[sprint.id] || 0) + 1),
                                                 }))
-
                                             } catch (error) {
-                                                console.error("Error fetching updated backlog items:", error);
-
+                                                console.error("Error fetching updated backlog items:", error)
                                             }
                                         }}
                                     />
@@ -950,7 +1042,7 @@ export default function ListSection({ projectId }: { projectId: string }) {
                             <>
                                 <DroppableContainerProductBacklog
                                     id="backlog"
-                                    items={unassignedBacklog}
+                                    items={filteredUnassignedBacklog}
                                     onDeleteBacklog={(backlog) => {
                                         handleDeleteBacklog(backlog)
                                     }}
@@ -961,9 +1053,8 @@ export default function ListSection({ projectId }: { projectId: string }) {
                                             const updatedBacklog: ProductBacklog = backlogResponse.data
 
                                             setUnassignedBacklog((prev) =>
-                                                prev.map((item) => (item.id === backlogId ? updatedBacklog : item))
+                                                prev.map((item) => (item.id === backlogId ? updatedBacklog : item)),
                                             )
-
                                         }
                                     }}
                                     loadingUnassigned={loadingUnassigned}
@@ -999,7 +1090,10 @@ export default function ListSection({ projectId }: { projectId: string }) {
 
                     <DragOverlay>
                         {activeId && activeItem ? (
-                            <BacklogItem id={activeId} backlog={activeItem} onDeleteBacklog={() => { }} onEditBacklog={() => { }} />
+                            <BacklogItem
+                                backlog={activeItem}
+                                onDeleteBacklog={() => { }}
+                                onEditBacklog={() => { }} />
                         ) : null}
                     </DragOverlay>
                 </DndContext>

@@ -1,18 +1,23 @@
 "use client"
-
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants"
 import type { ProductGoal } from "@/domain/entities/product-goal"
-import { useGetProductGoal } from "@/shared/hooks/use-get-product-goal"
+import { useProductGoals } from "@/shared/contexts/product-goals-context"
 import { Bolt, Search, X } from "lucide-react"
 import { useEffect, useState } from "react"
+import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from "../ui/dialog"
 import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 interface ProductGoalModalProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  isHoveringItem: boolean
   projectId: string
   onSelectGoal: (goalId: string | null) => void
   selectedGoalId?: string | null
@@ -20,77 +25,63 @@ interface ProductGoalModalProps {
 }
 
 export function ProductGoalModal({
-  open,
-  onOpenChange,
-  projectId,
+  isHoveringItem,
   onSelectGoal,
   selectedGoalId = null,
   title = "Add product goal",
 }: ProductGoalModalProps) {
-  const [productGoals, setProductGoals] = useState<ProductGoal[]>([])
-  const [page, setPage] = useState(DEFAULT_PAGE)
-  const [hasMore, setHasMore] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
+  const { goals, loadMoreGoals, isLoading, hasMore } = useProductGoals()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredGoals, setFilteredGoals] = useState<ProductGoal[]>([])
 
-  const { triggerGetProductGoal } = useGetProductGoal(projectId)
+  const selectedProductGoal = goals.find((goal) => goal.id === selectedGoalId)
 
-  // Load initial goals
-  useEffect(() => {
-    if (open && productGoals.length === 0) {
-      loadGoals()
-    }
-  }, [open])
-
-  // Filter goals when search query changes
   useEffect(() => {
     if (searchQuery.trim() === "") {
-      setFilteredGoals(productGoals)
+      setFilteredGoals(goals)
     } else {
       const query = searchQuery.toLowerCase()
-      setFilteredGoals(productGoals.filter((goal) => goal.title.toLowerCase().includes(query)))
+      setFilteredGoals(goals.filter((goal) => goal.title.toLowerCase().includes(query)))
     }
-  }, [searchQuery, productGoals])
+  }, [searchQuery, goals])
 
-  const loadGoals = async () => {
-    if (isLoading || !hasMore) return
-
-    try {
-      setIsLoading(true)
-      const response = await triggerGetProductGoal(projectId, page, DEFAULT_PAGE_SIZE)
-
-      if (response.status === "success") {
-        setProductGoals((prev) => {
-          const newGoals = [...prev]
-
-          // Add only unique goals
-          response.data.content.forEach((goal) => {
-            if (!newGoals.some((g) => g.id === goal.id)) {
-              newGoals.push(goal)
-            }
-          })
-
-          return newGoals
-        })
-
-        setHasMore(!response.data.last)
-        setPage((prev) => prev + 1)
-      }
-    } catch (error) {
-      console.error("Failed to load product goals:", error)
-    } finally {
-      setIsLoading(false)
+  const renderTrigger = () => {
+    if (selectedProductGoal) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <DialogTrigger asChild>
+              <Badge
+                variant="outline"
+                className="flex items-center gap-1 rounded-sm text-xs text-purple-600 bg-purple-100 border-purple-500 px-2 py-0.5 cursor-pointer hover:bg-purple-50"
+              >
+                <Bolt className="h-4 w-4 text-purple-500" />
+                <p className="max-w-[96px] truncate font-semibold">{selectedProductGoal.title}</p>
+              </Badge>
+            </DialogTrigger>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p className="text-xs">{selectedProductGoal.title}</p>
+          </TooltipContent>
+        </Tooltip>
+      )
     }
-  }
 
-  const handleSelectGoal = (goalId: string | null) => {
-    onSelectGoal(goalId)
-    onOpenChange(false)
+    return (
+      isHoveringItem && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="h-6 text-xs flex items-center gap-1">
+            Goal
+          </Button>
+        </DialogTrigger>
+      )
+    )
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog>
+      {renderTrigger()}
+
       <DialogContent className="sm:max-w-md rounded-sm">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
@@ -123,10 +114,9 @@ export function ProductGoalModal({
 
           <div className="mb-2">
             <div
-              className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${
-                selectedGoalId === null ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
-              }`}
-              onClick={() => handleSelectGoal(null)}
+              className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${selectedGoalId === null ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
+                }`}
+              onClick={() => onSelectGoal(null)}
             >
               <Bolt className="h-4 w-4 text-purple-500 mr-2" />
               <span className="text-sm">No product goal</span>
@@ -138,10 +128,11 @@ export function ProductGoalModal({
               {filteredGoals.map((goal) => (
                 <div
                   key={goal.id}
-                  className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${
-                    selectedGoalId === goal.id ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
-                  }`}
-                  onClick={() => handleSelectGoal(goal.id)}
+                  className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${selectedGoalId === goal.id
+                    ? "bg-blue-50 border border-blue-200"
+                    : "hover:bg-gray-50"
+                    }`}
+                  onClick={() => onSelectGoal(goal.id)}
                 >
                   <Bolt className="h-4 w-4 text-purple-500 mr-2" />
                   <span className="text-sm">{goal.title}</span>
@@ -149,14 +140,21 @@ export function ProductGoalModal({
               ))}
 
               {hasMore && (
-                <Button variant="ghost" className="w-full text-sm mt-2" onClick={loadGoals} disabled={isLoading}>
+                <Button
+                  variant="ghost"
+                  className="w-full text-sm mt-2"
+                  onClick={loadMoreGoals}
+                  disabled={isLoading}
+                >
                   {isLoading ? "Loading..." : "Load more"}
                 </Button>
               )}
 
               {filteredGoals.length === 0 && !isLoading && (
                 <div className="text-center py-4 text-gray-500">
-                  {searchQuery ? "No matching product goals found" : "No product goals available"}
+                  {searchQuery
+                    ? "No matching product goals found"
+                    : "No product goals available"}
                 </div>
               )}
             </div>

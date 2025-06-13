@@ -16,7 +16,3 @@ export interface ProductBacklog  {
   updatedAt: string
 
 }
-
-export interface ProductBacklogWithContainer extends ProductBacklog {
-  containerId: string
-}

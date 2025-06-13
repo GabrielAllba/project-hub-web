@@ -1,85 +1,49 @@
-"use client";
-
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants";
-import type { ProductGoal } from "@/domain/entities/product-goal";
-import { useCreateProductGoal } from "@/shared/hooks/use-create-product-goal";
-import { useGetProductGoal } from "@/shared/hooks/use-get-product-goal";
-import { cn } from "@/shared/utils/merge-class";
-import { Flag, X } from "lucide-react";
-import { useEffect, useState } from "react";
-import ProductGoalItem from "../items/product-goal-item";
-import { Button } from "../ui/button";
-import { Card } from "../ui/card";
-import { Input } from "../ui/input";
-import { ScrollArea } from "../ui/scroll-area";
-
-const NO_GOAL_ID = "no-goal";
+"use client"
+import { NO_GOAL_ID } from "@/constants/constants"
+import type { ProductGoal } from "@/domain/entities/product-goal"
+import { useProductGoals } from "@/shared/contexts/product-goals-context"
+import { useCreateProductGoal } from "@/shared/hooks/use-create-product-goal"
+import { cn } from "@/shared/utils/merge-class"
+import { Flag, X } from "lucide-react"
+import { useState } from "react"
+import ProductGoalItem from "../items/product-goal-item"
+import { Button } from "../ui/button"
+import { Card } from "../ui/card"
+import { Input } from "../ui/input"
+import { ScrollArea } from "../ui/scroll-area"
 
 interface ProductGoalsSectionProps {
-    projectId: string;
+    projectId: string
 }
 
 export default function ProductGoalsSection({ projectId }: ProductGoalsSectionProps) {
-    const [selectedGoalIds, setSelectedGoalIds] = useState<Set<string>>(new Set());
-    const [isAdding, setIsAdding] = useState(false);
-    const [newGoalTitle, setNewGoalTitle] = useState("");
-    const [goals, setGoals] = useState<ProductGoal[]>([]);
+    const [isAdding, setIsAdding] = useState(false)
+    const [newGoalTitle, setNewGoalTitle] = useState("")
 
-    const {
-        triggerGetProductGoal,
-        triggerGetProductGoalResponse,
-    } = useGetProductGoal(projectId);
-
-    const { triggerCreateProductGoal } = useCreateProductGoal();
-
-    useEffect(() => {
-        triggerGetProductGoal(projectId, DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
-            setGoals(res.data.content);
-        });
-    }, [projectId]);
-
-    const toggleSelectGoal = (goalId: string) => {
-        setSelectedGoalIds((prev) => {
-            const newSet = new Set(prev);
-            if (newSet.has(goalId)) {
-                newSet.delete(goalId);
-            } else {
-                newSet.add(goalId);
-            }
-            return newSet;
-        });
-    };
+    const { goals, selectedGoalIds, toggleSelectGoal, updateGoal, deleteGoal, loadMoreGoals, hasMore, setGoals } =
+        useProductGoals()
+    const { triggerCreateProductGoal } = useCreateProductGoal()
 
     const handleAddGoal = async () => {
-        if (!newGoalTitle.trim()) return;
-        await triggerCreateProductGoal({ projectId, title: newGoalTitle.trim() });
-        setNewGoalTitle("");
-        const res = await triggerGetProductGoal(projectId, DEFAULT_PAGE, DEFAULT_PAGE_SIZE);
-        setGoals(res.data.content);
-    };
+        if (!newGoalTitle.trim()) return
+        const response = await triggerCreateProductGoal({ projectId, title: newGoalTitle.trim() })
+        if (response.status === "success") {
+            const newGoal = response.data
+            setGoals([newGoal, ...goals])
+        }
+        setNewGoalTitle("")
+        setIsAdding(false)
+    }
 
     const handleUpdateGoal = (updated: ProductGoal) => {
-        setGoals((prev) =>
-            prev.map((goal) => (goal.id === updated.id ? updated : goal))
-        );
-    };
+        updateGoal(updated)
+    }
 
     const handleDeleteGoal = (goalId: string) => {
-        setGoals((prev) => prev.filter((goal) => goal.id !== goalId));
-    };
+        deleteGoal(goalId)
+    }
 
-    const isNoGoalSelected = selectedGoalIds.has(NO_GOAL_ID);
-
-    const handleLoadMore = async () => {
-        const nowPage = Math.floor(goals.length / DEFAULT_PAGE_SIZE);
-        const res = await triggerGetProductGoal(projectId, nowPage, DEFAULT_PAGE_SIZE);
-        if (res.status === "success") {
-            const uniqueNewGoals = res.data.content.filter(
-                (newGoal) => !goals.some((existing) => existing.id === newGoal.id)
-            );
-            setGoals((prev) => [...prev, ...uniqueNewGoals]);
-        }
-    };
+    const isNoGoalSelected = selectedGoalIds.has(NO_GOAL_ID)
 
     return (
         <Card className="w-full rounded-sm border bg-gray-50 p-3 shadow-none">
@@ -93,7 +57,7 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                     <div
                         className={cn(
                             "bg-white w-full px-3 py-2 rounded-md border text-sm flex items-center gap-2 cursor-pointer",
-                            isNoGoalSelected && "bg-blue-100 border border-blue-400"
+                            isNoGoalSelected && "bg-blue-100 border border-blue-400",
                         )}
                         onClick={() => toggleSelectGoal(NO_GOAL_ID)}
                     >
@@ -114,9 +78,9 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                 </div>
             </ScrollArea>
 
-            {!triggerGetProductGoalResponse?.data.last && (
+            {hasMore && (
                 <div className="flex justify-center mt-2">
-                    <Button variant="outline" size="sm" onClick={handleLoadMore}>
+                    <Button variant="outline" size="sm" onClick={loadMoreGoals}>
                         Load More
                     </Button>
                 </div>
@@ -139,16 +103,15 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                         autoFocus
                         onKeyDown={async (e) => {
                             if (e.key === "Enter") {
-                                await handleAddGoal();
+                                await handleAddGoal()
                             } else if (e.key === "Escape") {
-                                setIsAdding(false);
-                                setNewGoalTitle("");
+                                setIsAdding(false)
+                                setNewGoalTitle("")
                             }
                         }}
                     />
                 </div>
             )}
-
         </Card>
-    );
+    )
 }

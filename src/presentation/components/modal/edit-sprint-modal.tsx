@@ -1,7 +1,7 @@
 "use client"
 
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format, subDays } from "date-fns"
+import dayjs from "dayjs"
 import { CalendarIcon, Pencil } from "lucide-react"
 import { useState } from "react"
 import { useForm } from "react-hook-form"
@@ -52,8 +52,8 @@ interface EditSprintModalProps {
 
 export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) {
     const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
+
     const [open, setOpen] = useState(false)
-    const today = subDays(new Date(), 1)
 
     const initialValues = {
         goal: sprint.sprintGoal || "",
@@ -78,14 +78,12 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
     const onSubmit = async (data: SprintFormValues) => {
         const { startDate, endDate } = data
 
-        if (startDate && endDate) {
-            if (startDate > endDate) {
-                toast.error("Start date cannot be after end date.")
-                return
-            }
+        const start = startDate ? dayjs(startDate) : null
+        const end = endDate ? dayjs(endDate) : null
 
-            if (startDate < today || endDate < today) {
-                toast.error("Start and end date cannot be before today.")
+        if (start && end) {
+            if (start.isAfter(end)) {
+                toast.error("Start date cannot be after end date.")
                 return
             }
         }
@@ -94,8 +92,8 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
             await triggerEditSprintGoalAndDates({
                 sprintId: sprint.id,
                 sprintGoal: data.goal?.trim() ?? null,
-                startDate: startDate ? format(startDate, "yyyy-MM-dd HH:mm:ss.SSS") : null,
-                endDate: endDate ? format(endDate, "yyyy-MM-dd HH:mm:ss.SSS") : null,
+                startDate: startDate ? dayjs(startDate).format("YYYY-MM-DD HH:mm:ss.SSS") : null,
+                endDate: endDate ? dayjs(endDate).format("YYYY-MM-DD HH:mm:ss.SSS") : null,
             })
 
             toast.success("Sprint updated successfully!")
@@ -109,9 +107,9 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button variant="ghost" size="icon" className="hover:cursor-pointer">
-                    <Pencil className="size-4 text-gray-600" />
-                </Button>
+                <div className="hover:bg-gray-200 p-1 rounded-sm hover:cursor-pointer">
+                    <Pencil className="size-3 text-gray-700" />
+                </div>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
@@ -153,7 +151,9 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    {field.value
+                                                        ? dayjs(field.value).format("MMM D, YYYY")
+                                                        : <span>Pick a date</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -163,7 +163,6 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
                                                 mode="single"
                                                 selected={field.value!}
                                                 onSelect={field.onChange}
-                                                disabled={(date) => date < today}
                                                 initialFocus
                                             />
                                         </PopoverDialogContent>
@@ -191,7 +190,9 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
                                                         !field.value && "text-muted-foreground"
                                                     )}
                                                 >
-                                                    {field.value ? format(field.value, "PPP") : <span>Pick a date</span>}
+                                                    {field.value
+                                                        ? dayjs(field.value).format("MMM D, YYYY")
+                                                        : <span>Pick a date</span>}
                                                     <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                                                 </Button>
                                             </FormControl>
@@ -201,7 +202,6 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
                                                 mode="single"
                                                 selected={field.value!}
                                                 onSelect={field.onChange}
-                                                disabled={(date) => date < today}
                                                 initialFocus
                                             />
                                         </PopoverDialogContent>
