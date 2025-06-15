@@ -11,6 +11,7 @@ import { EditSprintModal } from "../modal/edit-sprint-modal"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { SortableBacklog } from "./sortable-backlog"
+import { CompleteSprintModal } from "../modal/complete-sprint-modal"
 
 interface DroppableContainerSprintProps {
   containerName: string
@@ -19,6 +20,7 @@ interface DroppableContainerSprintProps {
   onDeleteBacklog: (backlog: ProductBacklog) => void
   onEditSprint: (sprintId: string) => void
   onEditBacklog: (backlogId: string) => void
+  onCompleteSprint: () => void
   loadingBacklog: boolean
   isDraggedOver: boolean
   totalElement: number
@@ -84,14 +86,18 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
           </Badge>
 
           {isSprintStarted ? (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => console.log("Complete sprint logic here")}
-              className="text-xs rounded-sm hover:cursor-pointer"
-            >
-              Complete Sprint
-            </Button>
+            <CompleteSprintModal
+              sprintId={props.sprint.id}
+              sprintName={props.containerName}
+              availableSprints={[
+                { id: "backlog", name: "Backlog" }
+              ]}
+              onCompleteSprint={(moveToSprintId) => {
+                console.log(moveToSprintId)
+                props.onCompleteSprint()
+              }}
+            />
+
           ) : (
             <Button
               onClick={handleStartSprint}

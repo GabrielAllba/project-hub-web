@@ -1,4 +1,5 @@
-import { GetProjectSprintsUseCase } from "@/application/usecases/get-project-sprints-usecase"
+
+import { GetProjectSprintsAllStatusUseCase } from "@/application/usecases/get-project-sprints-all-status"
 import type { BaseResponse } from "@/domain/dto/base-response"
 import type { Page } from "@/domain/dto/page-response"
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res"
@@ -6,23 +7,23 @@ import { ProjectHubServiceRepository } from "@/infrastructure/repositories/proje
 import useSWRMutation from "swr/mutation"
 import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils"
 
-const getProjectSprintsUseCase = new GetProjectSprintsUseCase(new ProjectHubServiceRepository())
+const getProjectSprintsAllStatusUseCase = new GetProjectSprintsAllStatusUseCase(new ProjectHubServiceRepository())
 
 async function fetcher(
     _: string,
     { arg: { token, projectId, page, size } }: { arg: { token: string; projectId: string; page: number; size: number } },
 ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
     try {
-        return await getProjectSprintsUseCase.execute(token, projectId, page, size)
+        return await getProjectSprintsAllStatusUseCase.execute(token, projectId, page, size)
     } catch (err) {
         return convertAxiosErrorToBaseResponse<Page<SprintResponseDTO>>(err)
     }
 }
 
-export function useGetProjectSprints(projectId: string) {
+export function useGetProjectSprintsAllStatus(projectId: string) {
     const { trigger, data, isMutating, error } = useSWRMutation(`/project/${projectId}`, fetcher)
 
-    const triggerGetProjectSprints = async (page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> => {
+    const triggerGetProjectSprintsAllStatus = async (page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> => {
         const token = localStorage.getItem("accessToken")
         if (!token) throw new Error("No access token found")
 
@@ -30,9 +31,9 @@ export function useGetProjectSprints(projectId: string) {
     }
 
     return {
-        triggerGetProjectSprints,
-        triggerGetProjectSprintsResponse: data,
-        triggerGetProjectSprintsLoading: isMutating,
-        triggerGetProjectSprintsError: error,
+        triggerGetProjectSprintsAllStatus,
+        triggerGetProjectSprintsAllStatusResponse: data,
+        triggerGetProjectSprintsAllStatusLoading: isMutating,
+        triggerGetProjectSprintsAllStatusError: error,
     }
 }

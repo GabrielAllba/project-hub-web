@@ -30,8 +30,15 @@ export class AuthenticationServiceRepository {
   }
   async findUser(id: string): Promise<BaseResponse<FindUserResponseDTO>> {
     const response = await authenticationServices.post("/auth/user", {
-      "id":id
+      "id": id
     });
     return response.data;
   }
+  async searchUsers(query: string): Promise<BaseResponse<FindUserResponseDTO[]>> {
+    const response = await authenticationServices.get("/auth/search-users", {
+      params: { query },
+    });
+    return response.data;
+  }
+
 }

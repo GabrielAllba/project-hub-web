@@ -14,6 +14,7 @@ import { useCreateSprint } from "@/shared/hooks/use-create-sprint"
 import { useGetProductBacklog } from "@/shared/hooks/use-get-product-backlog"
 import { useGetProductBacklogBySprint } from "@/shared/hooks/use-get-product-backlog-by-sprint"
 import { useGetProjectSprints } from "@/shared/hooks/use-get-project-sprints"
+import { useGetProjectSprintsAllStatus } from "@/shared/hooks/use-get-project-sprints-all-status"
 import { useGetSprintById } from "@/shared/hooks/use-get-sprint-by-id"
 import { useReorderProductBacklog } from "@/shared/hooks/use-reorder-product-backlog"
 import {
@@ -90,6 +91,7 @@ export default function ListSection({
     const { triggerReorderProductBacklog } = useReorderProductBacklog()
     const { triggerGetSprintById } = useGetSprintById("")
     const { triggerGetProductBacklogById } = useGetProductBacklogById("")
+    const { triggerGetProjectSprintsAllStatus } = useGetProjectSprintsAllStatus(projectId)
 
     // Filter function for backlog items based on all filters
     const filterBacklogItems = useCallback(
@@ -153,73 +155,73 @@ export default function ListSection({
     const [loadingMoreSprints, setLoadingMoreSprints] = useState(false)
     const [hasMoreSprints, setHasMoreSprints] = useState(true)
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoadingSprints(true)
-            const sprintsData = await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
-            const sprints: Sprint[] = sprintsData.data.content.map(
-                (dto: SprintResponseDTO): Sprint => ({
-                    id: dto.id,
-                    projectId: dto.projectId,
-                    name: dto.name,
-                    startDate: dto.startDate,
-                    endDate: dto.endDate,
-                    createdAt: dto.createdAt,
-                    updatedAt: dto.updatedAt,
-                    sprintGoal: dto.sprintGoal,
-                    status: dto.status
-                }),
-            )
-            setSprints(sprints)
-            setLoadingSprints(false)
-            setTotalSprint(sprintsData.data.totalElements)
-            setHasMoreSprints(!sprintsData.data.last)
+    const loadData = async () => {
+        setLoadingSprints(true)
+        const sprintsData = await triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+        const sprints: Sprint[] = sprintsData.data.content.map(
+            (dto: SprintResponseDTO): Sprint => ({
+                id: dto.id,
+                projectId: dto.projectId,
+                name: dto.name,
+                startDate: dto.startDate,
+                endDate: dto.endDate,
+                createdAt: dto.createdAt,
+                updatedAt: dto.updatedAt,
+                sprintGoal: dto.sprintGoal,
+                status: dto.status
+            }),
+        )
+        setSprints(sprints)
+        setLoadingSprints(false)
+        setTotalSprint(sprintsData.data.totalElements)
+        setHasMoreSprints(!sprintsData.data.last)
 
-            const initialLoadingState: Record<string, boolean> = {}
-            const initialPageState: Record<string, number> = {}
-            const initialHasMoreState: Record<string, boolean> = {}
+        const initialLoadingState: Record<string, boolean> = {}
+        const initialPageState: Record<string, number> = {}
+        const initialHasMoreState: Record<string, boolean> = {}
 
-            sprints.forEach((sprint) => {
-                initialLoadingState[sprint.id] = true
-                initialPageState[sprint.id] = DEFAULT_PAGE
-                initialHasMoreState[sprint.id] = true
-            })
+        sprints.forEach((sprint) => {
+            initialLoadingState[sprint.id] = true
+            initialPageState[sprint.id] = DEFAULT_PAGE
+            initialHasMoreState[sprint.id] = true
+        })
 
-            setLoadingSprintItems(initialLoadingState)
-            setSprintPages(initialPageState)
-            setSprintHasMore(initialHasMoreState)
+        setLoadingSprintItems(initialLoadingState)
+        setSprintPages(initialPageState)
+        setSprintHasMore(initialHasMoreState)
 
-            setLoadingUnassigned(true)
-            const unassignedItems = await triggerGetProductBacklog(currentPageProductBacklog, DEFAULT_PAGE_SIZE)
-            setUnassignedBacklog(unassignedItems.data.content)
-            setUnassignedBacklogTotalElements(unassignedItems.data.totalElements)
-            setLoadingUnassigned(false)
+        setLoadingUnassigned(true)
+        const unassignedItems = await triggerGetProductBacklog(currentPageProductBacklog, DEFAULT_PAGE_SIZE)
+        setUnassignedBacklog(unassignedItems.data.content)
+        setUnassignedBacklogTotalElements(unassignedItems.data.totalElements)
+        setLoadingUnassigned(false)
 
-            const sprintItems: Record<string, ProductBacklog[]> = {}
+        const sprintItems: Record<string, ProductBacklog[]> = {}
 
-            for (const sprint of sprints) {
-                const response = await triggerGetProductBacklogBySprint(sprint.id, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
-                sprintItems[sprint.id] = response.data.content
+        for (const sprint of sprints) {
+            const response = await triggerGetProductBacklogBySprint(sprint.id, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+            sprintItems[sprint.id] = response.data.content
 
-                setSprintTotalElements((prev) => ({
-                    ...prev,
-                    [sprint.id]: response.data.totalElements,
-                }))
+            setSprintTotalElements((prev) => ({
+                ...prev,
+                [sprint.id]: response.data.totalElements,
+            }))
 
-                setSprintHasMore((prev) => ({
-                    ...prev,
-                    [sprint.id]: !response.data.last,
-                }))
+            setSprintHasMore((prev) => ({
+                ...prev,
+                [sprint.id]: !response.data.last,
+            }))
 
-                setLoadingSprintItems((prev) => ({
-                    ...prev,
-                    [sprint.id]: false,
-                }))
-            }
-
-            setSprintBacklogItems(sprintItems)
+            setLoadingSprintItems((prev) => ({
+                ...prev,
+                [sprint.id]: false,
+            }))
         }
 
+        setSprintBacklogItems(sprintItems)
+    }
+
+    useEffect(() => {
         loadData()
     }, [])
 
@@ -630,8 +632,11 @@ export default function ListSection({
         ],
     )
 
-    const handleCreateSprint = useCallback(() => {
-        triggerCreateSprint({ projectId: projectId, name: "Sprint " + (totalSprint + 1) }).then(() => {
+    const handleCreateSprint = useCallback(async () => {
+        const res = await triggerGetProjectSprintsAllStatus(0, 1)
+        alert(JSON.stringify(res.data))
+        const totalElement = res?.data.totalElements ? res?.data.totalElements : 0
+        await triggerCreateSprint({ projectId: projectId, name: "Sprint " + (totalElement + 1) }).then(() => {
             const reloadAllSprints = async () => {
                 const allSprints: Sprint[] = []
                 let currentPage = DEFAULT_PAGE
@@ -940,6 +945,9 @@ export default function ListSection({
                                                         prevSprints.map((sprint) => (sprint.id === sprintId ? updatedSprint : sprint)),
                                                     )
                                                 }
+                                            }}
+                                            onCompleteSprint={async () => {
+                                                await loadData()
                                             }}
                                             loadingBacklog={loadingSprintItems[sprint.id]}
                                             isDraggedOver={dragOverContainer === sprint.id}

@@ -1,5 +1,8 @@
+import type { ProjectRole } from "@/constants/constants";
 import type { BaseResponse } from "@/domain/dto/base-response";
 import type { Page } from "@/domain/dto/page-response";
+import type { AddDeveloperRequestDTO } from "@/domain/dto/req/add-developer-req";
+import type { AddScrumMasterRequestDTO } from "@/domain/dto/req/add-scrum-master-req";
 import type { CreateProductBacklogRequestDTO } from "@/domain/dto/req/create-product-backlog-req";
 import type { CreateProductGoalRequestDTO } from "@/domain/dto/req/create-product-goal-req";
 import type { CreateProjectRequestDTO } from "@/domain/dto/req/create-project-req";
@@ -12,6 +15,9 @@ import type { EditBacklogTitleRequestDTO } from "@/domain/dto/req/edit-backlog-t
 import type { EditSprintGoalAndDatesRequestDTO } from "@/domain/dto/req/edit-sprint-goal-and-dates-req";
 import type { RenameProductGoalRequestDTO } from "@/domain/dto/req/rename-product-goal-req";
 import type { ReorderProductBacklogRequestDTO } from "@/domain/dto/req/reorder-product-backlog-req";
+import type { CompleteSprintInfoResponseDTO } from "@/domain/dto/res/complete-sprint-info-res";
+import type { InvitationResponseDTO } from "@/domain/dto/res/invitation-res";
+import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res";
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
 import type { ProductBacklog } from "@/domain/entities/product-backlog";
 import type { ProductGoal } from "@/domain/entities/product-goal";
@@ -40,6 +46,45 @@ export class ProjectHubServiceRepository {
   async createProject(token: string, data: CreateProjectRequestDTO): Promise<BaseResponse<Project>> {
     const response = await projectHubService.post(
       "/project",
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+  async inviteScrumMaster(token: string, projectId: string, data: AddScrumMasterRequestDTO): Promise<BaseResponse<InvitationResponseDTO[]>> {
+    const response = await projectHubService.post(
+      `/project/${projectId}/scrum_master/invite`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+  async inviteDeveloper(token: string, projectId: string, data: AddDeveloperRequestDTO): Promise<BaseResponse<InvitationResponseDTO[]>> {
+    const response = await projectHubService.post(
+      `/project/${projectId}/developer/invite`,
+      data,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+  async inviteProductOwner(token: string, projectId: string, data: AddDeveloperRequestDTO): Promise<BaseResponse<InvitationResponseDTO[]>> {
+    const response = await projectHubService.post(
+      `/project/${projectId}/product_owner/invite`,
       data,
       {
         headers: {
@@ -126,8 +171,87 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
 
+  async completeSprint(token: string, sprintId: string): Promise<BaseResponse<SprintResponseDTO>> {
+    const response = await projectHubService.put(`/sprint/${sprintId}/complete`, null,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+  async getCompleteSprintInfo(token: string, sprintId: string): Promise<BaseResponse<CompleteSprintInfoResponseDTO>> {
+    const response = await projectHubService.get(`/sprint/${sprintId}/complete_sprint/info`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        }
+      }
+    );
+
+    return response.data;
+  }
+
   async getProjectSprints(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
     const response = await projectHubService.get(`/project/${projectId}/sprints`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+  async getProjectInvitations(token: string, userId: string, page: number, size: number): Promise<BaseResponse<Page<InvitationResponseDTO>>> {
+    const response = await projectHubService.get(`/project_invitation/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+  async getProjectMembers(
+    token: string,
+    projectId: string,
+    role: ProjectRole
+  ): Promise<BaseResponse<ProjectUserResponseDTO[]>> {
+    const response = await projectHubService.get(`/project/${projectId}/members`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        role: role.toLowerCase(),
+      },
+    });
+
+    return response.data;
+  }
+
+  async getProjectSprintsAllStatus(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+    const response = await projectHubService.get(`/project/${projectId}/sprints/all-status`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+  async getTimelineProjectSprints(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+    const response = await projectHubService.get(`/project/${projectId}/sprints/timeline`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -154,6 +278,26 @@ export class ProjectHubServiceRepository {
   }
   async getSprintById(token: string, sprintId: string): Promise<BaseResponse<SprintResponseDTO>> {
     const response = await projectHubService.get(`/sprint/${sprintId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async getProjectById(token: string, projectId: string): Promise<BaseResponse<Project>> {
+    const response = await projectHubService.get(`/project/${projectId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async getProductGoalById(token: string, productGoalId: string): Promise<BaseResponse<ProductGoal>> {
+    const response = await projectHubService.get(`/product-goal/${productGoalId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -206,6 +350,34 @@ export class ProjectHubServiceRepository {
 
     return response.data;
   }
+
+  async acceptProjectInvitation(token: string, invitationId: string): Promise<BaseResponse<InvitationResponseDTO>> {
+    const response = await projectHubService.put(
+      `/project/${invitationId}/accept`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+  async rejectProjectInvitation(token: string, invitationId: string): Promise<BaseResponse<InvitationResponseDTO>> {
+    const response = await projectHubService.put(
+      `/project/${invitationId}/reject`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+
 
   async editSprintGoalAndDates(token: string, data: EditSprintGoalAndDatesRequestDTO): Promise<BaseResponse<SprintResponseDTO>> {
     const response = await projectHubService.put(`/sprint/edit_goal_and_dates`,

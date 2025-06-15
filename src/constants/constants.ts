@@ -14,3 +14,5 @@ export const STATUS_PROGRESS_MAP = {
 
 
 export const NO_GOAL_ID = "no-goal"
+
+export type ProjectRole = "SCRUM_MASTER" | "DEVELOPER" | "PRODUCT_OWNER"

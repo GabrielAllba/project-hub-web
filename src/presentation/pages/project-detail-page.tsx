@@ -1,5 +1,6 @@
 "use client"
 
+import { IconReport, IconUsersGroup } from "@tabler/icons-react"
 import {
   Globe,
   Layout,
@@ -9,6 +10,8 @@ import {
 import { useParams } from "react-router-dom"
 import { BoardTab } from "../components/tabs/board-tab"
 import { ListTab } from "../components/tabs/list-tab"
+import { SummaryTab } from "../components/tabs/summary-tab"
+import { TeamTab } from "../components/tabs/team-tab"
 import TimelineTab from "../components/tabs/timeline-tab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { ProjectLayout } from "../layouts/project-detail-layout"
@@ -18,6 +21,8 @@ const tabConfig = [
   { value: "list", label: "Backlog", icon: ListIcon },
   { value: "board", label: "Board", icon: Layout },
   { value: "timeline", label: "Timeline", icon: PanelTop },
+  { value: "report", label: "Report", icon: IconReport },
+  { value: "team", label: "Team", icon: IconUsersGroup },
 ]
 
 export const ProjectDetailPage = () => {
@@ -46,6 +51,9 @@ export const ProjectDetailPage = () => {
 
         }
       >
+        <TabsContent value="summary">
+          <SummaryTab projectId={projectId} />
+        </TabsContent>
         <TabsContent value="list">
           <ListTab projectId={projectId} />
         </TabsContent>
@@ -56,6 +64,9 @@ export const ProjectDetailPage = () => {
           <div className="grid grid-cols-1">
             <TimelineTab projectId={projectId} />
           </div>
+        </TabsContent>
+        <TabsContent value="team">
+          <TeamTab projectId={projectId} />
         </TabsContent>
       </ProjectLayout>
     </Tabs>

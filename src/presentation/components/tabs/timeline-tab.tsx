@@ -3,11 +3,11 @@
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants"
 import type { Sprint, SprintStatus } from "@/domain/entities/sprint"
 import { useEditSprintGoalAndDates } from "@/shared/hooks/use-edit-sprint-goal-and-dates"
-import { useGetProjectSprints } from "@/shared/hooks/use-get-project-sprints"
+import { useGetTimelineProjectSprints } from "@/shared/hooks/use-get-timeline-project-sprints"
 import { getSprintStatusColor, getSprintStatusLabel } from "@/shared/utils/sprint-utils"
 import dayjs from "dayjs"
 import "dayjs/locale/id"; // Import Indonesian locale
-import { ArrowUpDown, Calendar, ChevronDown, Expand, Minimize, MoreVertical, Search, X } from "lucide-react"
+import { ArrowUpDown, ChevronDown, Expand, Minimize, Search, X } from "lucide-react"
 import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Rnd } from "react-rnd"
@@ -28,14 +28,13 @@ interface SprintPosition {
   height: number
 }
 
-type TimeRange = "6months" | "1year"
 
 const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
   const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
-  const { triggerGetProjectSprints, triggerGetProjectSprintsResponse } = useGetProjectSprints(projectId)
+  const { triggerGetTimelineProjectSprints, triggerGetTimelineProjectSprintsResponse } = useGetTimelineProjectSprints(projectId)
 
   // State
-  const [timeRange, setTimeRange] = useState<TimeRange>("6months")
+  const [visibleYear, setVisibleYear] = useState(dayjs().year())
   const [sprints, setSprints] = useState<Sprint[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [sprintPositions, setSprintPositions] = useState<Record<string, SprintPosition>>({})
@@ -64,40 +63,25 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
   // Fetch sprints data
   useEffect(() => {
     if (projectId) {
-      triggerGetProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+      triggerGetTimelineProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
     }
   }, [projectId])
 
   useEffect(() => {
-    if (triggerGetProjectSprintsResponse?.data) {
-      setSprints(triggerGetProjectSprintsResponse.data.content)
+    if (triggerGetTimelineProjectSprintsResponse?.data) {
+      setSprints(triggerGetTimelineProjectSprintsResponse.data.content)
     }
-  }, [triggerGetProjectSprintsResponse])
+  }, [triggerGetTimelineProjectSprintsResponse])
 
   // Generate timeline data
   const timelineData = useMemo(() => {
-    const today = dayjs()
-
-    // Calculate start and end dates based on selected time range
-    let monthsBefore: number
-    let monthsAfter: number
-
-    if (timeRange === "6months") {
-      monthsBefore = 3
-      monthsAfter = 3
-    } else {
-      // 1year
-      monthsBefore = 6
-      monthsAfter = 6
-    }
-
-    const startDate = today.subtract(monthsBefore, "month").startOf("month")
-    const endDate = today.add(monthsAfter, "month").endOf("month")
+    const startDate = dayjs(`${visibleYear}-01-01`).startOf("day")
+    const endDate = dayjs(`${visibleYear}-12-31`).endOf("day")
 
     const days = []
     let currentDay = startDate.clone()
 
-    while (currentDay.isBefore(endDate) || currentDay.isSame(endDate, "day")) {
+    while (currentDay.isSame(endDate) || currentDay.isBefore(endDate)) {
       days.push({
         date: currentDay.format("YYYY-MM-DD"),
         dayOfWeek: currentDay.format("ddd").charAt(0),
@@ -105,27 +89,21 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
         month: currentDay.format("MMM").toUpperCase(),
         year: currentDay.year(),
         isFirstOfMonth: currentDay.date() === 1,
-        isToday: currentDay.isSame(today, "day"),
-        isWeekend: currentDay.day() === 0 || currentDay.day() === 6, // 0 is Sunday, 6 is Saturday
+        isToday: currentDay.isSame(dayjs(), "day"),
+        isWeekend: currentDay.day() === 0 || currentDay.day() === 6,
       })
       currentDay = currentDay.add(1, "day")
     }
 
-    // Group by month for header
-    const monthGroups = days.reduce(
-      (acc, day) => {
-        const key = `${day.month} ${day.year}`
-        if (!acc[key]) {
-          acc[key] = []
-        }
-        acc[key].push(day)
-        return acc
-      },
-      {} as Record<string, typeof days>,
-    )
+    const monthGroups = days.reduce((acc, day) => {
+      const key = `${day.month} ${day.year}`
+      if (!acc[key]) acc[key] = []
+      acc[key].push(day)
+      return acc
+    }, {} as Record<string, typeof days>)
 
     return { days, monthGroups, startDate, endDate }
-  }, [timeRange])
+  }, [visibleYear])
 
   // Calculate sprint positions
   useEffect(() => {
@@ -218,10 +196,6 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
     }
   }
 
-  const handleTimeRangeChange = (range: TimeRange) => {
-    setTimeRange(range)
-  }
-
   const toggleExpand = () => {
     setIsExpanded(!isExpanded)
   }
@@ -310,19 +284,16 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
             {isExpanded ? "Minimize" : "Expand"}
           </Button>
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Calendar className="w-4 h-4 mr-2" />
-                {timeRange === "6months" ? "6 Months" : "1 Year"} View
-                <ChevronDown className="w-4 h-4 ml-2" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleTimeRangeChange("6months")}>6 Months</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleTimeRangeChange("1year")}>1 Year</DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setVisibleYear(y => y - 1)}>
+              ← {visibleYear - 1}
+            </Button>
+            <span className="text-sm font-medium">{visibleYear}</span>
+            <Button variant="outline" size="sm" onClick={() => setVisibleYear(y => y + 1)}>
+              {visibleYear + 1} →
+            </Button>
+          </div>
+
         </div>
       </div>
 
@@ -352,9 +323,6 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
       <div className="flex flex-col border-b bg-gray-50 flex-shrink-0">
         {/* Month Names Row */}
         <div className="flex">
-          <div className="w-48 p-3 border-r bg-white flex-shrink-0">
-            <span className="text-sm font-medium text-gray-600">Sprint</span>
-          </div>
           <div
             ref={headerScrollRef}
             className="flex overflow-x-hidden flex-1"
@@ -364,7 +332,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
               {Object.entries(timelineData.monthGroups).map(([monthYear, days]) => (
                 <div
                   key={monthYear}
-                  className="flex items-center justify-center border-r bg-gray-100 flex-shrink-0 h-full"
+                  className="flex items-center justify-center border-r bg-gray-100 flex-shrink-0 h-full p-3"
                   style={{ width: `${days.length * GRID_SIZE}px` }}
                 >
                   <span className="text-sm font-medium text-gray-700">{monthYear}</span>
@@ -377,7 +345,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
         {/* Daily Dates Row - Only show if not expanded */}
         {!isExpanded && (
           <div className="flex">
-            <div className="w-48 border-r bg-white flex-shrink-0" style={{ height: "40px" }} />
+            {/* <div className="w-48 border-r bg-white flex-shrink-0" style={{ height: "40px" }} /> */}
             <div
               ref={dailyScrollRef}
               className="flex overflow-x-hidden flex-1"
@@ -411,15 +379,6 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
 
       {/* Timeline Content */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Sprint Names Sidebar */}
-        <div className="w-48 border-r bg-white flex-shrink-0 overflow-y-auto">
-          {filteredSprints.map((sprint) => (
-            <div key={sprint.id} className="p-3 border-b flex items-center" style={{ height: `${ROW_HEIGHT}px` }}>
-              <div className="text-sm font-medium truncate">{sprint.name}</div>
-            </div>
-          ))}
-        </div>
-
         {/* Timeline Grid */}
         <div ref={timelineScrollRef} className="flex-1 overflow-auto" onScroll={handleTimelineScroll}>
           <div
@@ -427,7 +386,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
             style={{
               width: `${timelineData.days.length * GRID_SIZE}px`,
               height: `${filteredSprints.length * ROW_HEIGHT}px`,
-              minHeight: "400px",
+              minHeight: `${sprints.length > 6 ? sprints.length * ROW_HEIGHT : 500}px`,
             }}
           >
             {/* Grid Lines */}
@@ -448,7 +407,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
             {filteredSprints.map((_, index) => (
               <div
                 key={index}
-                className="absolute left-0 right-0 border-b border-gray-50"
+                className="absolute left-0 right-0 border-b border-gray-50 "
                 style={{ top: `${index * ROW_HEIGHT}px`, height: "1px" }}
               />
             ))}
@@ -587,12 +546,11 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                   >
                     {/* Status indicator */}
                     <div className={`w-1 h-full ${getSprintStatusColor(sprint.status)}`} />
-
-                    <div className="flex-1 p-2">
-                      <div className="text-xs font-medium mb-1">{sprint.name}</div>
-                      <div className="flex items-center justify-between ">
-                        <div className="text-xs text-gray-500">
-                          <p className="truncate text-xs">
+                    <div className="flex flex-col justify-center p-2 bg-red-20 w-full">
+                      <div className="text-xs font-medium mb-1 truncate">{sprint.name}</div>
+                      <div className="flex items-center justify-between w-full">
+                        <div className="text-xs text-gray-500 w-full">
+                          <p className="truncate text-xs max-w-3/4">
                             {extendsLeft ? "←" : ""} {dayjs(currentStartDate).format("MMM D")} -{" "}
                             {dayjs(currentEndDate).format("MMM D")} {extendsRight ? "→" : ""}
                           </p>
@@ -600,19 +558,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                       </div>
                     </div>
 
-                    <div className="p-1">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="h-5 w-5 p-0">
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
-                          <DropdownMenuItem>Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
+
                   </div>
                 </Rnd>
               )

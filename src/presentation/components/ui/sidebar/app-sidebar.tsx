@@ -1,19 +1,12 @@
 import {
-  IconArchive,
-  IconChartBar,
   IconDashboard,
   IconFileWord,
   IconFolder,
-  IconInnerShadowTop,
-  IconUsers,
+  IconInnerShadowTop
 } from "@tabler/icons-react"
 import * as React from "react"
 
 import type { ProjectSummary } from "@/domain/entities/project-summary"
-import type { User } from "@/domain/entities/user"
-import { NavMain } from "@/presentation/components/ui/sidebar/nav-main"
-import { NavProyek } from "@/presentation/components/ui/sidebar/nav-proyek"
-import { NavUser } from "@/presentation/components/ui/sidebar/nav-user"
 import {
   Sidebar,
   SidebarContent,
@@ -23,10 +16,13 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/presentation/components/ui/sidebar"
-import { useGetMe } from "@/shared/hooks/use-get-me"
+import { NavMain } from "@/presentation/components/ui/sidebar/nav-main"
+import { NavProyek } from "@/presentation/components/ui/sidebar/nav-proyek"
+import { NavUser } from "@/presentation/components/ui/sidebar/nav-user"
 import { useGetMyProjectSidebar } from "@/shared/hooks/use-get-my-project-sidebar"
 import { useEffect, useState } from 'react'
 import { Skeleton } from "../skeleton"
+import { useUser } from "@/shared/contexts/user-context"
 
 const navMain = [
   {
@@ -39,28 +35,12 @@ const navMain = [
     url: "/dashboard/project",
     icon: IconFolder,
   },
-  {
-    title: "Tugas Saya",
-    url: "/my-tasks",
-    icon: IconChartBar,
-  },
-  {
-    title: "Tim",
-    url: "/dashboard/teams",
-    icon: IconUsers,
-  },
-  {
-    title: "Arsip",
-    url: "/archive",
-    icon: IconArchive,
-  },
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const [user, setUser] = useState<User>()
+  const { user, loading: triggerGetMeloading } = useUser()
   const [projects, setProjects] = useState<ProjectSummary[]>([])
 
-  const { triggerGetMe, triggerGetMeResponse, triggerGetMeloading } = useGetMe()
   const {
     triggerSidebarProjects,
     sidebarProjectsResponse,
@@ -68,22 +48,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   } = useGetMyProjectSidebar()
 
   useEffect(() => {
-    const fetchInitialData = async () => {
-      await triggerGetMe()
-      await triggerSidebarProjects()
-    }
-
-    fetchInitialData()
+    triggerSidebarProjects()
   }, [])
-
-  useEffect(() => {
-    if (triggerGetMeResponse) {
-      setUser({
-        username: triggerGetMeResponse.data.username,
-        email: triggerGetMeResponse.data.email,
-      })
-    }
-  }, [triggerGetMeResponse])
 
   useEffect(() => {
     if (sidebarProjectsResponse?.data.content) {
@@ -147,7 +113,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           />
         ) : null}
       </SidebarFooter>
-
     </Sidebar>
   )
 }

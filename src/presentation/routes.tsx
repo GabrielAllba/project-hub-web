@@ -2,9 +2,8 @@ import { BrowserRouter, Route, Routes } from "react-router-dom";
 import DashboardLayout from "./layouts/dashboard-layout";
 import { DashboardPage } from "./pages/dashboard-page";
 import { LoginPage } from "./pages/login-page";
-import { ProyekPage } from "./pages/proyek-page";
-import { TeamPage } from "./pages/team-page";
 import { ProjectDetailPage } from "./pages/project-detail-page";
+import { ProyekPage } from "./pages/proyek-page";
 
 const NotFoundPage = () => <div>404 Not Found</div>;
 
@@ -15,7 +14,6 @@ export const AppRoutes = () => (
 
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardPage />} />
-        <Route path="teams" element={<TeamPage />} />
 
         <Route path="project">
           <Route index element={<ProyekPage />} />

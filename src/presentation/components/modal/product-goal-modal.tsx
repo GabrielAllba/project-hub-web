@@ -1,6 +1,8 @@
 "use client"
+import { NO_GOAL_ID } from "@/constants/constants"
 import type { ProductGoal } from "@/domain/entities/product-goal"
 import { useProductGoals } from "@/shared/contexts/product-goals-context"
+import { useGetProductGoalById } from "@/shared/hooks/use-get-product-goal-by-id"
 import { Bolt, Search, X } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Badge } from "../ui/badge"
@@ -29,19 +31,67 @@ export function ProductGoalModal({
   onSelectGoal,
   selectedGoalId = null,
   title = "Add product goal",
+
 }: ProductGoalModalProps) {
   const { goals, loadMoreGoals, isLoading, hasMore } = useProductGoals()
   const [searchQuery, setSearchQuery] = useState("")
   const [filteredGoals, setFilteredGoals] = useState<ProductGoal[]>([])
+  const [fetchedGoal, setFetchedGoal] = useState<ProductGoal | null>(null)
+  const [isSearchingRemote, setIsSearchingRemote] = useState(false)
+  const [selectedProductGoal, setSelectedProductGoal] = useState<ProductGoal | null>(null)
 
-  const selectedProductGoal = goals.find((goal) => goal.id === selectedGoalId)
+  const { triggerGetProductGoalById } = useGetProductGoalById("")
 
+  // Ensure selected goal is shown even if not in goals list
   useEffect(() => {
-    if (searchQuery.trim() === "") {
-      setFilteredGoals(goals)
+    if (!selectedGoalId) {
+      setSelectedProductGoal(null)
+      return
+    }
+
+    const local = goals.find((goal) => goal.id === selectedGoalId)
+    if (local) {
+      setSelectedProductGoal(local)
     } else {
-      const query = searchQuery.toLowerCase()
-      setFilteredGoals(goals.filter((goal) => goal.title.toLowerCase().includes(query)))
+      triggerGetProductGoalById(selectedGoalId).then((res) => {
+        if (res.status === "success" && res.data) {
+          setSelectedProductGoal(res.data)
+        } else {
+          setSelectedProductGoal(null)
+          onSelectGoal(NO_GOAL_ID)
+        }
+      })
+    }
+  }, [selectedGoalId, goals])
+
+  // Handle search and fetch if not found
+  useEffect(() => {
+    const query = searchQuery.toLowerCase().trim()
+
+    if (query === "") {
+      setFilteredGoals(goals)
+      setFetchedGoal(null)
+    } else {
+      const localFiltered = goals.filter((goal) =>
+        goal.title.toLowerCase().includes(query)
+      )
+
+      setFilteredGoals(localFiltered)
+
+      if (localFiltered.length === 0 && query.length > 5) {
+        setIsSearchingRemote(true)
+        triggerGetProductGoalById(query).then((res) => {
+          if (res.status === "success" && res.data) {
+            setFetchedGoal(res.data)
+          } else {
+            setFetchedGoal(null)
+          }
+          setIsSearchingRemote(false)
+        })
+      } else {
+        setFetchedGoal(null)
+        setIsSearchingRemote(false)
+      }
     }
   }, [searchQuery, goals])
 
@@ -56,7 +106,9 @@ export function ProductGoalModal({
                 className="flex items-center gap-1 rounded-sm text-xs text-purple-600 bg-purple-100 border-purple-500 px-2 py-0.5 cursor-pointer hover:bg-purple-50"
               >
                 <Bolt className="h-4 w-4 text-purple-500" />
-                <p className="max-w-[96px] truncate font-semibold">{selectedProductGoal.title}</p>
+                <p className="max-w-[96px] truncate font-semibold">
+                  {selectedProductGoal.title}
+                </p>
               </Badge>
             </DialogTrigger>
           </TooltipTrigger>
@@ -70,7 +122,11 @@ export function ProductGoalModal({
     return (
       isHoveringItem && (
         <DialogTrigger asChild>
-          <Button variant="outline" size="sm" className="h-6 text-xs flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-6 text-xs flex items-center gap-1"
+          >
             Goal
           </Button>
         </DialogTrigger>
@@ -114,7 +170,9 @@ export function ProductGoalModal({
 
           <div className="mb-2">
             <div
-              className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${selectedGoalId === null ? "bg-blue-50 border border-blue-200" : "hover:bg-gray-50"
+              className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${selectedGoalId === null
+                ? "bg-blue-50 border border-blue-200"
+                : "hover:bg-gray-50"
                 }`}
               onClick={() => onSelectGoal(null)}
             >
@@ -139,6 +197,35 @@ export function ProductGoalModal({
                 </div>
               ))}
 
+              {filteredGoals.length === 0 && fetchedGoal && (
+                <div
+                  key={fetchedGoal.id}
+                  className={`flex items-center px-3 py-2 rounded-md cursor-pointer ${selectedGoalId === fetchedGoal.id
+                    ? "bg-blue-50 border border-blue-200"
+                    : "hover:bg-gray-50"
+                    }`}
+                  onClick={() => onSelectGoal(fetchedGoal.id)}
+                >
+                  <Bolt className="h-4 w-4 text-purple-500 mr-2" />
+                  <span className="text-sm">{fetchedGoal.title}</span>
+                </div>
+              )}
+
+              {isSearchingRemote && (
+                <div className="text-center py-4 text-gray-500">Searching...</div>
+              )}
+
+              {filteredGoals.length === 0 &&
+                !fetchedGoal &&
+                !isSearchingRemote &&
+                !isLoading && (
+                  <div className="text-center py-4 text-gray-500">
+                    {searchQuery
+                      ? "No matching product goals found"
+                      : "No product goals available"}
+                  </div>
+                )}
+
               {hasMore && (
                 <Button
                   variant="ghost"
@@ -148,14 +235,6 @@ export function ProductGoalModal({
                 >
                   {isLoading ? "Loading..." : "Load more"}
                 </Button>
-              )}
-
-              {filteredGoals.length === 0 && !isLoading && (
-                <div className="text-center py-4 text-gray-500">
-                  {searchQuery
-                    ? "No matching product goals found"
-                    : "No product goals available"}
-                </div>
               )}
             </div>
           </ScrollArea>
