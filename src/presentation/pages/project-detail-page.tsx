@@ -15,6 +15,7 @@ import { TeamTab } from "../components/tabs/team-tab"
 import TimelineTab from "../components/tabs/timeline-tab"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs"
 import { ProjectLayout } from "../layouts/project-detail-layout"
+import { ReportTab } from "../components/tabs/report-tab"
 
 const tabConfig = [
   { value: "summary", label: "Summary", icon: Globe },
@@ -64,6 +65,9 @@ export const ProjectDetailPage = () => {
           <div className="grid grid-cols-1">
             <TimelineTab projectId={projectId} />
           </div>
+        </TabsContent>
+        <TabsContent value="report">
+          <ReportTab projectId={projectId} />
         </TabsContent>
         <TabsContent value="team">
           <TeamTab projectId={projectId} />

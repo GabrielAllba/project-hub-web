@@ -9,6 +9,7 @@ import { useFindUser } from "@/shared/hooks/use-find-user"
 import { useGetProjectById } from "@/shared/hooks/use-get-project-by-id"
 import { useGetProjectInvitations } from "@/shared/hooks/use-get-project-invitations"
 import { useEffect, useState } from "react"
+import { toast } from "sonner"
 import { InvitationDialog } from "../../dialog/invitation-dialog"
 
 export function SiteHeader() {
@@ -78,6 +79,20 @@ export function SiteHeader() {
     }
   }, [triggerGetProjectInvitationsResponse])
 
+  const handleAccept = async () => {
+    // Refetch invitations
+    await triggerGetProjectInvitations(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+
+    toast.success("Invitation accepted: You have successfully joined the project.")
+  }
+
+  const handleReject = async () => {
+    // Refetch invitations
+    await triggerGetProjectInvitations(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+
+    toast.success("Invitation rejected: You have declined the invitation.")
+  }
+
   return (
     <header className="flex h-(--header-height) shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-(--header-height)">
       <div className="flex w-full items-center gap-1 px-4 lg:gap-2 lg:px-6">
@@ -87,8 +102,8 @@ export function SiteHeader() {
           <InvitationDialog
             invitations={enrichedInvitations}
             loading={triggerGetProjectInvitationsLoading}
-            onAccept={(id) => console.log(`Accepted invitation ${id}`)}
-            onReject={(id) => console.log(`Rejected invitation ${id}`)}
+            onAccept={handleAccept}
+            onReject={handleReject}
           />
         </div>
       </div>

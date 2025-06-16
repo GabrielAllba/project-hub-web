@@ -634,7 +634,7 @@ export default function ListSection({
 
     const handleCreateSprint = useCallback(async () => {
         const res = await triggerGetProjectSprintsAllStatus(0, 1)
-        alert(JSON.stringify(res.data))
+
         const totalElement = res?.data.totalElements ? res?.data.totalElements : 0
         await triggerCreateSprint({ projectId: projectId, name: "Sprint " + (totalElement + 1) }).then(() => {
             const reloadAllSprints = async () => {

@@ -1,6 +1,6 @@
 interface EmptyStateProps {
   icon?: React.ReactNode
-  message: string
+  message?: string
 }
 
 export const EmptyState = ({ icon = "👥", message }: EmptyStateProps) => {

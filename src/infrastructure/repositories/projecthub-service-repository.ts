@@ -17,14 +17,17 @@ import type { RenameProductGoalRequestDTO } from "@/domain/dto/req/rename-produc
 import type { ReorderProductBacklogRequestDTO } from "@/domain/dto/req/reorder-product-backlog-req";
 import type { CompleteSprintInfoResponseDTO } from "@/domain/dto/res/complete-sprint-info-res";
 import type { InvitationResponseDTO } from "@/domain/dto/res/invitation-res";
+import type { ProjectBacklogSummaryResponseDTO } from "@/domain/dto/res/project-backlog-summary-res";
 import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res";
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
+import type { UserWorkItemSummaryResponseDTO } from "@/domain/dto/res/user-work-item-summary-res";
 import type { ProductBacklog } from "@/domain/entities/product-backlog";
 import type { ProductGoal } from "@/domain/entities/product-goal";
 import type { Project } from "@/domain/entities/project";
 import type { ProjectSummary } from "@/domain/entities/project-summary";
 import type { Team } from "@/domain/entities/team";
 import type { TeamSummary } from "@/domain/entities/team-summary";
+import type { AssignBacklogUserRequestDTO } from '../../domain/dto/req/assign-backlog-user-req';
 import type { EditBacklogStatusRequestDTO } from '../../domain/dto/req/edit-backlog-status-req';
 import { projectHubService } from "../api/project-hub-services";
 
@@ -208,13 +211,22 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getProjectInvitations(token: string, userId: string, page: number, size: number): Promise<BaseResponse<Page<InvitationResponseDTO>>> {
-    const response = await projectHubService.get(`/project_invitation/${userId}`, {
+    const response = await projectHubService.get(`/project_invitation/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
       params: {
         page,
         size,
+      },
+    });
+
+    return response.data;
+  }
+  async getProjectInvitationById(token: string, invitationId: string): Promise<BaseResponse<InvitationResponseDTO>> {
+    const response = await projectHubService.get(`/project_invitation/${invitationId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
       },
     });
 
@@ -231,6 +243,56 @@ export class ProjectHubServiceRepository {
       },
       params: {
         role: role.toLowerCase(),
+      },
+    });
+
+    return response.data;
+  }
+  async getProjectBacklogSummary(
+    token: string,
+    projectId: string,
+  ): Promise<BaseResponse<ProjectBacklogSummaryResponseDTO>> {
+    const response = await projectHubService.get(`/project/${projectId}/backlog_summary`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+  async getProjectWorkSummary(
+    token: string,
+    projectId: string,
+    range: string,
+  ): Promise<BaseResponse<UserWorkItemSummaryResponseDTO[]>> {
+    const response = await projectHubService.get(`/project/${projectId}/work_summary`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        range: range,
+      },
+    });
+
+    return response.data;
+  }
+
+  async searchSprints(
+    token: string,
+    projectId: string,
+    keyword: string,
+    page: number,
+    size: number
+  ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+    const response = await projectHubService.get(`/sprint/search`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        projectId,
+        keyword,
+        page,
+        size,
       },
     });
 
@@ -392,6 +454,16 @@ export class ProjectHubServiceRepository {
 
   async editBacklogPoint(token: string, data: EditBacklogPointRequestDTO): Promise<BaseResponse<ProductBacklog>> {
     const response = await projectHubService.put(`/product_backlog/edit_backlog_point`,
+      data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+  async assignBacklogUser(token: string, data: AssignBacklogUserRequestDTO): Promise<BaseResponse<ProductBacklog>> {
+    const response = await projectHubService.put(`/product_backlog/assign_user`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,

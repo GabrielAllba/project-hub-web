@@ -1,29 +1,45 @@
 "use client"
 
-import { PRODUCT_BACKLOG_PRIORITY_OPTIONS, PRODUCT_BACKLOG_STATUS_OPTIONS } from "@/constants/constants"
+import {
+    PRODUCT_BACKLOG_PRIORITY_OPTIONS,
+    PRODUCT_BACKLOG_STATUS_OPTIONS,
+    type ProjectRole
+} from "@/constants/constants"
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import type { User } from "@/domain/entities/user"
+import { useAssignBacklogUser } from "@/shared/hooks/use-assign-backlog-user"
 import { useDeleteBacklog } from "@/shared/hooks/use-delete-backlog"
 import { useEditBacklogGoal } from "@/shared/hooks/use-edit-backlog-goal"
 import { useEditBacklogPoint } from "@/shared/hooks/use-edit-backlog-point"
 import { useEditBacklogPriority } from "@/shared/hooks/use-edit-backlog-priority"
 import { useEditBacklogStatus } from "@/shared/hooks/use-edit-backlog-status"
 import { useEditBacklogTitle } from "@/shared/hooks/use-edit-backlog-title"
-import { useFindUser } from "@/shared/hooks/use-find-user"
+import { useGetProjectMembers } from "@/shared/hooks/use-get-project-members"
 import {
     getPriorityColor,
     getPriorityLabel,
     getStatusColor,
-    getStatusLabel,
+    getStatusLabel
 } from "@/shared/utils/product-backlog-utils"
-import { ChevronDown, Eye, GripVertical, Pencil, Trash2 } from "lucide-react"
+import {
+    ChevronDown,
+    Eye,
+    GripVertical,
+    Pencil,
+    Trash2
+} from "lucide-react"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { ProductGoalModal } from "../modal/product-goal-modal"
-import { Avatar, AvatarFallback } from "../ui/avatar"
+import { AssigneeSelector } from "../selector/assignee-selector"
 import { Badge } from "../ui/badge"
 import { Card, CardContent } from "../ui/card"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger
+} from "../ui/dropdown-menu"
 import { Input } from "../ui/input"
 import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
@@ -34,9 +50,6 @@ interface BacklogItemProps {
 }
 
 export function BacklogItem(props: BacklogItemProps) {
-
-    const { triggerFindUser } = useFindUser()
-
     const [assignee, setAssignee] = useState<User | null>(null)
     const [isEditingPoint, setIsEditingPoint] = useState(false)
     const [pointValue, setPointValue] = useState(props.backlog.point ?? 0)
@@ -51,46 +64,52 @@ export function BacklogItem(props: BacklogItemProps) {
     const { triggerEditBacklogPriority } = useEditBacklogPriority()
     const { triggerEditBacklogTitle } = useEditBacklogTitle()
     const { triggerEditBacklogGoal } = useEditBacklogGoal()
+    const { triggerAssignBacklogUser } = useAssignBacklogUser()
+    const { triggerGetProjectMembers } = useGetProjectMembers(props.backlog.projectId)
+
+    const [members, setMembers] = useState<User[]>([])
+
+
+    useEffect(() => {
+        const fetch = async () => {
+            const roles: ProjectRole[] = ["PRODUCT_OWNER", "SCRUM_MASTER", "DEVELOPER"]
+            const results = await Promise.all(
+                roles.map(role => triggerGetProjectMembers(role))
+            )
+            const all = results.flatMap(r => r?.data || [])
+            const unique = Array.from(new Map(all.map(m => [m.id, m])).values())
+            setMembers(unique)
+        }
+        fetch()
+    }, [props.backlog.projectId])
 
     useEffect(() => {
         if (props.backlog.assigneeId) {
-            triggerFindUser(props.backlog.assigneeId).then((res) => {
-                setAssignee(res.data)
-            })
+            const found = members.find((m) => m.id === props.backlog.assigneeId)
+            if (found) setAssignee(found)
         }
-    }, [props.backlog.assigneeId])
+    }, [props.backlog.assigneeId, members])
 
     const handlePointSubmit = async () => {
-        await triggerEditBacklogPoint({
-            backlogId: props.backlog.id,
-            point: pointValue,
-        })
+        await triggerEditBacklogPoint({ backlogId: props.backlog.id, point: pointValue })
         setIsEditingPoint(false)
         props.onEditBacklog(props.backlog.id)
         toast.success("Backlog point updated successfully!")
     }
 
     const handleTitleSubmit = async () => {
-        await triggerEditBacklogTitle({
-            backlogId: props.backlog.id,
-            title: titleValue,
-        })
+        await triggerEditBacklogTitle({ backlogId: props.backlog.id, title: titleValue })
         toast.success("Backlog title updated successfully!")
         setEditingTitleBacklog(undefined)
         props.onEditBacklog(props.backlog.id)
     }
 
     const handleProductGoalChange = async (goalId: string | null) => {
-        try {
-            await triggerEditBacklogGoal({ backlogId: props.backlog.id, goalId: goalId })
-            props.onEditBacklog(props.backlog.id)
-            toast.success("Product goal updated successfully!")
-        } catch (error) {
-            console.error("Failed to update product goal:", error)
-            toast.error("Failed to update product goal")
-        }
-
+        await triggerEditBacklogGoal({ backlogId: props.backlog.id, goalId })
+        props.onEditBacklog(props.backlog.id)
+        toast.success("Product goal updated successfully!")
     }
+
 
     return (
         <Card
@@ -100,17 +119,13 @@ export function BacklogItem(props: BacklogItemProps) {
         >
             <CardContent className="p-2">
                 <div className="grid grid-cols-[24px_1fr_144px_32px_48px_112px_112px_64px] items-center gap-2 w-full">
-                    {/* Drag Handle */}
                     <div className="flex justify-center cursor-grab active:cursor-grabbing">
                         <GripVertical className="w-4 h-4 text-muted-foreground" />
                     </div>
 
-                    {/* Title */}
-                    <div
-                        className="min-w-0 flex items-center gap-1"
+                    <div className="min-w-0 flex items-center gap-1"
                         onMouseEnter={() => setIsHoveringTitle(true)}
-                        onMouseLeave={() => setIsHoveringTitle(false)}
-                    >
+                        onMouseLeave={() => setIsHoveringTitle(false)}>
                         {!editingTitleBacklog || editingTitleBacklog.id !== props.backlog.id ? (
                             <div className="flex items-center gap-1 truncate">
                                 <p className="text-sm truncate">{props.backlog.title}</p>
@@ -125,26 +140,19 @@ export function BacklogItem(props: BacklogItemProps) {
                                 )}
                             </div>
                         ) : (
-                            <div className="relative w-full flex items-center gap-1">
-                                <Input
-                                    value={titleValue}
-                                    onChange={(e) => setTitleValue(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") handleTitleSubmit()
-                                        if (e.key === "Escape") {
-                                            setTitleValue(props.backlog.title)
-                                            setEditingTitleBacklog(undefined)
-                                        }
-                                    }}
-                                    autoFocus
-                                    className="text-sm h-7 pr-16 rounded-sm"
-                                />
-
-                            </div>
+                            <Input
+                                value={titleValue}
+                                onChange={(e) => setTitleValue(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") handleTitleSubmit()
+                                    if (e.key === "Escape") setEditingTitleBacklog(undefined)
+                                }}
+                                autoFocus
+                                className="text-sm h-7 pr-16 rounded-sm"
+                            />
                         )}
                     </div>
 
-                    {/* Product Goal */}
                     <div className="flex justify-center items-center">
                         <ProductGoalModal
                             isHoveringItem={isHoveringItem}
@@ -155,21 +163,27 @@ export function BacklogItem(props: BacklogItemProps) {
                         />
                     </div>
 
-                    {/* Assignee */}
                     <div className="flex justify-center">
-                        <Avatar className="w-6 h-6">
-                            <AvatarFallback className="bg-gray-300 text-white text-xs">
-                                {assignee?.username?.charAt(0).toUpperCase() ?? "?"}
-                            </AvatarFallback>
-                        </Avatar>
+                        <AssigneeSelector
+                            projectId={props.backlog.projectId}
+                            selectedAssignee={assignee}
+                            onSelectAssignee={async (user) => {
+                                await triggerAssignBacklogUser({ backlogId: props.backlog.id, assigneeId: user.id })
+                                setAssignee(user)
+                                toast.success("Assignee updated")
+                            }}
+                        />
                     </div>
 
-                    {/* Point */}
-                    <div className="flex justify-center">
+                    <div className="flex justify-center items-center ">
                         {!isEditingPoint ? (
                             <Tooltip>
                                 <TooltipTrigger>
-                                    <Badge variant="secondary" className="text-xs cursor-pointer" onClick={() => setIsEditingPoint(true)}>
+                                    <Badge
+                                        variant="secondary"
+                                        className="text-xs cursor-pointer h-full rounded-sm flex items-center"
+                                        onClick={() => setIsEditingPoint(true)}
+                                    >
                                         {props.backlog.point}
                                     </Badge>
                                 </TooltipTrigger>
@@ -178,36 +192,28 @@ export function BacklogItem(props: BacklogItemProps) {
                                 </TooltipContent>
                             </Tooltip>
                         ) : (
-                            <div className="flex items-center gap-1 relative">
-                                <Input
-                                    type="number"
-                                    value={pointValue}
-                                    onChange={(e) => setPointValue(Number(e.target.value))}
-                                    onKeyDown={(e) => {
-                                        if (e.key === "Enter") handlePointSubmit()
-                                        if (e.key === "Escape") {
-                                            setPointValue(props.backlog.point)
-                                            setIsEditingPoint(false)
-                                        }
-                                    }}
-                                    className="h-6 w-14 rounded-sm text-xs"
-                                    autoFocus
-                                />
-                            </div>
+                            <Input
+                                type="number"
+                                value={pointValue}
+                                onChange={(e) => setPointValue(Number(e.target.value))}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") handlePointSubmit()
+                                    if (e.key === "Escape") setIsEditingPoint(false)
+                                }}
+                                className="h-6 w-14 rounded-sm text-xs"
+                                autoFocus
+                            />
                         )}
                     </div>
 
-                    {/* Priority */}
                     <div>
                         <DropdownMenu>
-                            <DropdownMenuTrigger
-                                className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getPriorityColor(props.backlog.priority)}`}
-                            >
+                            <DropdownMenuTrigger className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getPriorityColor(props.backlog.priority)}`}>
                                 <span>{getPriorityLabel(props.backlog.priority)}</span>
                                 <ChevronDown className="w-4 h-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-32 mt-1 rounded-sm p-0">
-                                {PRODUCT_BACKLOG_PRIORITY_OPTIONS.map((priority) => (
+                                {PRODUCT_BACKLOG_PRIORITY_OPTIONS.map(priority => (
                                     <DropdownMenuItem
                                         key={priority}
                                         onClick={async () => {
@@ -227,17 +233,14 @@ export function BacklogItem(props: BacklogItemProps) {
                         </DropdownMenu>
                     </div>
 
-                    {/* Status */}
                     <div>
                         <DropdownMenu>
-                            <DropdownMenuTrigger
-                                className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getStatusColor(props.backlog.status)}`}
-                            >
+                            <DropdownMenuTrigger className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getStatusColor(props.backlog.status)}`}>
                                 <span>{getStatusLabel(props.backlog.status)}</span>
                                 <ChevronDown className="w-4 h-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-32 mt-1 rounded-sm p-0">
-                                {PRODUCT_BACKLOG_STATUS_OPTIONS.map((status) => (
+                                {PRODUCT_BACKLOG_STATUS_OPTIONS.map(status => (
                                     <DropdownMenuItem
                                         key={status}
                                         onClick={async () => {
@@ -257,7 +260,6 @@ export function BacklogItem(props: BacklogItemProps) {
                         </DropdownMenu>
                     </div>
 
-                    {/* Actions */}
                     <div className="flex justify-end gap-1">
                         <Eye className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer" />
                         <Pencil className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer" />

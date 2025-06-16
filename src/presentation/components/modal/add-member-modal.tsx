@@ -46,9 +46,9 @@ export const AddMemberModal = ({
   const [notFound, setNotFound] = useState(false)
 
   const { triggerSearchUsers } = useSearchUsers()
-  const { triggerInviteDeveloper } = useInviteDeveloper(projectId)
-  const { triggerInviteProductOwner } = useInviteProductOwner(projectId)
-  const { triggerInviteScrumMaster } = useInviteScrumMaster(projectId)
+  const { triggerInviteDeveloper, triggerInviteDeveloperResponse } = useInviteDeveloper(projectId)
+  const { triggerInviteProductOwner, triggerInviteProductOwnerResponse } = useInviteProductOwner(projectId)
+  const { triggerInviteScrumMaster, triggerInviteScrumMasterResponse } = useInviteScrumMaster(projectId)
 
   useEffect(() => {
     if (!search) {
@@ -97,23 +97,44 @@ export const AddMemberModal = ({
       SCRUM_MASTER: selectedUsers.filter((u) => u.role === "SCRUM_MASTER"),
     }
 
-    try {
-      if (grouped.DEVELOPER.length > 0) {
-        await triggerInviteDeveloper({ userIds: grouped.DEVELOPER.map((u) => u.user.id) })
-      }
-      if (grouped.PRODUCT_OWNER.length > 0) {
-        await triggerInviteProductOwner({ userIds: grouped.PRODUCT_OWNER.map((u) => u.user.id) })
-      }
-      if (grouped.SCRUM_MASTER.length > 0) {
-        await triggerInviteScrumMaster({ userIds: grouped.SCRUM_MASTER.map((u) => u.user.id) })
-      }
 
-      setSelectedUsers([])
-      onOpenChange(false)
-    } catch (error) {
-      toast.error(`Invite error: ${error}`)
+    if (grouped.DEVELOPER.length > 0) {
+      await triggerInviteDeveloper({ userIds: grouped.DEVELOPER.map((u) => u.user.id) })
     }
+    if (grouped.PRODUCT_OWNER.length > 0) {
+      await triggerInviteProductOwner({ userIds: grouped.PRODUCT_OWNER.map((u) => u.user.id) })
+    }
+    if (grouped.SCRUM_MASTER.length > 0) {
+      await triggerInviteScrumMaster({ userIds: grouped.SCRUM_MASTER.map((u) => u.user.id) })
+    }
+
+    setSelectedUsers([])
+    onOpenChange(false)
+
   }
+
+  useEffect(() => {
+    if (triggerInviteScrumMasterResponse && triggerInviteScrumMasterResponse?.status != "success") {
+      toast.error(triggerInviteScrumMasterResponse?.message)
+    } else if (triggerInviteScrumMasterResponse && triggerInviteScrumMasterResponse.status == "success") {
+      toast.success(triggerInviteScrumMasterResponse?.message)
+    }
+  }, [triggerInviteScrumMasterResponse])
+  useEffect(() => {
+    if (triggerInviteProductOwnerResponse && triggerInviteProductOwnerResponse?.status != "success") {
+      toast.error(triggerInviteProductOwnerResponse?.message)
+    } else if (triggerInviteProductOwnerResponse && triggerInviteProductOwnerResponse.status == "success") {
+      toast.success(triggerInviteProductOwnerResponse?.message)
+    }
+  }, [triggerInviteProductOwnerResponse])
+  useEffect(() => {
+    if (triggerInviteDeveloperResponse && triggerInviteDeveloperResponse?.status != "success") {
+      toast.error(triggerInviteDeveloperResponse?.message)
+    } else if (triggerInviteDeveloperResponse && triggerInviteDeveloperResponse.status == "success") {
+      toast.success(triggerInviteDeveloperResponse?.message)
+    }
+  }, [triggerInviteDeveloperResponse])
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

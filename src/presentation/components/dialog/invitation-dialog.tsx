@@ -7,10 +7,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/presentation/componen
 import { ScrollArea } from "@/presentation/components/ui/scroll-area"
 import { Separator } from "@/presentation/components/ui/separator"
 import { useAcceptProjectInvitation } from "@/shared/hooks/use-accept-project-invitation"
+import { useGetProjectInvitationById } from "@/shared/hooks/use-get-project-invitation-by-id"
 import { useRejectProjectInvitation } from "@/shared/hooks/use-reject-project-invitation"
 import { cn } from "@/shared/utils/merge-class"
 import { Bell } from "lucide-react"
 import { useMemo, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 interface EnrichedInvitation extends ProjectInvitation {
     inviterUsername?: string
@@ -33,6 +35,8 @@ export function InvitationDialog({
     const [visibleCount, setVisibleCount] = useState(DEFAULT_PAGE_SIZE)
     const [hoveredInvitationId, setHoveredInvitationId] = useState<string | null>(null)
 
+    const navigate = useNavigate()
+
     const pendingInvitationsCount = invitations.filter(inv => inv.status === "PENDING").length
 
     const sortedInvitations = useMemo(() => {
@@ -49,6 +53,7 @@ export function InvitationDialog({
 
     const { triggerAcceptProjectInvitation } = useAcceptProjectInvitation("")
     const { triggerRejectProjectInvitation } = useRejectProjectInvitation("")
+    const { triggerGetProjectInvitationById } = useGetProjectInvitationById(hoveredInvitationId || "")
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -124,6 +129,7 @@ export function InvitationDialog({
                                                 className="h-7 px-3 text-xs"
                                                 onClick={async () => {
                                                     await triggerRejectProjectInvitation(inv.id)
+                                                    await triggerGetProjectInvitationById()
                                                     onReject?.(inv.id)
                                                 }}
                                             >
@@ -134,7 +140,11 @@ export function InvitationDialog({
                                                 className="h-7 px-3 text-xs"
                                                 onClick={async () => {
                                                     await triggerAcceptProjectInvitation(inv.id)
+                                                    const updated = await triggerGetProjectInvitationById()
                                                     onAccept?.(inv.id)
+                                                    if (updated?.data.projectId) {
+                                                        navigate(`/dashboard/project/${updated.data.projectId}`)
+                                                    }
                                                 }}
                                             >
                                                 Accept

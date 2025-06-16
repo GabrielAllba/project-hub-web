@@ -13,7 +13,6 @@ import { EmptyState } from "./empty-state"
 
 export const DeveloperSection = ({ projectId }: { projectId: string }) => {
     const [members, setMembers] = useState<ProjectUserResponseDTO[]>([])
-    const [visibleCount, setVisibleCount] = useState(2)
     const [openDialog, setOpenDialog] = useState(false)
     const { triggerGetProjectMembers } = useGetProjectMembers(projectId)
 
@@ -37,7 +36,7 @@ export const DeveloperSection = ({ projectId }: { projectId: string }) => {
             <Separator />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 ">
-                {members.slice(0, visibleCount).map((member) => (
+                {members.map((member) => (
                     <Card key={member.id} className="rounded-sm">
                         <CardHeader className="flex flex-row items-center gap-4">
                             <Avatar>
@@ -63,18 +62,6 @@ export const DeveloperSection = ({ projectId }: { projectId: string }) => {
                 )}
             </div>
 
-            {visibleCount < members.length && (
-                <div className="pt-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-blue-600 hover:underline"
-                        onClick={() => setVisibleCount((v) => v + 3)}
-                    >
-                        Load More
-                    </Button>
-                </div>
-            )}
 
             <AddMemberModal
                 projectId={projectId}

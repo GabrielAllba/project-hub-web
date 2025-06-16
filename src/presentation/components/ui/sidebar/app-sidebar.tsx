@@ -59,7 +59,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const proyekNavItems = projects.map((project) => ({
     name: project.name,
-    url: `/projects/${project.projectId}`,
+    url: `/dashboard/project/${project.projectId}`,
     icon: IconFileWord,
   }))
 

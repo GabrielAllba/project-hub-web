@@ -7,9 +7,10 @@ import {
     CartesianGrid,
     Legend,
     XAxis,
-    YAxis
+    YAxis,
 } from "recharts"
 
+import { useGetProjectWorkSummary } from "@/shared/hooks/use-get-project-work-summary"
 import { useIsMobile } from "@/shared/hooks/use-mobile"
 import {
     Card,
@@ -41,78 +42,57 @@ type ChartEntry = {
     todo: number
     inProgress: number
     done: number
-    date: string
 }
-
-const rawData: ChartEntry[] = [
-    { name: "Alice", todo: 2, inProgress: 3, done: 4, date: "2024-06-01" },
-    { name: "Bob", todo: 1, inProgress: 4, done: 2, date: "2024-06-05" },
-    { name: "Charlie", todo: 0, inProgress: 2, done: 6, date: "2024-06-07" },
-    { name: "Alice", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "Bob", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "Charlie", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "A", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "B", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "C", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "D", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "E", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "F", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "G", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "H", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "I", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "J", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "K", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "L", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "M", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "N", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "O", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "P", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "Q", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "R", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "S", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "T", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "U", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "V", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "W", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "X", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "Y", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-    { name: "Z", todo: 1, inProgress: 1, done: 3, date: "2024-06-10" },
-    { name: "AA", todo: 3, inProgress: 0, done: 1, date: "2024-06-11" },
-    { name: "AB", todo: 2, inProgress: 1, done: 5, date: "2024-06-12" },
-]
 
 const chartConfig = {
     todo: {
         label: "To Do",
-        color: "#C084FC", // ungu pastel yang lebih kuat
+        color: "#C084FC", // purple
     },
     inProgress: {
         label: "In Progress",
-        color: "#60A5FA", // biru lembut tapi jelas
+        color: "#60A5FA", // blue
     },
     done: {
         label: "Done",
-        color: "#4ADE80", // hijau pastel tapi tegas
+        color: "#4ADE80", // green
     },
 }
 
-
-export function ChartAreaInteractive() {
+export function ChartAreaInteractive({ projectId }: { projectId: string }) {
     const isMobile = useIsMobile()
-    const [timeRange, setTimeRange] = React.useState("90d")
+    const [timeRange, setTimeRange] = React.useState("3m")
+
+    const {
+        triggerGetProjectWorkSummary,
+        triggerGetProjectWorkSummaryResponse,
+        triggerGetProjectWorkSummaryLoading
+    } = useGetProjectWorkSummary(projectId)
 
     React.useEffect(() => {
         if (isMobile) setTimeRange("7d")
     }, [isMobile])
 
-    const filteredData = React.useMemo(() => {
-        const today = new Date("2024-06-13")
-        const range = timeRange === "30d" ? 30 : timeRange === "7d" ? 7 : 90
-        const start = new Date(today)
-        start.setDate(today.getDate() - range)
+    React.useEffect(() => {
+        if (projectId && timeRange) {
+            triggerGetProjectWorkSummary(timeRange)
+        }
+    }, [projectId, timeRange])
 
-        return rawData.filter((d) => new Date(d.date) >= start)
-    }, [timeRange])
+    const chartData: ChartEntry[] = React.useMemo(() => {
+        if (!triggerGetProjectWorkSummaryResponse?.data) return []
+
+        if (triggerGetProjectWorkSummaryResponse.data.length > 0) {
+
+            return triggerGetProjectWorkSummaryResponse.data.map((entry) => ({
+                name: entry.email ?? "Unassigned",
+                todo: entry.todo ?? 0,
+                inProgress: entry.inProgress ?? 0,
+                done: entry.done ?? 0,
+            }))
+        }
+        return []
+    }, [triggerGetProjectWorkSummaryResponse?.data])
 
     return (
         <Card className="@container/card rounded-sm">
@@ -126,11 +106,11 @@ export function ChartAreaInteractive() {
                     <ToggleGroup
                         type="single"
                         value={timeRange}
-                        onValueChange={setTimeRange}
+                        onValueChange={(val) => val && setTimeRange(val)}
                         variant="outline"
                         className="hidden *:data-[slot=toggle-group-item]:!px-4 @[767px]/card:flex"
                     >
-                        <ToggleGroupItem value="90d">Last 3 months</ToggleGroupItem>
+                        <ToggleGroupItem value="3m">Last 3 months</ToggleGroupItem>
                         <ToggleGroupItem value="30d">Last 30 days</ToggleGroupItem>
                         <ToggleGroupItem value="7d">Last 7 days</ToggleGroupItem>
                     </ToggleGroup>
@@ -142,38 +122,47 @@ export function ChartAreaInteractive() {
                             <SelectValue placeholder="Last 3 months" />
                         </SelectTrigger>
                         <SelectContent className="rounded-xl">
-                            <SelectItem value="90d">Last 3 months</SelectItem>
+                            <SelectItem value="3m">Last 3 months</SelectItem>
                             <SelectItem value="30d">Last 30 days</SelectItem>
                             <SelectItem value="7d">Last 7 days</SelectItem>
                         </SelectContent>
                     </Select>
                 </CardAction>
             </CardHeader>
+
             <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
-                <div className="overflow-x-auto">
-                    <ChartContainer config={chartConfig} className="h-[300px] w-[1500px]">
-                        <BarChart width={1500} height={300} data={filteredData}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="name" />
-                            <YAxis />
-                            <Legend />
-                            <ChartTooltip
-                                content={
-                                    <ChartTooltipContent
-                                        indicator="dot"
-                                        labelFormatter={(val) => `Person: ${val}`}
-                                    />
-                                }
-                            />
-                            <Bar dataKey="todo" fill={chartConfig.todo.color} />
-                            <Bar dataKey="inProgress" fill={chartConfig.inProgress.color} />
-                            <Bar dataKey="done" fill={chartConfig.done.color} />
-                        </BarChart>
-                    </ChartContainer>
-                </div>
+                {triggerGetProjectWorkSummaryLoading ? (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+                        Loading chart data...
+                    </div>
+                ) : chartData.length === 0 ? (
+                    <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
+                        No data available for this range.
+                    </div>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <ChartContainer config={chartConfig} className="h-[300px] min-w-[1500px]">
+                            <BarChart width={1500} height={300} data={chartData}>
+                                <CartesianGrid strokeDasharray="3 3" />
+                                <XAxis dataKey="name" />
+                                <YAxis />
+                                <Legend />
+                                <ChartTooltip
+                                    content={
+                                        <ChartTooltipContent
+                                            indicator="dot"
+                                            labelFormatter={(val) => `User: ${val}`}
+                                        />
+                                    }
+                                />
+                                <Bar dataKey="todo" fill={chartConfig.todo.color} />
+                                <Bar dataKey="inProgress" fill={chartConfig.inProgress.color} />
+                                <Bar dataKey="done" fill={chartConfig.done.color} />
+                            </BarChart>
+                        </ChartContainer>
+                    </div>
+                )}
             </CardContent>
-
-
         </Card>
     )
 }
