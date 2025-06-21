@@ -6,7 +6,13 @@ import type { ProjectHubServiceRepository } from "@/infrastructure/repositories/
 export class GetTimelineProjectSprintsUseCase {
     constructor(private readonly projectHubRepo: ProjectHubServiceRepository) { }
 
-    async execute(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
-        return await this.projectHubRepo.getTimelineProjectSprints(token, projectId, page, size);
+    async execute(
+        token: string,
+        projectId: string,
+        page: number,
+        size: number,
+        year: number
+    ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+        return await this.projectHubRepo.getTimelineProjectSprints(token, projectId, page, size, year);
     }
 }

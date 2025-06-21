@@ -46,25 +46,34 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
     const isNoGoalSelected = selectedGoalIds.has(NO_GOAL_ID)
 
     return (
-        <Card className="w-full rounded-sm border bg-gray-50 p-3 shadow-none">
-            <div className="flex items-center justify-between mb-0">
-                <h4 className="text-sm font-semibold">Product Goal</h4>
-                <X className="w-4 h-4 text-muted-foreground cursor-pointer" />
+        <Card className="w-full rounded-lg border border-zinc-200 bg-gray-50 p-4 shadow-none">
+            <div className="flex items-center justify-between mb-4">
+                <h4 className="text-base font-semibold text-zinc-800">🎯 Product Goals</h4>
+                <X className="w-4 h-4 text-zinc-400 hover:text-zinc-600 cursor-pointer transition-colors" />
             </div>
 
             <ScrollArea className="h-[300px] pr-1.5">
-                <div className="space-y-1.5">
+                <div className="space-y-2">
+                    {/* No Goal Item */}
                     <div
-                        className={cn(
-                            "bg-white w-full px-3 py-2 rounded-md border text-sm flex items-center gap-2 cursor-pointer",
-                            isNoGoalSelected && "bg-blue-100 border border-blue-400",
-                        )}
                         onClick={() => toggleSelectGoal(NO_GOAL_ID)}
+                        className={cn(
+                            "w-full px-3 py-2 rounded-md border flex items-center gap-2 text-sm cursor-pointer transition-colors",
+                            isNoGoalSelected
+                                ? "bg-blue-50 border-blue-400 text-blue-700"
+                                : "bg-white border-zinc-200 hover:bg-zinc-50"
+                        )}
                     >
-                        <Flag className={cn("w-4 h-4 text-muted-foreground", isNoGoalSelected && "text-blue-600")} />
-                        <span className={isNoGoalSelected ? "text-blue-600" : ""}>No product goal</span>
+                        <Flag
+                            className={cn(
+                                "w-4 h-4",
+                                isNoGoalSelected ? "text-blue-600" : "text-zinc-400"
+                            )}
+                        />
+                        <span>{isNoGoalSelected ? "No product goal (selected)" : "No product goal"}</span>
                     </div>
 
+                    {/* All Goal Items */}
                     {goals.map((goal) => (
                         <ProductGoalItem
                             key={goal.id}
@@ -78,33 +87,34 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                 </div>
             </ScrollArea>
 
+            {/* Load more */}
             {hasMore && (
-                <div className="flex justify-center mt-2">
-                    <Button variant="outline" size="sm" onClick={loadMoreGoals}>
+                <div className="flex justify-center mt-4">
+                    <Button variant="outline" size="sm" className="rounded-full border-zinc-300 text-zinc-600 hover:bg-zinc-50" onClick={loadMoreGoals}>
                         Load More
                     </Button>
                 </div>
             )}
 
+            {/* Add new goal input */}
             {!isAdding ? (
                 <button
                     onClick={() => setIsAdding(true)}
-                    className="text-sm text-blue-600 hover:underline hover:cursor-pointer mt-2"
+                    className="text-sm text-blue-600 hover:underline hover:cursor-pointer mt-4"
                 >
                     + Create product goal
                 </button>
             ) : (
-                <div className="mt-2">
+                <div className="mt-4">
                     <Input
                         value={newGoalTitle}
                         onChange={(e) => setNewGoalTitle(e.target.value)}
-                        placeholder="Product goal title"
-                        className="text-sm rounded-sm"
+                        placeholder="New product goal title"
+                        className="text-sm rounded-md border-zinc-300 focus:ring-blue-500 focus:border-blue-500"
                         autoFocus
                         onKeyDown={async (e) => {
-                            if (e.key === "Enter") {
-                                await handleAddGoal()
-                            } else if (e.key === "Escape") {
+                            if (e.key === "Enter") await handleAddGoal()
+                            else if (e.key === "Escape") {
                                 setIsAdding(false)
                                 setNewGoalTitle("")
                             }
@@ -113,5 +123,6 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                 </div>
             )}
         </Card>
+
     )
 }

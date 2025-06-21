@@ -26,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu"
 import { Input } from "../ui/input"
+import { BacklogDetailDrawer } from "../drawer/backlog-detail-drawer"
 
 interface ListTabProps {
   projectId: string
@@ -96,7 +97,7 @@ export const ListTab = ({ projectId }: ListTabProps) => {
             {/* Status filter */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline"      className="flex items-center gap-1">
+                <Button variant="outline" className="flex items-center gap-1">
                   <Filter className="h-4 w-4 mr-1" />
                   Status
                   {selectedStatuses.length > 0 && (
@@ -249,7 +250,7 @@ export const ListTab = ({ projectId }: ListTabProps) => {
         )}
 
         {/* Main content */}
-        <div className="flex gap-6">
+        <div className="flex gap-6 ">
           {showProductGoals && (
             <div className="w-[280px]">
               <ProductGoalsSection projectId={projectId} />
@@ -264,6 +265,7 @@ export const ListTab = ({ projectId }: ListTabProps) => {
               searchQuery={searchQuery}
             />
           </div>
+          <BacklogDetailDrawer />
         </div>
       </div>
     </ProductGoalsProvider>

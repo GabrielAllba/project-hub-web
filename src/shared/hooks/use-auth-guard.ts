@@ -2,6 +2,7 @@ import { ValidateTokenUseCase } from "@/application/usecases/validate-token-usec
 import { AuthenticationServiceRepository } from "@/infrastructure/repositories/authentication-service-repository";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import useSWR from "swr";
 
 const validateTokenUseCase = new ValidateTokenUseCase(new AuthenticationServiceRepository());
@@ -23,6 +24,7 @@ export function useAuthGuard() {
     if (error || !token) {
       localStorage.removeItem("accessToken");
       navigate("/login", { replace: true });
+      toast.info("Your session has expired")
     }
   }, [error, navigate, token]);
 

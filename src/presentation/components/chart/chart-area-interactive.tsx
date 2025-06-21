@@ -36,6 +36,8 @@ import {
     ToggleGroup,
     ToggleGroupItem,
 } from "../ui/toggle-group"
+import { EmptyStateIllustration } from "../empty/empty-state"
+import { LoadingSpinner } from "../loading/loading-spinner"
 
 type ChartEntry = {
     name: string
@@ -47,16 +49,17 @@ type ChartEntry = {
 const chartConfig = {
     todo: {
         label: "To Do",
-        color: "#C084FC", // purple
+        color: "#9CA3AF", // gray-400 (neutral, cocok untuk belum dikerjakan)
     },
     inProgress: {
         label: "In Progress",
-        color: "#60A5FA", // blue
+        color: "#60A5FA", // blue-400
     },
     done: {
         label: "Done",
-        color: "#4ADE80", // green
+        color: "#C084FC", // purple-400
     },
+
 }
 
 export function ChartAreaInteractive({ projectId }: { projectId: string }) {
@@ -133,11 +136,11 @@ export function ChartAreaInteractive({ projectId }: { projectId: string }) {
             <CardContent className="px-2 pt-4 sm:px-6 sm:pt-6">
                 {triggerGetProjectWorkSummaryLoading ? (
                     <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-                        Loading chart data...
+                        <LoadingSpinner message="Loading chart data..."></LoadingSpinner>
                     </div>
                 ) : chartData.length === 0 ? (
                     <div className="flex h-[300px] items-center justify-center text-sm text-muted-foreground">
-                        No data available for this range.
+                        <EmptyStateIllustration type="no-work-items"></EmptyStateIllustration>
                     </div>
                 ) : (
                     <div className="overflow-x-auto">

@@ -14,16 +14,18 @@ import type { EditBacklogPriorityRequestDTO } from "@/domain/dto/req/edit-backlo
 import type { EditBacklogTitleRequestDTO } from "@/domain/dto/req/edit-backlog-title-req";
 import type { EditSprintGoalAndDatesRequestDTO } from "@/domain/dto/req/edit-sprint-goal-and-dates-req";
 import type { RenameProductGoalRequestDTO } from "@/domain/dto/req/rename-product-goal-req";
+import type { RenameProjectRequestDTO } from "@/domain/dto/req/rename-project-req";
 import type { ReorderProductBacklogRequestDTO } from "@/domain/dto/req/reorder-product-backlog-req";
 import type { CompleteSprintInfoResponseDTO } from "@/domain/dto/res/complete-sprint-info-res";
 import type { InvitationResponseDTO } from "@/domain/dto/res/invitation-res";
 import type { ProjectBacklogSummaryResponseDTO } from "@/domain/dto/res/project-backlog-summary-res";
 import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res";
+import type { SprintOverviewResponseDTO } from "@/domain/dto/res/sprint-overview-res";
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
+import type { UserTaskDistributionResponseDTO } from "@/domain/dto/res/user-task-distribution-res";
 import type { UserWorkItemSummaryResponseDTO } from "@/domain/dto/res/user-work-item-summary-res";
 import type { ProductBacklog } from "@/domain/entities/product-backlog";
 import type { ProductGoal } from "@/domain/entities/product-goal";
-import type { Project } from "@/domain/entities/project";
 import type { ProjectSummary } from "@/domain/entities/project-summary";
 import type { Team } from "@/domain/entities/team";
 import type { TeamSummary } from "@/domain/entities/team-summary";
@@ -46,7 +48,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
 
-  async createProject(token: string, data: CreateProjectRequestDTO): Promise<BaseResponse<Project>> {
+  async createProject(token: string, data: CreateProjectRequestDTO): Promise<BaseResponse<ProjectSummary>> {
     const response = await projectHubService.post(
       "/project",
       data,
@@ -312,7 +314,13 @@ export class ProjectHubServiceRepository {
 
     return response.data;
   }
-  async getTimelineProjectSprints(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+  async getTimelineProjectSprints(
+    token: string,
+    projectId: string,
+    page: number,
+    size: number,
+    year: number
+  ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
     const response = await projectHubService.get(`/project/${projectId}/sprints/timeline`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -320,11 +328,13 @@ export class ProjectHubServiceRepository {
       params: {
         page,
         size,
+        year,
       },
     });
 
     return response.data;
   }
+
   async getProjectSprintsInProgress(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
     const response = await projectHubService.get(`/project/${projectId}/sprints/in_progress`, {
       headers: {
@@ -347,8 +357,26 @@ export class ProjectHubServiceRepository {
 
     return response.data;
   }
+  async getSprintOverview(token: string, sprintId: string): Promise<BaseResponse<SprintOverviewResponseDTO>> {
+    const response = await projectHubService.get(`/sprint/${sprintId}/overview`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
 
-  async getProjectById(token: string, projectId: string): Promise<BaseResponse<Project>> {
+    return response.data;
+  }
+  async getSprintTaskDistribution(token: string, sprintId: string): Promise<BaseResponse<UserTaskDistributionResponseDTO[]>> {
+    const response = await projectHubService.get(`/sprint/${sprintId}/task_distribution`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async getProjectById(token: string, projectId: string): Promise<BaseResponse<ProjectSummary>> {
     const response = await projectHubService.get(`/project/${projectId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -394,6 +422,16 @@ export class ProjectHubServiceRepository {
 
   async deleteBacklog(token: string, backlogId: string): Promise<BaseResponse<void>> {
     const response = await projectHubService.delete(`/product_backlog/${backlogId}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async deleteProject(token: string, projectId: string): Promise<BaseResponse<void>> {
+    const response = await projectHubService.delete(`/project/${projectId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -496,6 +534,17 @@ export class ProjectHubServiceRepository {
 
   async editBacklogTitle(token: string, data: EditBacklogTitleRequestDTO): Promise<BaseResponse<ProductBacklog>> {
     const response = await projectHubService.put(`/product_backlog/edit_backlog_title`,
+      data, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    return response.data;
+  }
+
+  async renameProject(token: string, data: RenameProjectRequestDTO): Promise<BaseResponse<ProjectSummary>> {
+    const response = await projectHubService.put(`/project/rename`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,

@@ -36,6 +36,7 @@ import {
     PopoverDialogContent,
     PopoverDialogTrigger,
 } from "../ui/popover-dialog"
+import type { BaseResponse } from "@/domain/dto/base-response"
 
 const sprintSchema = z.object({
     goal: z.string().min(0, "Sprint goal is required"),
@@ -76,33 +77,37 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
         watchEndDate?.toISOString() !== initialValues.endDate?.toISOString()
 
     const onSubmit = async (data: SprintFormValues) => {
-        const { startDate, endDate } = data
+        const { startDate, endDate, goal } = data
 
         const start = startDate ? dayjs(startDate) : null
         const end = endDate ? dayjs(endDate) : null
 
-        if (start && end) {
-            if (start.isAfter(end)) {
-                toast.error("Start date cannot be after end date.")
-                return
-            }
+        if (start && end && start.isAfter(end)) {
+            toast.error("Start date cannot be after end date.")
+            return
         }
 
         try {
             await triggerEditSprintGoalAndDates({
                 sprintId: sprint.id,
-                sprintGoal: data.goal?.trim() ?? null,
-                startDate: startDate ? dayjs(startDate).format("YYYY-MM-DD HH:mm:ss.SSS") : null,
-                endDate: endDate ? dayjs(endDate).format("YYYY-MM-DD HH:mm:ss.SSS") : null,
+                sprintGoal: goal?.trim() ?? null,
+                startDate: start ? start.format("YYYY-MM-DD HH:mm:ss.SSS") : null,
+                endDate: end ? end.format("YYYY-MM-DD HH:mm:ss.SSS") : null,
             })
 
             toast.success("Sprint updated successfully!")
             onEditSprint(sprint.id)
             setOpen(false)
         } catch (err) {
-            toast.error("Failed to update sprint. " + err)
+            const baseError = err as BaseResponse<null>
+            toast.error("Failed to update sprint. " + baseError.message)
+
+            // rollback form to original state
+            form.reset(initialValues)
         }
+
     }
+
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

@@ -3,4 +3,5 @@ export interface GetMeResponseDTO {
   email: string;
   username: string;
   isEmailVerified: boolean;
+  isUserFirstTime: boolean;
 }

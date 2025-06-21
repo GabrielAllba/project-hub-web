@@ -1,23 +1,19 @@
-import { useState } from "react";
-import { toast } from "sonner";
-
-
-
-import { Button } from "../ui/button";
+import { useState } from "react"
+import { Button } from "../ui/button"
 import {
   Dialog,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
-import { useCreateProject } from "@/shared/hooks/use-create-project";
+} from "../ui/dialog"
+import { Input } from "../ui/input"
+import { useProjects } from "@/shared/contexts/project-context"
 
 interface NewProjectModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  onCreated: () => void;
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onCreated: () => void
 }
 
 export const NewProjectModal = ({
@@ -25,39 +21,31 @@ export const NewProjectModal = ({
   onOpenChange,
   onCreated,
 }: NewProjectModalProps) => {
-  const [projectName, setProjectName] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-
-  const {
-    triggerCreateProject,
-    triggerCreateProjectLoading,
-  } = useCreateProject();
+  const [projectName, setProjectName] = useState<string>("")
+  const [isCreating, setIsCreating] = useState(false)
+  const { createProject } = useProjects()
 
   const handleCreate = async () => {
-    if (!projectName.trim()) {
-      toast.error("Nama proyek tidak boleh kosong");
-      return;
-    }
+    if (!projectName.trim()) return
 
-    const response = await triggerCreateProject({
-      name: projectName,
-      description,
-    });
+    setIsCreating(true)
+    const created = await createProject(projectName.trim())
+    setIsCreating(false)
 
-    if (response.status=== "success") {
-      toast.success("Berhasil membuat proyek", {
-        description: response.message,
-      });
-      setProjectName("");
-      setDescription("");
-      onOpenChange(false);
-      onCreated();
-    } else {
-      toast.error("Gagal membuat proyek", {
-        description: response.message,
-      });
+    if (created) {
+      setProjectName("")
+      onOpenChange(false)
+      onCreated()
     }
-  };
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") handleCreate()
+    if (e.key === "Escape") {
+      setProjectName("")
+      onOpenChange(false)
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -72,28 +60,27 @@ export const NewProjectModal = ({
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             maxLength={255}
-          />
-          <Input
-            placeholder="Deskripsi"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            maxLength={255}
+            onKeyDown={handleKeyDown}
+            autoFocus
           />
         </div>
 
         <DialogFooter>
           <Button
             variant="outline"
-            onClick={() => onOpenChange(false)}
-            disabled={triggerCreateProjectLoading}
+            onClick={() => {
+              setProjectName("")
+              onOpenChange(false)
+            }}
+            disabled={isCreating}
           >
             Batal
           </Button>
-          <Button onClick={handleCreate} disabled={triggerCreateProjectLoading}>
-            {triggerCreateProjectLoading ? "Membuat..." : "Buat"}
+          <Button onClick={handleCreate} disabled={isCreating}>
+            {isCreating ? "Membuat..." : "Buat"}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  );
-};
+  )
+}

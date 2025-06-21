@@ -12,24 +12,27 @@ async function fetcher(
     _: string,
     { arg }: { arg: EditSprintGoalAndDatesRequestDTO }
 ): Promise<BaseResponse<SprintResponseDTO>> {
-    try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-            throw new Error("No access token found");
-        }
 
-        const result = await editSprintGoalAndDatesUseCase.execute(token, arg);
-        return result;
-    } catch (err) {
-        return convertAxiosErrorToBaseResponse<SprintResponseDTO>(err);
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+        throw new Error("No access token found");
     }
+
+    const result = await editSprintGoalAndDatesUseCase.execute(token, arg);
+    return result;
+
 }
 
 export function useEditSprintGoalAndDates() {
     const { trigger, data, isMutating } = useSWRMutation("/sprint/edit_goal_and_dates", fetcher);
 
     const triggerEditSprintGoalAndDates = async (payload: EditSprintGoalAndDatesRequestDTO): Promise<BaseResponse<SprintResponseDTO>> => {
-        return await trigger(payload);
+        try {
+            return await trigger(payload);
+        } catch (err) {
+            throw convertAxiosErrorToBaseResponse<SprintResponseDTO>(err);
+
+        }
     };
 
     return {

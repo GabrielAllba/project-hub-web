@@ -106,7 +106,7 @@ export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
             className="hover:cursor-pointer mt-2"
             variant="ghost"
             size="sm"
-            onClick={handleShowInput}>+ Tambah tugas
+            onClick={handleShowInput}>+ Add Task
         </Button>
     )
 }

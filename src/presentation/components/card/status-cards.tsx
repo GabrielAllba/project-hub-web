@@ -23,7 +23,7 @@ export function StatusCards({
         subtitle: string
     ) => (
         <Card className="rounded-sm">
-            <CardHeader className="pb-2 flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between">
                 <div className="flex items-center">
                     <div className={`w-3 h-3 rounded-full ${color} mr-2`} />
                     <CardTitle className="text-lg font-medium">{title}</CardTitle>

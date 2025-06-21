@@ -1,5 +1,6 @@
 "use client"
 
+import type { BaseResponse } from "@/domain/dto/base-response"
 import { useCompleteSprint } from "@/shared/hooks/use-complete-sprint"
 import { useGetCompleteSprintInfo } from "@/shared/hooks/use-get-complete-sprint-info"
 import { BadgeCheck, Trophy } from "lucide-react"
@@ -37,21 +38,27 @@ export function CompleteSprintModal({
     const { triggerCompleteSprint } = useCompleteSprint(sprintId || "")
     const { triggerGetCompleteSprintInfo } = useGetCompleteSprintInfo(sprintId || "")
 
-    const [completedCount, setCompletedCount] = useState<number>() 
-    const [openCount, setOpenCount] = useState<number>() 
+    const [completedCount, setCompletedCount] = useState<number>()
+    const [openCount, setOpenCount] = useState<number>()
 
     useEffect(() => {
         triggerGetCompleteSprintInfo().then((res) => {
             setCompletedCount(res.data.doneBacklogs)
             setOpenCount(res.data.notDoneBacklogs)
         })
-    } , [open])
+    }, [open])
 
     const handleComplete = async () => {
-        await triggerCompleteSprint()
-        onCompleteSprint(moveToSprintId === "backlog" ? null : moveToSprintId)
-        setOpen(false)
-        toast.success("Sprint completed successfully")
+        try {
+            await triggerCompleteSprint()
+            onCompleteSprint(moveToSprintId === "backlog" ? null : moveToSprintId)
+            setOpen(false)
+            toast.success("Sprint completed successfully")
+        } catch (err) {
+            const baseError = err as BaseResponse<null>
+            toast.error(baseError.message)
+
+        }
     }
 
     return (

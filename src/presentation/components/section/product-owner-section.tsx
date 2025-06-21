@@ -4,12 +4,12 @@ import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res"
 import { useGetProjectMembers } from "@/shared/hooks/use-get-project-members"
 import { Plus } from "lucide-react"
 import { useEffect, useState } from "react"
+import { EmptyStateIllustration } from "../empty/empty-state"
 import { AddMemberModal } from "../modal/add-member-modal"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
 import { Card, CardHeader, CardTitle } from "../ui/card"
 import { Separator } from "../ui/separator"
-import { EmptyState } from "./empty-state"
 
 export const ProductOwnerSection = ({ projectId }: { projectId: string }) => {
     const [members, setMembers] = useState<ProjectUserResponseDTO[]>([])
@@ -58,7 +58,9 @@ export const ProductOwnerSection = ({ projectId }: { projectId: string }) => {
                     </Card>
                 ))}
                 {members.length === 0 && (
-                    <EmptyState message="Belum ada anggota product owner yang ditambahkan." />
+                    <div className="col-span-full">
+                        <EmptyStateIllustration type="no-member"></EmptyStateIllustration>
+                    </div>
                 )}
             </div>
 

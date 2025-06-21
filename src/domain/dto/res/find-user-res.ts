@@ -3,4 +3,5 @@ export interface FindUserResponseDTO {
   email: string;
   username: string;
   isEmailVerified: boolean;
+  isUserFirstTime: boolean
 }

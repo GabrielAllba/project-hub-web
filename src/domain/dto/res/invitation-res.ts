@@ -4,8 +4,10 @@ export interface InvitationResponseDTO {
   role: string
   invitationId: string;
   projectId: string;
+  projectName: string;
   inviteeId: string;
   inviterId: string;
+  inviterUsername: string;
   invitedAt: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED"; 
 }

@@ -1,0 +1,95 @@
+import { IconHammerOff, IconUserOff } from "@tabler/icons-react"
+import { Calendar, Filter, ListTodo, SearchX } from "lucide-react"
+
+type EmptyStateProps = {
+    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member"
+    size?: "sm"
+}
+
+export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) => {
+    const sizeClasses = {
+        sm: {
+            iconPadding: "p-2",
+            icon: "w-10 h-10",
+            heading: "text-base",
+            text: "text-sm",
+        },
+    }[size]
+
+
+    const render = (
+        icon: React.ReactNode,
+        heading: string,
+        text: string,
+        bgColor: string
+    ) => (
+        <div className="flex-1 flex items-center justify-center">
+            <div className="text-center max-w-md mx-auto p-8">
+                <div className="mb-6 relative">
+                    <div
+                        className={`mx-auto ${sizeClasses.icon} aspect-square rounded-full flex items-center justify-center ${sizeClasses.iconPadding} ${bgColor}`}
+                    >
+                        {icon}
+                    </div>
+                </div>
+                <h3 className={`${sizeClasses.heading} font-semibold text-gray-900 mb-2`}>{heading}</h3>
+                <p className={`text-gray-500 mb-4 ${sizeClasses.text}`}>{text}</p>
+            </div>
+        </div>
+    )
+
+    if (type === "no-sprints") {
+        return render(
+            <Calendar className={`${sizeClasses.icon} text-blue-500`} />,
+            "No Sprints Found",
+            "This year doesn't have any sprints yet. Try changing another year to view timeline.",
+            "bg-gradient-to-br from-blue-100 to-blue-200"
+        )
+    }
+
+    if (type === "no-search") {
+        return render(
+            <SearchX className={`${sizeClasses.icon} text-orange-500`} />,
+            "No Search Results",
+            "We couldn't find any sprints matching your search. Try using different keywords or check your spelling.",
+            "bg-gradient-to-br from-orange-100 to-orange-200"
+        )
+    }
+
+    if (type === "no-filter") {
+        return render(
+            <Filter className={`${sizeClasses.icon} text-purple-500`} />,
+            "No Matching Sprints",
+            "No sprints match your current filter criteria. Try adjusting your filters to see more results.",
+            "bg-gradient-to-br from-purple-100 to-purple-200"
+        )
+    }
+
+    if (type === "no-task") {
+        return render(
+            <ListTodo className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Tasks Available",
+            "There are currently no tasks. Create tasks to get started with your work.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+
+    if (type === "no-work-items") {
+        return render(
+            <IconHammerOff className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Work Items Available",
+            "There are currently no work items.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+    if (type === "no-member") {
+        return render(
+            <IconUserOff className={`${sizeClasses.icon} text-blue-600`} />,
+            "No member Available",
+            "There are currently no member.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+
+    return null
+}

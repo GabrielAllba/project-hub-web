@@ -4,6 +4,7 @@ import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
+import { EmptyStateIllustration } from "../empty/empty-state"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { SortableBacklog } from "./sortable-backlog"
@@ -41,7 +42,7 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
             onClick={props.onCreateSprint}
           >
             <Plus />
-            Buat Sprint
+            Create sprint
           </Button>
         </div>
       </div>
@@ -64,7 +65,7 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
             {/* Empty state */}
             {props.items.length === 0 && (
               <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px]">
-                {isDragActive ? "Drop items here" : "No items in this sprint"}
+                {isDragActive ? "Drop items here" : <EmptyStateIllustration size="sm" type="no-task"></EmptyStateIllustration>}
               </div>
             )}
           </div>

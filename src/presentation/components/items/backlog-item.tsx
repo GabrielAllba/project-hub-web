@@ -5,6 +5,7 @@ import {
     PRODUCT_BACKLOG_STATUS_OPTIONS,
     type ProjectRole
 } from "@/constants/constants"
+import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res"
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import type { User } from "@/domain/entities/user"
 import { useAssignBacklogUser } from "@/shared/hooks/use-assign-backlog-user"
@@ -29,6 +30,7 @@ import {
     Trash2
 } from "lucide-react"
 import { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { ProductGoalModal } from "../modal/product-goal-modal"
 import { AssigneeSelector } from "../selector/assignee-selector"
@@ -50,6 +52,8 @@ interface BacklogItemProps {
 }
 
 export function BacklogItem(props: BacklogItemProps) {
+    const navigate = useNavigate()
+
     const [assignee, setAssignee] = useState<User | null>(null)
     const [isEditingPoint, setIsEditingPoint] = useState(false)
     const [pointValue, setPointValue] = useState(props.backlog.point ?? 0)
@@ -77,8 +81,14 @@ export function BacklogItem(props: BacklogItemProps) {
                 roles.map(role => triggerGetProjectMembers(role))
             )
             const all = results.flatMap(r => r?.data || [])
-            const unique = Array.from(new Map(all.map(m => [m.id, m])).values())
-            setMembers(unique)
+            const unique: ProjectUserResponseDTO[] = Array.from(new Map(all.map(m => [m.id, m])).values())
+            const uniqueUsers: User[] = unique.map((dto) => ({
+                ...dto,
+                isEmailVerified: false, // default/fake value or derive from dto if available
+                isUserFirstTime: false  // same as above
+            }))
+
+            setMembers(uniqueUsers)
         }
         fetch()
     }, [props.backlog.projectId])
@@ -261,8 +271,14 @@ export function BacklogItem(props: BacklogItemProps) {
                     </div>
 
                     <div className="flex justify-end gap-1">
-                        <Eye className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer" />
-                        <Pencil className="w-4 h-4 text-muted-foreground hover:text-primary cursor-pointer" />
+                        <Eye
+                            className="w-4 h-4 text-muted-foreground hover:text-blue-500 cursor-pointer"
+                            onClick={() => {
+                                const search = new URLSearchParams(window.location.search)
+                                search.set("backlogId", props.backlog.id)
+                                navigate({ search: search.toString() }, { replace: true })
+                            }}
+                        />
                         <Trash2
                             className="w-4 h-4 text-muted-foreground hover:text-red-500 cursor-pointer"
                             onClick={() =>

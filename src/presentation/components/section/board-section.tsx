@@ -1,10 +1,10 @@
 "use client"
 
-import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants";
-import type { ProductBacklog, ProductBacklogPriority, ProductBacklogStatus } from "@/domain/entities/product-backlog";
-import { useEditBacklogStatus } from "@/shared/hooks/use-edit-backlog-status"; // Import the missing hook
-import { useGetProductBacklogBySprint } from "@/shared/hooks/use-get-product-backlog-by-sprint";
-import { useReorderProductBacklog } from "@/shared/hooks/use-reorder-product-backlog";
+import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants"
+import type { ProductBacklog, ProductBacklogPriority, ProductBacklogStatus } from "@/domain/entities/product-backlog"
+import { useEditBacklogStatus } from "@/shared/hooks/use-edit-backlog-status"
+import { useGetProductBacklogBySprint } from "@/shared/hooks/use-get-product-backlog-by-sprint"
+import { useReorderProductBacklog } from "@/shared/hooks/use-reorder-product-backlog"
 import {
     closestCenter,
     DndContext,
@@ -15,12 +15,16 @@ import {
     type DragEndEvent,
     type DragOverEvent,
     type DragStartEvent,
-} from "@dnd-kit/core";
-import { arrayMove } from "@dnd-kit/sortable";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { BacklogCard } from "../card/backlog-card";
-import { DroppableContainerBoard } from "../containers/droppable-container-board";
-import { toast } from "sonner";
+} from "@dnd-kit/core"
+import { arrayMove } from "@dnd-kit/sortable"
+import { Loader2 } from "lucide-react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { toast } from "sonner"
+import { BacklogCard } from "../card/backlog-card"
+import { DroppableContainerBoard } from "../containers/droppable-container-board"
+import { EmptyStateIllustration } from "../empty/empty-state"
+import { BoardSkeleton } from "../loading/board-skeleton"
+import { Button } from "../ui/button"
 
 const CONTAINERS = [
     { id: "TODO" as ProductBacklogStatus, title: "To Do" },
@@ -30,51 +34,101 @@ const CONTAINERS = [
 
 interface BoardSectionProps {
     sprintId: string
-    statusFilters: ProductBacklogStatus[]
     priorityFilters: ProductBacklogPriority[]
 }
 
 export default function BoardSection(props: BoardSectionProps) {
     const [tasks, setTasks] = useState<ProductBacklog[]>([])
     const [activeTask, setActiveTask] = useState<ProductBacklog | null>(null)
-
-    // Add backup state for rollback functionality
     const [backupTasks, setBackupTasks] = useState<ProductBacklog[]>([])
 
-    const { triggerGetProductBacklogBySprint } = useGetProductBacklogBySprint(props.sprintId)
-    const { triggerReorderProductBacklog } = useReorderProductBacklog()
-    const { triggerEditBacklogStatus } = useEditBacklogStatus() // Declare the missing hook
+    // Load more functionality state
+    const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
+    const [hasMoreData, setHasMoreData] = useState(true)
+    const [isLoadingMore, setIsLoadingMore] = useState(false) // For load more button spinner
+    const [isInitialLoading, setIsInitialLoading] = useState(true) // NEW: True initially for skeleton
 
-    // Fetch tasks on sprint change
+    const [totalItems, setTotalItems] = useState(0)
+
+    const {
+        triggerGetProductBacklogBySprint,
+        // We will no longer directly use triggerGetProductBacklogBySprintLoading for the skeleton,
+        // instead, we manage `isInitialLoading` manually.
+    } = useGetProductBacklogBySprint(props.sprintId)
+    const { triggerReorderProductBacklog } = useReorderProductBacklog()
+    const { triggerEditBacklogStatus } = useEditBacklogStatus()
+
+    // Initial fetch and reset on sprint change
     useEffect(() => {
-        const fetchTasks = async () => {
+        const fetchInitialTasks = async () => {
+            setCurrentPage(DEFAULT_PAGE)
+            setHasMoreData(true)
+            setIsInitialLoading(true) // Indicate that initial loading has started
+
             const response = await triggerGetProductBacklogBySprint(props.sprintId, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+
             if (response.status === "success" && response.data) {
                 setTasks(response.data.content)
+                setTotalItems(response.data.totalElements || 0)
+                setHasMoreData(response.data.content.length === DEFAULT_PAGE_SIZE && !response.data.last)
             } else {
                 setTasks([])
+                setTotalItems(0)
+                setHasMoreData(false)
             }
+            setIsInitialLoading(false) // Initial loading finished
         }
 
-        if (props.sprintId) fetchTasks()
-    }, [props.sprintId])
+        if (props.sprintId) {
+            // Only fetch if sprintId is provided.
+            // Reset tasks and loading states on sprintId change
+            setTasks([]); // Clear tasks when sprintId changes
+            fetchInitialTasks();
+        }
+    }, [props.sprintId]); // Added triggerGetProductBacklogBySprint to deps
+
+    // Load more function
+    const loadMoreTasks = async () => {
+        // Prevent loading more if already loading, no more data, or initial load is ongoing
+        if (isLoadingMore || !hasMoreData || isInitialLoading) return
+
+        setIsLoadingMore(true)
+        const nextPage = currentPage + 1
+
+        try {
+            const response = await triggerGetProductBacklogBySprint(props.sprintId, nextPage, DEFAULT_PAGE_SIZE)
+
+            if (response.status === "success" && response.data) {
+                const newTasks = response.data.content
+
+                // Append new tasks to existing ones
+                setTasks((prevTasks) => [...prevTasks, ...newTasks])
+                setCurrentPage(nextPage)
+                setHasMoreData(newTasks.length === DEFAULT_PAGE_SIZE && !response.data.last)
+
+                toast.success(`Loaded ${newTasks.length} more tasks`)
+            } else {
+                setHasMoreData(false)
+                toast.info("No more tasks to load")
+            }
+        } catch (error) {
+            console.error("Failed to load more tasks:", error)
+            toast.error("Failed to load more tasks")
+        } finally {
+            setIsLoadingMore(false)
+        }
+    }
 
     // Apply filters to tasks
     const filteredTasks = useMemo(() => {
         return tasks.filter((task) => {
-            // Status filter - if filters are selected, task must match one of them
-            if (props.statusFilters.length > 0 && !props.statusFilters.includes(task.status)) {
-                return false
-            }
-
             // Priority filter - if filters are selected, task must match one of them
             if (props.priorityFilters.length > 0 && !props.priorityFilters.includes(task.priority)) {
                 return false
             }
-
             return true
         })
-    }, [tasks, props.statusFilters, props.priorityFilters])
+    }, [tasks, props.priorityFilters])
 
     const dragStateRef = useRef<{
         activeId: string | null
@@ -102,6 +156,7 @@ export default function BoardSection(props: BoardSectionProps) {
     function getTasksByStatus(status: ProductBacklogStatus): ProductBacklog[] {
         return filteredTasks.filter((task) => task.status === status)
     }
+
     function handleDragStart(event: DragStartEvent) {
         const { active } = event
         const activeId = active.id as string
@@ -268,9 +323,8 @@ export default function BoardSection(props: BoardSectionProps) {
                 `Task ID: ${dragState.activeId}\n` +
                 `Action: No change (dropped outside droppable area)\n` +
                 `Remains in: ${dragState.originalContainer} (position: ${dragState.originalPosition})\n\n` +
-                `No API call needed  task stays in original position.`,
+                `No API call needed - task stays in original position.`,
             )
-
 
             setActiveTask(null)
             return
@@ -350,7 +404,6 @@ export default function BoardSection(props: BoardSectionProps) {
                     `Backlog successfully updated from ${dragState.originalContainer} to ${dragState.currentContainer}`,
                 )
 
-
                 await triggerReorderProductBacklog({
                     activeId: dragState.activeId!,
                     originalContainer: props.sprintId,
@@ -362,8 +415,6 @@ export default function BoardSection(props: BoardSectionProps) {
                     backlogId: dragState.activeId!,
                     status: dragState.currentContainer as ProductBacklogStatus,
                 })
-
-
             } catch (error) {
                 console.error("Failed to reorder backlog:", error)
 
@@ -375,19 +426,11 @@ export default function BoardSection(props: BoardSectionProps) {
                 dragStateRef.current.insertPosition = dragStateRef.current.originalPosition
 
                 // Show error message
-
-                toast.error(
-                    `API Call Failed:\n\n` +
-                    `Error: ${error}` +
-                    `Task has been restored to its original position.`,
-                )
-
-
+                toast.error(`API Call Failed:\n\n` + `Error: ${error}\n` + `Task has been restored to its original position.`)
             }
         } else {
             // No change made
             toast.info(`No Change Made:\n\n` + `Task was dropped in the same position.\n` + `No API call needed.`)
-
         }
 
         setActiveTask(null)
@@ -400,43 +443,88 @@ export default function BoardSection(props: BoardSectionProps) {
 
     return (
         <div className="bg-background min-h-screen">
-            {/* Task Summary */}
-            <div className="mb-4 flex gap-4 text-sm text-muted-foreground">
-                <span>Total Tasks: {filteredTasks.length}</span>
-                <span>To Do: {getTaskCount("TODO")}</span>
-                <span>In Progress: {getTaskCount("INPROGRESS")}</span>
-                <span>Done: {getTaskCount("DONE")}</span>
-            </div>
-
-            {/* Empty State */}
-            {filteredTasks.length === 0 && (
-                <div className="flex flex-col items-center justify-center p-8 border border-dashed rounded-lg bg-muted/30">
-                    <p className="text-muted-foreground">No tasks match the current filters</p>
-                    <p className="text-sm text-muted-foreground mt-1">Try adjusting your filter criteria</p>
-                </div>
-            )}
-
-            {/* Drag and Drop Board */}
-            {filteredTasks.length > 0 && (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragStart={handleDragStart}
-                    onDragEnd={handleDragEnd}
-                    onDragOver={handleDragOver}
-                >
-                    <div className="flex gap-6 overflow-x-auto pb-4">
-                        {CONTAINERS.map((container) => (
-                            <DroppableContainerBoard
-                                key={container.id}
-                                id={container.id}
-                                title={container.title}
-                                tasks={getTasksByStatus(container.id)}
-                            />
-                        ))}
+            {isInitialLoading && filteredTasks.length != 0 ? (
+                // Display BoardSkeleton during initial load
+                <BoardSkeleton columnCount={3} cardCountPerColumn={3} />
+            ) : (
+                <>
+                    {/* Task Summary - Only show when not initially loading */}
+                    <div className="mb-4 flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span>Loaded Tasks: {tasks.length}</span>
+                        {totalItems > 0 && <span>Total Available: {totalItems}</span>}
+                        <span>Filtered Tasks: {filteredTasks.length}</span>
+                        <span>To Do: {getTaskCount("TODO")}</span>
+                        <span>In Progress: {getTaskCount("INPROGRESS")}</span>
+                        <span>Done: {getTaskCount("DONE")}</span>
                     </div>
-                    {activeTask && <DragOverlay>{<BacklogCard task={activeTask} isDragging />}</DragOverlay>}
-                </DndContext>
+
+                    {/* Empty State */}
+                    {filteredTasks.length === 0 && tasks.length === 0 && (
+                        <div className="flex flex-col items-center justify-center p-8 border border-dashed rounded-lg bg-muted/30">
+                            <EmptyStateIllustration size="sm" type="no-task"></EmptyStateIllustration>
+                        </div>
+                    )}
+
+                    {/* Filtered Empty State */}
+                    {filteredTasks.length === 0 && tasks.length > 0 && (
+                        <div className="flex flex-col items-center justify-center p-8 border border-dashed rounded-lg bg-muted/30">
+                            <p className="text-muted-foreground">No tasks match the current filters</p>
+                            <p className="text-sm text-muted-foreground mt-1">Try adjusting your filter criteria</p>
+                            {/* Load More Button inside filtered empty state */}
+                            {hasMoreData && (
+                                <Button onClick={loadMoreTasks} disabled={isLoadingMore} variant="outline" className="mt-4">
+                                    {isLoadingMore ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Loading...
+                                        </>
+                                    ) : (
+                                        "Load More Tasks"
+                                    )}
+                                </Button>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Drag and Drop Board */}
+                    {filteredTasks.length > 0 && (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragStart={handleDragStart}
+                            onDragEnd={handleDragEnd}
+                            onDragOver={handleDragOver}
+                        >
+                            <div className="flex gap-6 overflow-x-auto pb-4">
+                                {CONTAINERS.map((container) => (
+                                    <DroppableContainerBoard
+                                        key={container.id}
+                                        id={container.id}
+                                        title={container.title}
+                                        tasks={getTasksByStatus(container.id)}
+                                    />
+                                ))}
+                            </div>
+                            {activeTask && <DragOverlay>{<BacklogCard task={activeTask} isDragging />}</DragOverlay>}
+                        </DndContext>
+                    )}
+
+                    {/* Load More Button at Bottom - Only shows when initial load is complete and there's more data */}
+                    {hasMoreData && filteredTasks.length > 0 && (
+                        <div className="mt-6 flex justify-center">
+                            <Button onClick={loadMoreTasks} disabled={isLoadingMore} variant="outline" size="lg">
+                                {isLoadingMore ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Loading More Tasks...
+                                    </>
+                                ) : (
+                                    `Load More Tasks`
+                                )}
+                            </Button>
+                        </div>
+                    )}
+                </>
             )}
         </div>
     )

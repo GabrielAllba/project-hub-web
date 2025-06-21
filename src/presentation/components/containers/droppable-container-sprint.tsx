@@ -1,5 +1,6 @@
 "use client"
 
+import type { BaseResponse } from "@/domain/dto/base-response"
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import type { Sprint } from "@/domain/entities/sprint"
 import { useStartSprint } from "@/shared/hooks/use-start-sprint"
@@ -7,11 +8,13 @@ import { cn } from "@/shared/utils/merge-class"
 import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
+import { toast } from "sonner"
+import { EmptyStateIllustration } from "../empty/empty-state"
+import { CompleteSprintModal } from "../modal/complete-sprint-modal"
 import { EditSprintModal } from "../modal/edit-sprint-modal"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { SortableBacklog } from "./sortable-backlog"
-import { CompleteSprintModal } from "../modal/complete-sprint-modal"
 
 interface DroppableContainerSprintProps {
   containerName: string
@@ -37,7 +40,9 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
       await triggerStartSprint()
       props.onEditSprint(props.sprint.id)
     } catch (error) {
-      console.error("Failed to start sprint:", error)
+      const baseError = error as BaseResponse<null>
+      toast.error(baseError.message)
+
     }
   }
 
@@ -116,6 +121,7 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
         </div>
       </div>
 
+
       <div
         ref={setNodeRef}
         className={cn(
@@ -124,26 +130,30 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
         )}
         data-container-id={props.sprint.id}
       >
-        <SortableContext
-          items={props.items.map((item) => item.id)}
-          strategy={verticalListSortingStrategy}
-        >
-          <div className="flex flex-col flex-1">
-            {props.items.map((item) => (
-              <SortableBacklog
-                key={item.id}
-                backlog={item}
-                onDeleteBacklog={props.onDeleteBacklog}
-                onEditBacklog={props.onEditBacklog}
-              />
-            ))}
-            {props.items.length === 0 && (
-              <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px] italic">
-                {isDragActive ? "Drop items here" : "No items in this sprint"}
-              </div>
-            )}
-          </div>
-        </SortableContext>
+        {
+          !props.loadingBacklog && <SortableContext
+            items={props.items.map((item) => item.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="flex flex-col flex-1">
+              {props.items.map((item) => (
+                <SortableBacklog
+                  key={item.id}
+                  backlog={item}
+                  onDeleteBacklog={props.onDeleteBacklog}
+                  onEditBacklog={props.onEditBacklog}
+                />
+              ))}
+              {props.items.length === 0 && (
+                <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px]">
+                  {isDragActive ? "Drop items here" :
+                    <EmptyStateIllustration size="sm" type="no-task"></EmptyStateIllustration>}
+                </div>
+              )}
+            </div>
+          </SortableContext>
+        }
+
       </div>
     </>
 

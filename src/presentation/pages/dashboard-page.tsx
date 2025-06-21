@@ -1,9 +1,16 @@
+"use client"
 
-export function DashboardPage() {
+
+import { MyTasksSection } from "../components/section/my-tasks-section"
+import { ProjectHeaderSection } from "../components/section/project-header-section"
+import { ProjectSection } from "../components/section/project-section"
+
+export const DashboardPage = () => {
   return (
-    <div className="@container/main flex flex-1 flex-col gap-2">
-      <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-      </div>
+    <div className="space-y-6">
+      <ProjectHeaderSection />
+      <ProjectSection />
+      <MyTasksSection></MyTasksSection>
     </div>
-  );
+  )
 }

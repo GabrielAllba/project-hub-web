@@ -1,26 +1,20 @@
 "use client"
 
 import { DEFAULT_PAGE_SIZE } from "@/constants/constants"
-import type { ProjectInvitation } from "@/domain/entities/invitation"
+import type { InvitationResponseDTO } from "@/domain/dto/res/invitation-res"
 import { Button } from "@/presentation/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/presentation/components/ui/popover"
 import { ScrollArea } from "@/presentation/components/ui/scroll-area"
 import { Separator } from "@/presentation/components/ui/separator"
 import { useAcceptProjectInvitation } from "@/shared/hooks/use-accept-project-invitation"
-import { useGetProjectInvitationById } from "@/shared/hooks/use-get-project-invitation-by-id"
 import { useRejectProjectInvitation } from "@/shared/hooks/use-reject-project-invitation"
 import { cn } from "@/shared/utils/merge-class"
 import { Bell } from "lucide-react"
 import { useMemo, useState } from "react"
 import { useNavigate } from "react-router-dom"
 
-interface EnrichedInvitation extends ProjectInvitation {
-    inviterUsername?: string
-    projectName?: string
-}
-
 interface Props {
-    invitations: EnrichedInvitation[]
+    invitations: InvitationResponseDTO[]
     onAccept: (id: string) => void
     onReject: (id: string) => void
     loading?: boolean
@@ -53,7 +47,6 @@ export function InvitationDialog({
 
     const { triggerAcceptProjectInvitation } = useAcceptProjectInvitation("")
     const { triggerRejectProjectInvitation } = useRejectProjectInvitation("")
-    const { triggerGetProjectInvitationById } = useGetProjectInvitationById(hoveredInvitationId || "")
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -129,7 +122,6 @@ export function InvitationDialog({
                                                 className="h-7 px-3 text-xs"
                                                 onClick={async () => {
                                                     await triggerRejectProjectInvitation(inv.id)
-                                                    await triggerGetProjectInvitationById()
                                                     onReject?.(inv.id)
                                                 }}
                                             >
@@ -140,11 +132,10 @@ export function InvitationDialog({
                                                 className="h-7 px-3 text-xs"
                                                 onClick={async () => {
                                                     await triggerAcceptProjectInvitation(inv.id)
-                                                    const updated = await triggerGetProjectInvitationById()
                                                     onAccept?.(inv.id)
-                                                    if (updated?.data.projectId) {
-                                                        navigate(`/dashboard/project/${updated.data.projectId}`)
-                                                    }
+
+                                                    navigate(`/dashboard/project/${inv.projectId}`)
+
                                                 }}
                                             >
                                                 Accept

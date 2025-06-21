@@ -3,13 +3,13 @@ import type { SprintStatus } from "@/domain/entities/sprint"
 export const getSprintStatusColor = (status: SprintStatus): string => {
     switch (status) {
         case "COMPLETED":
-            return "bg-green-500"
+            return "bg-green-100 text-green-800"
         case "IN_PROGRESS":
-            return "bg-blue-500"
+            return "bg-blue-100 text-blue-800"
         case "NOT_STARTED":
-            return "bg-gray-300"
+            return "bg-gray-100 text-gray-800"
         default:
-            return "bg-gray-300"
+            return "bg-gray-100 text-gray-800"
     }
 }
 

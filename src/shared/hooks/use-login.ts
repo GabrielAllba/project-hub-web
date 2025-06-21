@@ -12,22 +12,19 @@ async function fetcher(
     _: string,
     { arg }: { arg: LoginRequestDTO }
 ): Promise<BaseResponse<LoginResponseDTO>> {
-    try {
-        const result = await loginUseCase.execute(arg);
-        return {
-            status: result.status,
-            message: "Login successful",
-            data: {
-                accessToken: result.data?.accessToken,
-            },
-        };
-    } catch (err) {
-        return convertAxiosErrorToBaseResponse<LoginResponseDTO>(err);
-    }
+    const result = await loginUseCase.execute(arg);
+    return {
+        status: result.status,
+        message: "Login successful",
+        data: {
+            accessToken: result.data?.accessToken,
+        },
+    };
 }
 
+
 export function useLogin() {
-    const { trigger, data, isMutating } = useSWRMutation(
+    const { trigger, data, error, isMutating } = useSWRMutation(
         "/auth/login",
         fetcher
     );
@@ -35,11 +32,16 @@ export function useLogin() {
     const triggerLogin = async (
         payload: LoginRequestDTO
     ): Promise<BaseResponse<LoginResponseDTO>> => {
-        return await trigger(payload);
+        try {
+            return await trigger(payload);
+        } catch (err) {
+            throw convertAxiosErrorToBaseResponse<LoginResponseDTO>(err);
+        }
     };
 
     return {
         triggerLogin,
+        triggerLoginErrror: error,
         triggerLoginResponse: data,
         triggerLoginLoading: isMutating,
     };
