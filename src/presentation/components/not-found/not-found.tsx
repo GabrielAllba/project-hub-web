@@ -1,31 +1,26 @@
-import { Frown } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "../ui/button";
+import { IconError404 } from "@tabler/icons-react"
+import { Link } from "react-router-dom"
 
-export function NotFoundPage() {
+export const NotFoundPage = () => {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-center">
-            <div className="space-y-6">
-                <Frown className="mx-auto h-20 w-20 text-primary animate-bounce-slow" /> {/* Larger icon, animated */}
-
-                <h1 className="text-7xl font-bold tracking-tight text-foreground sm:text-9xl">
-                    404
-                </h1>
-                <p className="text-xl font-medium text-muted-foreground sm:text-2xl">
-                    Page Not Found
-                </p>
-                <p className="max-w-md text-base text-gray-500 dark:text-gray-400 mx-auto">
-                    Oops! The page you're looking for doesn't exist or has been moved.
-                    Please check the URL or navigate back to the dashboard.
-                </p>
-                <div className="mt-8 flex justify-center">
-                    <Button asChild size="lg"> {/* Larger button */}
-                        <Link to="/dashboard/project">
-                            Go to Dashboard
-                        </Link>
-                    </Button>
+        <div className="h-screen w-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-blue-100 px-4">
+            <div className="text-center max-w-md">
+                <div className="flex justify-center mb-6">
+                    <div className="bg-blue-600/10 text-blue-600 p-4 rounded-full">
+                        <IconError404 className="w-12 h-12" />
+                    </div>
                 </div>
+                <h1 className="text-3xl font-bold text-blue-800 mb-2">404 - Page Not Found</h1>
+                <p className="text-sm text-blue-600 mb-6">
+                    Oops! The page you're looking for doesn't exist or has been moved.
+                </p>
+                <Link
+                    to="/dashboard"
+                    className="inline-block bg-blue-600 text-white px-5 py-2 rounded-md text-sm font-medium hover:bg-blue-700 transition"
+                >
+                    Back to Project Dashboard
+                </Link>
             </div>
         </div>
-    );
+    )
 }

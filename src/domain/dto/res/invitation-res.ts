@@ -9,5 +9,5 @@ export interface InvitationResponseDTO {
   inviterId: string;
   inviterUsername: string;
   invitedAt: string;
-  status: "PENDING" | "ACCEPTED" | "REJECTED"; 
+  status: "PENDING" | "ACCEPTED" | "REJECTED";
 }

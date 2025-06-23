@@ -8,10 +8,14 @@ import { useRenameProject } from "@/shared/hooks/use-rename-project"
 import type { ReactNode } from "react"
 import { createContext, useContext, useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
+import { useAcceptProjectInvitation } from "../hooks/use-accept-project-invitation"
 import { useDeleteProject } from "../hooks/use-delete-proejct"
+import { useRejectProjectInvitation } from "../hooks/use-reject-project-invitation"
+import { useSearchProjects } from "../hooks/use-search-projects"
 
 interface ProjectContextType {
     projects: ProjectSummary[]
+    recentProjects: ProjectSummary[]
     isInitialLoading: boolean
     isLoadingMore: boolean
     hasMore: boolean
@@ -19,12 +23,16 @@ interface ProjectContextType {
     createProject: (name: string) => Promise<ProjectSummary | null>
     renameProject: (projectId: string, newName: string) => Promise<ProjectSummary | null>
     deleteProject: (projectId: string) => Promise<boolean>
+    acceptInvitation: (projectId: string) => Promise<boolean>
+    rejectInvitation: (projectId: string) => Promise<boolean>
+    searchProjects: (keyword: string, page?: number, size?: number) => Promise<ProjectSummary[]>
 }
 
 const ProjectContext = createContext<ProjectContextType | undefined>(undefined)
 
 export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     const [projects, setProjects] = useState<ProjectSummary[]>([])
+    const [recentProjects, setRecentProjects] = useState<ProjectSummary[]>([])
     const [isInitialLoading, setIsInitialLoading] = useState(true)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
     const [hasMore, setHasMore] = useState(true)
@@ -34,13 +42,17 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
     const { triggerCreateProject } = useCreateProject()
     const { triggerRenameProject } = useRenameProject()
     const { triggerDeleteProject } = useDeleteProject("")
+    const { triggerAcceptProjectInvitation } = useAcceptProjectInvitation("")
+    const { triggerRejectProjectInvitation } = useRejectProjectInvitation("")
+    const { triggerSearchProjects } = useSearchProjects()
 
     const loadInitialProjects = async () => {
         setIsInitialLoading(true)
         try {
             const response = await triggerGetMyProject(0, DEFAULT_PAGE_SIZE)
             if (response.status === "success" && response.data) {
-                setProjects(response.data.content ?? [])
+                setRecentProjects(response.data.content)
+                setProjects(response.data.content)
                 setHasMore(!response.data.last)
                 pageRef.current = 1
             }
@@ -62,6 +74,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
                     (p) => !projects.some((existing) => existing.projectId === p.projectId)
                 )
                 setProjects((prev) => [...prev, ...unique])
+                setRecentProjects((prev) => [...prev, ...unique])
                 setHasMore(!response.data.last)
                 pageRef.current += 1
             }
@@ -87,6 +100,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
                 }
 
                 setProjects((prev) => [newProject, ...prev])
+                setRecentProjects((prev) => [newProject, ...prev])
                 return newProject
             } else {
                 toast.error("Failed to create project", {
@@ -107,15 +121,16 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
             const response = await triggerRenameProject({ projectId, name: newName })
             if (response.status === "success" && response.data) {
                 toast.success("Project renamed successfully")
-
                 setProjects((prev) =>
                     prev.map((project) =>
-                        project.projectId === projectId
-                            ? { ...project, name: response.data.name }
-                            : project
+                        project.projectId === projectId ? { ...project, name: response.data.name } : project
                     )
                 )
-
+                setRecentProjects((prev) =>
+                    prev.map((project) =>
+                        project.projectId === projectId ? { ...project, name: response.data.name } : project
+                    )
+                )
                 return response.data
             } else {
                 toast.error("Failed to rename project", {
@@ -134,6 +149,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
             if (response.status === "success") {
                 toast.success("Project deleted successfully")
                 setProjects((prev) => prev.filter((p) => p.projectId !== projectId))
+                setRecentProjects((prev) => prev.filter((p) => p.projectId !== projectId))
                 return true
             } else {
                 toast.error("Failed to delete project", {
@@ -147,6 +163,82 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         }
     }
 
+    const acceptInvitation = async (projectId: string): Promise<boolean> => {
+        try {
+            const response = await triggerAcceptProjectInvitation(projectId)
+            if (response.status === "success" && response.data) {
+                toast.success("Invitation accepted")
+                const newProject: ProjectSummary = {
+                    projectId: response.data.projectId,
+                    name: response.data.projectName,
+                    userRole: response.data.role,
+                }
+                setProjects((prev) => [newProject, ...prev])
+                setRecentProjects((prev) => [newProject, ...prev])
+                return true
+            } else {
+                toast.error("Failed to accept invitation", {
+                    description: response.message,
+                })
+                return false
+            }
+        } catch {
+            toast.error("An error occurred while accepting the invitation.")
+            return false
+        }
+    }
+
+    const rejectInvitation = async (projectId: string): Promise<boolean> => {
+        try {
+            const response = await triggerRejectProjectInvitation(projectId)
+            if (response.status === "success") {
+                toast.success("Invitation rejected")
+                setProjects((prev) => prev.filter((p) => p.projectId !== projectId))
+                setRecentProjects((prev) => prev.filter((p) => p.projectId !== projectId))
+                return true
+            } else {
+                toast.error("Failed to reject invitation", {
+                    description: response.message,
+                })
+                return false
+            }
+        } catch {
+            toast.error("An error occurred while rejecting the invitation.")
+            return false
+        }
+    }
+
+    const searchProjects = async (
+        keyword: string,
+        page: number = 0,
+        size: number = DEFAULT_PAGE_SIZE
+    ): Promise<ProjectSummary[]> => {
+        try {
+            const response = await triggerSearchProjects(keyword, page, size)
+            if (response.status === "success" && response.data) {
+                const searchedProjects =
+                    response.data.content?.map((p) => ({
+                        projectId: p.projectId,
+                        name: p.name,
+                        userRole: p.userRole,
+                    })) ?? []
+
+                setProjects(searchedProjects)
+                setHasMore(!response.data.last)
+                pageRef.current = page + 1
+                return searchedProjects
+            } else {
+                toast.error("Failed to search projects", {
+                    description: response.message,
+                })
+                return []
+            }
+        } catch {
+            toast.error("An error occurred while searching projects.")
+            return []
+        }
+    }
+
     useEffect(() => {
         loadInitialProjects()
     }, [])
@@ -155,6 +247,7 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
         <ProjectContext.Provider
             value={{
                 projects,
+                recentProjects,
                 isInitialLoading,
                 isLoadingMore,
                 hasMore,
@@ -162,6 +255,9 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
                 createProject,
                 renameProject,
                 deleteProject,
+                acceptInvitation,
+                rejectInvitation,
+                searchProjects,
             }}
         >
             {children}

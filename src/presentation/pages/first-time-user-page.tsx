@@ -98,7 +98,7 @@ export const FirstTimeUserPage = () => {
 
     useEffect(() => {
         if (!user?.isUserFirstTime) {
-            navigate('/dashboard/project')
+            navigate('/dashboard')
         }
     }, [user])
 

@@ -3,7 +3,7 @@
 import { IconAlertCircle, IconHourglassEmpty, IconReport, IconUsersGroup } from "@tabler/icons-react"
 import { Globe, Layout, List as ListIcon, PanelTop } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useParams } from "react-router-dom"
+import { useParams, useSearchParams } from "react-router-dom"
 
 import { BoardTab } from "../components/tabs/board-tab"
 import { ListTab } from "../components/tabs/list-tab"
@@ -29,6 +29,11 @@ const tabConfig = [
 
 export const ProjectDetailPage = () => {
   const { projectId } = useParams<{ projectId: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const tabParam = searchParams.get("tab") || "list"
+  const [activeTab, setActiveTab] = useState<string>(tabParam)
+
   const [project, setProject] = useState<ProjectSummary | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -37,7 +42,6 @@ export const ProjectDetailPage = () => {
   useEffect(() => {
     const fetchProject = async () => {
       if (!projectId) return
-
       try {
         const res = await triggerGetProjectById(projectId)
         if (res.status === "success") {
@@ -51,9 +55,23 @@ export const ProjectDetailPage = () => {
         setError(baseError?.message || "Something went wrong while fetching the project.")
       }
     }
-
     fetchProject()
   }, [projectId])
+
+  // ✅ Sync from URL to activeTab (if changed from outside)
+  useEffect(() => {
+    if (tabParam !== activeTab) {
+      setActiveTab(tabParam)
+    }
+  }, [tabParam])
+
+  // ✅ Sync from tab change to URL (replace only tab param, preserve others)
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab)
+    const newParams = new URLSearchParams(searchParams)
+    newParams.set("tab", newTab)
+    setSearchParams(newParams, { replace: true })
+  }
 
   if (!projectId) return <div>Project ID not found</div>
 
@@ -81,7 +99,7 @@ export const ProjectDetailPage = () => {
     "hover:cursor-pointer data-[state=active]:shadow-none rounded-none shadow-none group px-2 py-1 text-sm text-muted-foreground data-[state=active]:text-blue-600 data-[state=active]:border-b-2 border-0 data-[state=active]:border-blue-600 data-[state=active]:font-medium"
 
   return (
-    <Tabs defaultValue="list" className="mt-2">
+    <Tabs value={activeTab} onValueChange={handleTabChange} className="mt-2">
       <ProjectLayout
         title={project.name}
         tabs={
@@ -98,42 +116,24 @@ export const ProjectDetailPage = () => {
         }
       >
         <TabsContent value="summary">
-          <SummaryTab
-            key={"summary-tab-project-" + projectId}
-            projectId={projectId}
-          />
+          <SummaryTab key={"summary-tab-" + projectId} projectId={projectId} />
         </TabsContent>
         <TabsContent value="list">
-          <ListTab
-            key={"list-tab-project-" + projectId}
-            projectId={projectId}
-          />
+          <ListTab key={"list-tab-" + projectId} projectId={projectId} />
         </TabsContent>
         <TabsContent value="board">
-          <BoardTab
-            key={"board-tab-project-" + projectId}
-            projectId={projectId}
-          />
+          <BoardTab key={"board-tab-" + projectId} projectId={projectId} />
         </TabsContent>
         <TabsContent value="timeline">
           <div className="grid grid-cols-1">
-            <TimelineTab
-              key={"timeline-tab-project-" + projectId}
-              projectId={projectId}
-            />
+            <TimelineTab key={"timeline-tab-" + projectId} projectId={projectId} />
           </div>
         </TabsContent>
         <TabsContent value="report">
-          <ReportTab
-            key={"report-tab-project-" + projectId}
-            projectId={projectId}
-          />
+          <ReportTab key={"report-tab-" + projectId} projectId={projectId} />
         </TabsContent>
         <TabsContent value="team">
-          <TeamTab
-            key={"team-tab-project-" + projectId}
-            projectId={projectId}
-          />
+          <TeamTab key={"team-tab-" + projectId} projectId={projectId} />
         </TabsContent>
       </ProjectLayout>
     </Tabs>

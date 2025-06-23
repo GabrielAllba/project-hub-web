@@ -5,70 +5,105 @@ import {
     IconFolder,
     IconLoader2,
     IconRocket,
-    IconSubtask,
-    IconTarget
-} from "@tabler/icons-react"
-import { useState } from "react"
+    IconSubtask
+} from "@tabler/icons-react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-import { Button } from "../ui/button"
-import { Separator } from "../ui/separator"
+import { DEFAULT_PAGE_SIZE } from "@/constants/constants";
+import type { GetMyActiveBacklogResponseDTO } from "@/domain/dto/res/get-my-active-backlog-res";
+import { useGetMyActiveBacklogs } from "@/shared/hooks/use-get-my-active-backlogs";
+import { getPriorityColor, getStatusColor } from "@/shared/utils/product-backlog-utils";
+import { toast } from "sonner";
+import { EmptyStateIllustration } from "../empty/empty-state";
+import { Button } from "../ui/button";
+import { Separator } from "../ui/separator";
 
-interface Task {
-    id: string
-    title: string
-    projectName: string
-    sprintName: string
-    productGoalTitle?: string
-    status: "TODO" | "IN_PROGRESS" | "DONE"
-    point: number
-}
-
-const dummyTasks: Task[] = Array.from({ length: 20 }, (_, i) => ({
-    id: `task-${i + 1}`,
-    title: `Implement feature ${i + 1}`,
-    projectName: `Project ${Math.floor(i / 5) + 1}`,
-    sprintName: `Sprint ${Math.floor(i / 3) + 1}`,
-    productGoalTitle: i % 3 === 0 ? `Goal ${Math.floor(i / 3) + 1}` : undefined,
-    status: i % 3 === 0 ? "TODO" : i % 3 === 1 ? "IN_PROGRESS" : "DONE",
-    point: (i % 5) + 1
-}))
 
 export const MyTasksSection = () => {
-    const PAGE_SIZE = 6
-    const [page, setPage] = useState(1)
-    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const { triggerGetMyActiveBacklogs } = useGetMyActiveBacklogs()
+    const navigate = useNavigate()
 
-    const tasks = dummyTasks.slice(0, page * PAGE_SIZE)
-    const hasMore = tasks.length < dummyTasks.length
+    const [tasks, setTasks] = useState<GetMyActiveBacklogResponseDTO[]>([])
+    const [page, setPage] = useState(0)
+    const [hasMore, setHasMore] = useState(true)
+    const [isLoading, setIsLoading] = useState(false)
 
-    const handleLoadMore = () => {
-        if (isLoadingMore || !hasMore) return
-        setIsLoadingMore(true)
-        setTimeout(() => {
-            setPage((prev) => prev + 1)
-            setIsLoadingMore(false)
-        }, 600)
-    }
+    const loadBacklogs = async () => {
+        if (isLoading || !hasMore) return
 
-    const getStatusBadge = (status: Task["status"]) => {
-        switch (status) {
-            case "TODO":
-                return <span className="text-xs text-muted-foreground">To Do</span>
-            case "IN_PROGRESS":
-                return (
-                    <span className="text-xs text-yellow-700 bg-yellow-100 px-2 py-0.5 rounded-sm">
-                        In Progress
-                    </span>
-                )
-            case "DONE":
-                return (
-                    <span className="text-xs text-green-700 bg-green-100 px-2 py-0.5 rounded-sm">
-                        Done
-                    </span>
-                )
+        setIsLoading(true)
+
+        try {
+            const res = await triggerGetMyActiveBacklogs(page, DEFAULT_PAGE_SIZE)
+            const content = res.data?.content ?? []
+
+            setTasks((prev) => {
+                const existingIds = new Set(prev.map((t) => t.id))
+                const newTasks = content.filter((t) => !existingIds.has(t.id))
+                return [...prev, ...newTasks]
+            })
+
+            setHasMore(content.length === DEFAULT_PAGE_SIZE)
+        } catch (err) {
+            toast.error("Failed to load tasks: " + err)
+        } finally {
+            setIsLoading(false)
         }
     }
 
+    const loadMoreBacklogs = useCallback(async () => {
+        if (!hasMore || isLoading) return
+
+        setIsLoading(true)
+        try {
+            const nextPage = page + 1
+            const res = await triggerGetMyActiveBacklogs(nextPage, DEFAULT_PAGE_SIZE)
+
+            if (res.status === "success") {
+                const content = res.data?.content ?? []
+
+                const newItems = content.filter(
+                    (item) => !tasks.some((existing) => existing.id === item.id)
+                )
+
+                setTasks((prev) => [...prev, ...newItems])
+                setPage(nextPage)
+                setHasMore(!res.data?.last)
+            }
+        } catch (err) {
+            toast.error("Failed to load more tasks: " + err)
+        } finally {
+            setIsLoading(false)
+        }
+    }, [hasMore, isLoading, page, tasks, triggerGetMyActiveBacklogs])
+
+
+
+    useEffect(() => {
+        loadBacklogs()
+    }, [])
+
+    const handleTaskClick = useCallback((task: GetMyActiveBacklogResponseDTO) => {
+        const newSearchParams = new URLSearchParams();
+        newSearchParams.set('tab', 'list');
+        newSearchParams.set('search', task.title);
+        navigate(`/dashboard/project/${task.projectId}?${newSearchParams.toString()}`);
+    }, [navigate]);
+
+    if (!isLoading && tasks.length === 0) {
+        return (
+            <div className="space-y-6">
+                <div className="flex items-center gap-2 pt-4">
+                    <IconSubtask className="text-blue-600" />
+                    <span className="text-base font-medium">My Active Tasks</span>
+                </div>
+                <div className="pt-6">
+                    <EmptyStateIllustration type="no-task" />
+                </div>
+            </div>
+        )
+    }
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-2 pt-4">
@@ -79,26 +114,29 @@ export const MyTasksSection = () => {
             <div className="flex flex-col">
                 {tasks.map((task, index) => (
                     <div key={task.id}>
-                        <div className="flex justify-between items-start py-3 hover:bg-muted/50 transition px-1 rounded-sm">
+                        <div
+                            className="flex justify-between items-start py-3 hover:bg-muted/50 transition px-1 rounded-sm cursor-pointer"
+                            onClick={() => handleTaskClick(task)}
+                        >
                             {/* Left */}
                             <div className="flex gap-3 items-start">
                                 <IconCheckbox className="text-muted-foreground mt-1 w-4 h-4" />
 
-                                <div className="flex flex-col">
+                                <div className="flex flex-col ">
                                     <span className="text-sm font-medium">{task.title}</span>
 
-                                    <div className="text-xs text-muted-foreground flex gap-4 flex-wrap mt-1">
+                                    <div className="text-xs text-muted-foreground flex items-center gap-4 flex-wrap mt-1">
                                         <span className="flex items-center gap-1">
-                                            <IconFolder size={12} />
+                                            <IconFolder size={12} className="text-yellow-500" />
                                             {task.projectName}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <IconRocket size={12} />
+                                            <IconRocket size={12} className="text-blue-500" />
                                             {task.sprintName}
                                         </span>
-                                        {task.productGoalTitle && (
+                                        {task.productGoalId && (
                                             <span className="flex items-center gap-1">
-                                                <IconTarget size={12} />
+                                                🎯
                                                 {task.productGoalTitle}
                                             </span>
                                         )}
@@ -106,11 +144,20 @@ export const MyTasksSection = () => {
                                             {task.point} pts
                                         </span>
                                     </div>
+
                                 </div>
                             </div>
 
                             {/* Right: Status only */}
-                            <div className="pt-1">{getStatusBadge(task.status)}</div>
+                            <div className="flex gap-2">
+                                <div className={`p-1 px-2 rounded-md text-xs font-semibold ${getStatusColor(task.status)}`}>
+                                    {task.status}
+                                </div>
+                                <div className={`p-1 px-2 rounded-md text-xs font-semibold ${getPriorityColor(task.priority)}`}>
+                                    {task.priority}
+                                </div>
+                            </div>
+
                         </div>
 
                         {index < tasks.length - 1 && <Separator className="my-1" />}
@@ -121,12 +168,12 @@ export const MyTasksSection = () => {
             {hasMore && (
                 <div className="flex justify-center pt-4">
                     <Button
-                        onClick={handleLoadMore}
-                        disabled={isLoadingMore}
+                        onClick={loadMoreBacklogs}
+                        disabled={isLoading}
                         variant="outline"
                         className="min-w-48"
                     >
-                        {isLoadingMore ? (
+                        {isLoading ? (
                             <>
                                 <IconLoader2 className="mr-2 h-4 w-4 animate-spin" />
                                 Loading more...
@@ -135,6 +182,7 @@ export const MyTasksSection = () => {
                             <>Load more tasks</>
                         )}
                     </Button>
+
                 </div>
             )}
         </div>

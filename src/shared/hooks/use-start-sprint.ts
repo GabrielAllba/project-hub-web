@@ -25,9 +25,9 @@ async function fetcher(
 export function useStartSprint(sprintId: string) {
     const { trigger, data, isMutating } = useSWRMutation(`/sprint/${sprintId}/start`, fetcher);
 
-    const triggerStartSprint = async (): Promise<BaseResponse<SprintResponseDTO>> => {
+    const triggerStartSprint = async (id: string): Promise<BaseResponse<SprintResponseDTO>> => {
         try {
-            return await trigger({ sprintId: sprintId });
+            return await trigger({ sprintId: id });
         } catch (err) {
             throw convertAxiosErrorToBaseResponse<SprintResponseDTO>(err);
         }

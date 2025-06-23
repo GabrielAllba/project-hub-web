@@ -1,6 +1,7 @@
-import { useState } from "react";
 import { Search } from "lucide-react";
+import { useEffect, useState } from "react";
 
+import { useProjects } from "@/shared/contexts/project-context";
 import { NewProjectModal } from "../modal/new-project-modal";
 import { Button } from "../ui/button";
 import { GreetingSection } from "../ui/greeting";
@@ -10,9 +11,19 @@ export const ProjectHeaderSection = () => {
   const [openModal, setOpenModal] = useState<boolean>(false);
   const [searchTerm, setSearchTerm] = useState<string>("");
 
+  const { searchProjects } = useProjects();
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
+
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      searchProjects(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeout);
+  }, [searchTerm]);
 
   return (
     <>
@@ -20,7 +31,7 @@ export const ProjectHeaderSection = () => {
         <GreetingSection />
         <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-base font-medium">📁 Project</span>
+            <span className="text-base font-medium">Project</span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -34,7 +45,10 @@ export const ProjectHeaderSection = () => {
                 onChange={handleSearchChange}
               />
             </div>
-            <Button className="text-white" onClick={() => setOpenModal(true)}>
+            <Button
+              className="text-white rounded-sm bg-blue-700 hover:bg-blue-700 cursor-pointer"
+              onClick={() => setOpenModal(true)}
+            >
               + New Project
             </Button>
           </div>

@@ -1,8 +1,8 @@
-import { IconHammerOff, IconUserOff } from "@tabler/icons-react"
+import { IconFolder, IconHammerOff, IconUserOff } from "@tabler/icons-react"
 import { Calendar, Filter, ListTodo, SearchX } from "lucide-react"
 
 type EmptyStateProps = {
-    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member"
+    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project"
     size?: "sm"
 }
 
@@ -42,7 +42,7 @@ export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) =
         return render(
             <Calendar className={`${sizeClasses.icon} text-blue-500`} />,
             "No Sprints Found",
-            "This year doesn't have any sprints yet. Try changing another year to view timeline.",
+            "we couldn't find any sprints matching your search. Try using different keywords or check your spelling.",
             "bg-gradient-to-br from-blue-100 to-blue-200"
         )
     }
@@ -87,6 +87,15 @@ export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) =
             <IconUserOff className={`${sizeClasses.icon} text-blue-600`} />,
             "No member Available",
             "There are currently no member.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+
+    if (type === "no-project") {
+        return render(
+            <IconFolder className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Project Available",
+            "Start your journey by creating your first project. Manage and monitor all your projects in one place.",
             "bg-gradient-to-br from-blue-50 to-blue-100"
         )
     }

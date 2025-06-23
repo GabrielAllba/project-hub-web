@@ -7,8 +7,6 @@ import { BacklogItem } from "../items/backlog-item"
 
 interface SortableBacklogProps {
     backlog: ProductBacklog
-    onDeleteBacklog: (backlog: ProductBacklog) => void
-    onEditBacklog: (backlogId: string) => void
 }
 
 export function SortableBacklog(props: SortableBacklogProps) {
@@ -29,10 +27,6 @@ export function SortableBacklog(props: SortableBacklogProps) {
         <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
             <BacklogItem
                 backlog={props.backlog}
-                onDeleteBacklog={(backlog: ProductBacklog) => {
-                    props.onDeleteBacklog(backlog)
-                }}
-                onEditBacklog={props.onEditBacklog}
             />
         </div>
     )

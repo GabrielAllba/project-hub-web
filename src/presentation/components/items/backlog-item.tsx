@@ -1,3 +1,4 @@
+// @/components/BacklogItem.tsx
 "use client"
 
 import {
@@ -8,13 +9,8 @@ import {
 import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res"
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import type { User } from "@/domain/entities/user"
-import { useAssignBacklogUser } from "@/shared/hooks/use-assign-backlog-user"
-import { useDeleteBacklog } from "@/shared/hooks/use-delete-backlog"
-import { useEditBacklogGoal } from "@/shared/hooks/use-edit-backlog-goal"
-import { useEditBacklogPoint } from "@/shared/hooks/use-edit-backlog-point"
-import { useEditBacklogPriority } from "@/shared/hooks/use-edit-backlog-priority"
-import { useEditBacklogStatus } from "@/shared/hooks/use-edit-backlog-status"
-import { useEditBacklogTitle } from "@/shared/hooks/use-edit-backlog-title"
+import { useBacklog } from "@/shared/contexts/backlog-context"
+import { useSprint } from "@/shared/contexts/sprint-context"; // Import useSprint
 import { useGetProjectMembers } from "@/shared/hooks/use-get-project-members"
 import {
     getPriorityColor,
@@ -47,32 +43,40 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 interface BacklogItemProps {
     backlog: ProductBacklog
-    onDeleteBacklog: (backlog: ProductBacklog) => void
-    onEditBacklog: (backlogId: string) => void
 }
 
-export function BacklogItem(props: BacklogItemProps) {
+export function BacklogItem({ backlog }: BacklogItemProps) {
     const navigate = useNavigate()
+    const {
+        editBacklogPoint,
+        editBacklogTitle,
+        editBacklogPriority,
+        editBacklogStatus,
+        editBacklogGoal,
+        assignBacklogUser,
+        deleteUnassignedBacklog,
+    } = useBacklog()
+
+    const {
+        deleteSprintBacklogItem,
+        editBacklogPoint: editSprintBacklogPoint,
+        editBacklogTitle: editSprintBacklogTitle,
+        editBacklogPriority: editSprintBacklogPriority,
+        editBacklogStatus: editSprintBacklogStatus,
+        editBacklogGoal: editSprintBacklogGoal,
+        assignBacklogUser: assignSprintBacklogUser,
+    } = useSprint()
 
     const [assignee, setAssignee] = useState<User | null>(null)
     const [isEditingPoint, setIsEditingPoint] = useState(false)
-    const [pointValue, setPointValue] = useState(props.backlog.point ?? 0)
+    const [pointValue, setPointValue] = useState(backlog.point ?? 0)
     const [isHoveringTitle, setIsHoveringTitle] = useState(false)
     const [editingTitleBacklog, setEditingTitleBacklog] = useState<ProductBacklog>()
-    const [titleValue, setTitleValue] = useState(props.backlog.title)
+    const [titleValue, setTitleValue] = useState(backlog.title)
     const [isHoveringItem, setIsHoveringItem] = useState(false)
 
-    const { triggerDeleteBacklog } = useDeleteBacklog(props.backlog.id)
-    const { triggerEditBacklogPoint } = useEditBacklogPoint()
-    const { triggerEditBacklogStatus } = useEditBacklogStatus()
-    const { triggerEditBacklogPriority } = useEditBacklogPriority()
-    const { triggerEditBacklogTitle } = useEditBacklogTitle()
-    const { triggerEditBacklogGoal } = useEditBacklogGoal()
-    const { triggerAssignBacklogUser } = useAssignBacklogUser()
-    const { triggerGetProjectMembers } = useGetProjectMembers(props.backlog.projectId)
-
+    const { triggerGetProjectMembers } = useGetProjectMembers(backlog.projectId)
     const [members, setMembers] = useState<User[]>([])
-
 
     useEffect(() => {
         const fetch = async () => {
@@ -84,46 +88,70 @@ export function BacklogItem(props: BacklogItemProps) {
             const unique: ProjectUserResponseDTO[] = Array.from(new Map(all.map(m => [m.id, m])).values())
             const uniqueUsers: User[] = unique.map((dto) => ({
                 ...dto,
-                isEmailVerified: false, // default/fake value or derive from dto if available
-                isUserFirstTime: false  // same as above
+                isEmailVerified: false,
+                isUserFirstTime: false
             }))
-
             setMembers(uniqueUsers)
         }
         fetch()
-    }, [props.backlog.projectId])
+    }, [backlog.projectId]) // Added triggerGetProjectMembers to dependency array
 
     useEffect(() => {
-        if (props.backlog.assigneeId) {
-            const found = members.find((m) => m.id === props.backlog.assigneeId)
+        if (backlog.assigneeId) {
+            const found = members.find((m) => m.id === backlog.assigneeId)
             if (found) setAssignee(found)
+        } else {
+            setAssignee(null) // Clear assignee if backlog.assigneeId is null/undefined
         }
-    }, [props.backlog.assigneeId, members])
+    }, [backlog.assigneeId, members])
 
     const handlePointSubmit = async () => {
-        await triggerEditBacklogPoint({ backlogId: props.backlog.id, point: pointValue })
-        setIsEditingPoint(false)
-        props.onEditBacklog(props.backlog.id)
-        toast.success("Backlog point updated successfully!")
+        if (backlog.sprintId) {
+            await editSprintBacklogPoint(backlog.sprintId, backlog.id, pointValue)
+            setIsEditingPoint(false)
+            toast.success("Backlog point updated successfully!")
+        } else {
+            await editBacklogPoint(backlog.id, pointValue)
+            setIsEditingPoint(false)
+            toast.success("Backlog point updated successfully!")
+        }
+    }
+
+    const handleDeleteBacklog = async () => {
+        if (backlog.sprintId) {
+            await deleteSprintBacklogItem(backlog.sprintId, backlog.id)
+            toast.success("Backlog removed from sprint successfully!")
+        } else {
+            await deleteUnassignedBacklog(backlog.id)
+            toast.success("Backlog deleted successfully!")
+        }
     }
 
     const handleTitleSubmit = async () => {
-        await triggerEditBacklogTitle({ backlogId: props.backlog.id, title: titleValue })
-        toast.success("Backlog title updated successfully!")
-        setEditingTitleBacklog(undefined)
-        props.onEditBacklog(props.backlog.id)
+        if (backlog.sprintId) {
+            await editSprintBacklogTitle(backlog.sprintId, backlog.id, titleValue)
+            setEditingTitleBacklog(undefined)
+            toast.success("Backlog title updated successfully!")
+        } else {
+            await editBacklogTitle(backlog.id, titleValue)
+            setEditingTitleBacklog(undefined)
+            toast.success("Backlog title updated successfully!")
+        }
     }
 
     const handleProductGoalChange = async (goalId: string | null) => {
-        await triggerEditBacklogGoal({ backlogId: props.backlog.id, goalId })
-        props.onEditBacklog(props.backlog.id)
-        toast.success("Product goal updated successfully!")
+        if (backlog.sprintId) {
+            await editSprintBacklogGoal(backlog.sprintId, backlog.id, goalId)
+            toast.success("Product goal updated successfully!")
+        } else {
+            await editBacklogGoal(backlog.id, goalId)
+            toast.success("Product goal updated successfully!")
+        }
     }
-
 
     return (
         <Card
-            className="py-0 mb-2 hover:shadow-md transition-shadow rounded-md"
+            className="py-0 hover:shadow-md transition-shadow rounded-none"
             onMouseEnter={() => setIsHoveringItem(true)}
             onMouseLeave={() => setIsHoveringItem(false)}
         >
@@ -136,15 +164,15 @@ export function BacklogItem(props: BacklogItemProps) {
                     <div className="min-w-0 flex items-center gap-1"
                         onMouseEnter={() => setIsHoveringTitle(true)}
                         onMouseLeave={() => setIsHoveringTitle(false)}>
-                        {!editingTitleBacklog || editingTitleBacklog.id !== props.backlog.id ? (
+                        {!editingTitleBacklog || editingTitleBacklog.id !== backlog.id ? (
                             <div className="flex items-center gap-1 truncate">
-                                <p className="text-sm truncate">{props.backlog.title}</p>
+                                <p className="text-sm truncate">{backlog.title}</p>
                                 {isHoveringTitle && (
                                     <Pencil
                                         className="w-3 h-3 text-muted-foreground cursor-pointer hover:text-primary"
                                         onClick={() => {
-                                            setTitleValue(props.backlog.title)
-                                            setEditingTitleBacklog(props.backlog)
+                                            setTitleValue(backlog.title)
+                                            setEditingTitleBacklog(backlog)
                                         }}
                                     />
                                 )}
@@ -166,21 +194,27 @@ export function BacklogItem(props: BacklogItemProps) {
                     <div className="flex justify-center items-center">
                         <ProductGoalModal
                             isHoveringItem={isHoveringItem}
-                            projectId={props.backlog.projectId}
+                            projectId={backlog.projectId}
                             onSelectGoal={handleProductGoalChange}
-                            selectedGoalId={props.backlog.productGoalId}
+                            selectedGoalId={backlog.productGoalId}
                             title="Select product goal"
                         />
                     </div>
 
                     <div className="flex justify-center">
                         <AssigneeSelector
-                            projectId={props.backlog.projectId}
+                            projectId={backlog.projectId}
                             selectedAssignee={assignee}
                             onSelectAssignee={async (user) => {
-                                await triggerAssignBacklogUser({ backlogId: props.backlog.id, assigneeId: user.id })
-                                setAssignee(user)
-                                toast.success("Assignee updated")
+                                if (backlog.sprintId) {
+                                    await assignSprintBacklogUser(backlog.sprintId, backlog.id, user.id)
+                                    setAssignee(user)
+                                    toast.success("Assignee updated")
+                                } else {
+                                    await assignBacklogUser(backlog.id, user.id)
+                                    setAssignee(user)
+                                    toast.success("Assignee updated")
+                                }
                             }}
                         />
                     </div>
@@ -194,7 +228,7 @@ export function BacklogItem(props: BacklogItemProps) {
                                         className="text-xs cursor-pointer h-full rounded-sm flex items-center"
                                         onClick={() => setIsEditingPoint(true)}
                                     >
-                                        {props.backlog.point}
+                                        {backlog.point}
                                     </Badge>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -218,8 +252,8 @@ export function BacklogItem(props: BacklogItemProps) {
 
                     <div>
                         <DropdownMenu>
-                            <DropdownMenuTrigger className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getPriorityColor(props.backlog.priority)}`}>
-                                <span>{getPriorityLabel(props.backlog.priority)}</span>
+                            <DropdownMenuTrigger className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getPriorityColor(backlog.priority)}`}>
+                                <span>{getPriorityLabel(backlog.priority)}</span>
                                 <ChevronDown className="w-4 h-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-32 mt-1 rounded-sm p-0">
@@ -227,10 +261,14 @@ export function BacklogItem(props: BacklogItemProps) {
                                     <DropdownMenuItem
                                         key={priority}
                                         onClick={async () => {
-                                            if (priority !== props.backlog.priority) {
-                                                await triggerEditBacklogPriority({ backlogId: props.backlog.id, priority })
-                                                props.onEditBacklog(props.backlog.id)
-                                                toast.success("Priority updated successfully!")
+                                            if (priority !== backlog.priority) {
+                                                if (backlog.sprintId) {
+                                                    await editSprintBacklogPriority(backlog.sprintId, backlog.id, priority)
+                                                    toast.success("Priority updated successfully!")
+                                                } else {
+                                                    await editBacklogPriority(backlog.id, priority)
+                                                    toast.success("Priority updated successfully!")
+                                                }
                                             }
                                         }}
                                     >
@@ -245,8 +283,8 @@ export function BacklogItem(props: BacklogItemProps) {
 
                     <div>
                         <DropdownMenu>
-                            <DropdownMenuTrigger className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getStatusColor(props.backlog.status)}`}>
-                                <span>{getStatusLabel(props.backlog.status)}</span>
+                            <DropdownMenuTrigger className={`w-full cursor-pointer flex items-center justify-between gap-1 px-2 py-1 rounded text-xs font-medium ${getStatusColor(backlog.status)}`}>
+                                <span>{getStatusLabel(backlog.status)}</span>
                                 <ChevronDown className="w-4 h-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="w-32 mt-1 rounded-sm p-0">
@@ -254,10 +292,14 @@ export function BacklogItem(props: BacklogItemProps) {
                                     <DropdownMenuItem
                                         key={status}
                                         onClick={async () => {
-                                            if (status !== props.backlog.status) {
-                                                await triggerEditBacklogStatus({ backlogId: props.backlog.id, status })
-                                                props.onEditBacklog(props.backlog.id)
-                                                toast.success("Status updated successfully!")
+                                            if (status !== backlog.status) {
+                                                if (backlog.sprintId) {
+                                                    await editSprintBacklogStatus(backlog.sprintId, backlog.id, status)
+                                                    toast.success("Status updated successfully!")
+                                                } else {
+                                                    await editBacklogStatus(backlog.id, status)
+                                                    toast.success("Status updated successfully!")
+                                                }
                                             }
                                         }}
                                     >
@@ -275,17 +317,13 @@ export function BacklogItem(props: BacklogItemProps) {
                             className="w-4 h-4 text-muted-foreground hover:text-blue-500 cursor-pointer"
                             onClick={() => {
                                 const search = new URLSearchParams(window.location.search)
-                                search.set("backlogId", props.backlog.id)
+                                search.set("backlogId", backlog.id)
                                 navigate({ search: search.toString() }, { replace: true })
                             }}
                         />
                         <Trash2
                             className="w-4 h-4 text-muted-foreground hover:text-red-500 cursor-pointer"
-                            onClick={() =>
-                                triggerDeleteBacklog()
-                                    .then(() => props.onDeleteBacklog(props.backlog))
-                                    .catch(console.error)
-                            }
+                            onClick={handleDeleteBacklog} // Call the unified handler
                         />
                     </div>
                 </div>

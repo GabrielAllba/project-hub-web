@@ -1,27 +1,28 @@
 "use client"
 
 import type React from "react"
-
-import type { CreateProductBacklogRequestDTO } from "@/domain/dto/req/create-product-backlog-req"
-import type { ProductBacklog } from "@/domain/entities/product-backlog"
-import { useCreateProductBacklog } from "@/shared/hooks/use-create-product-backlog"
 import { useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
+
+import { useBacklog } from "@/shared/contexts/backlog-context"
+import { useSprint } from "@/shared/contexts/sprint-context"
 import { Button } from "../ui/button"
 import { Input } from "../ui/input"
 import { LoadingSpinner } from "../ui/loading-spinner"
 
-interface AddProductBacklogInputProps {
-    projectId: string
-    sprintId: string | null;
-    onProductBacklogCreated: (backlog: ProductBacklog) => void
+interface Props {
+    sprintId?: string
 }
 
-export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
+export const AddProductBacklogInput = (props: Props) => {
+    const { createUnassignedBacklog } = useBacklog()
+    const { createSprintBacklog } = useSprint()
+
     const [isInputVisible, setIsInputVisible] = useState(false)
     const [taskTitle, setTaskTitle] = useState("")
-    const inputRef = useRef<HTMLInputElement>(null)
+    const [isLoading, setIsLoading] = useState(false)
 
-    const { triggerCreateProductBacklog, triggerCreateProductBacklogLoading } = useCreateProductBacklog()
+    const inputRef = useRef<HTMLInputElement>(null)
 
     useEffect(() => {
         if (isInputVisible && inputRef.current) {
@@ -48,28 +49,41 @@ export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
 
     const handleCreateTask = async () => {
         if (!taskTitle.trim()) return
+        setIsLoading(true)
 
-        try {
-            const createDto: CreateProductBacklogRequestDTO = {
-                title: taskTitle.trim(),
-                sprintId: props.sprintId
+        if (props.sprintId) {
+            try {
+                const response = await createSprintBacklog({ sprintId: props.sprintId!, title: taskTitle.trim() })
+                if (response.status === "success") {
+                    setTaskTitle("")
+                    setIsInputVisible(false)
+                } else {
+                    toast.error("Failed to create task: " + response.message)
+                }
+            } catch (error) {
+                toast.error("Error creating task: " + error)
+            } finally {
+                setIsLoading(false)
             }
-
-            const response = await triggerCreateProductBacklog(createDto, props.projectId)
-
-            if (response.status === "success") {
-                setTaskTitle("")
-                props.onProductBacklogCreated(response.data)
-            } else {
-                console.error("Failed to create task:", response.message)
+        } else {
+            try {
+                const response = await createUnassignedBacklog(taskTitle.trim())
+                if (response.status === "success") {
+                    setTaskTitle("")
+                    setIsInputVisible(false)
+                } else {
+                    toast.error("Failed to create task: " + response.message)
+                }
+            } catch (error) {
+                toast.error("Error creating task: " + error)
+            } finally {
+                setIsLoading(false)
             }
-        } catch (error) {
-            console.error("Error creating task:", error)
         }
     }
 
     const handleBlur = () => {
-        if (!triggerCreateProductBacklogLoading && !taskTitle.trim()) {
+        if (!isLoading && !taskTitle.trim()) {
             handleHideInput()
         }
     }
@@ -85,16 +99,21 @@ export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
                         onKeyDown={handleKeyPress}
                         onBlur={handleBlur}
                         placeholder="Enter task title and press Enter"
-                        disabled={triggerCreateProductBacklogLoading}
+                        disabled={isLoading}
                         className="pr-8"
                     />
-                    {triggerCreateProductBacklogLoading && (
+                    {isLoading && (
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
                             <LoadingSpinner size="sm" />
                         </div>
                     )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={handleHideInput} disabled={triggerCreateProductBacklogLoading}>
+                <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleHideInput}
+                    disabled={isLoading}
+                >
                     Cancel
                 </Button>
             </div>
@@ -106,7 +125,9 @@ export const AddProductBacklogInput = (props: AddProductBacklogInputProps) => {
             className="hover:cursor-pointer mt-2"
             variant="ghost"
             size="sm"
-            onClick={handleShowInput}>+ Add Task
+            onClick={handleShowInput}
+        >
+            + Add Task
         </Button>
     )
 }

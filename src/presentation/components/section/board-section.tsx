@@ -33,6 +33,7 @@ const CONTAINERS = [
 ]
 
 interface BoardSectionProps {
+    projectId: string
     sprintId: string
     priorityFilters: ProductBacklogPriority[]
 }
@@ -45,15 +46,13 @@ export default function BoardSection(props: BoardSectionProps) {
     // Load more functionality state
     const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
     const [hasMoreData, setHasMoreData] = useState(true)
-    const [isLoadingMore, setIsLoadingMore] = useState(false) // For load more button spinner
-    const [isInitialLoading, setIsInitialLoading] = useState(true) // NEW: True initially for skeleton
+    const [isLoadingMore, setIsLoadingMore] = useState(false)
+    const [isInitialLoading, setIsInitialLoading] = useState(true)
 
     const [totalItems, setTotalItems] = useState(0)
 
     const {
         triggerGetProductBacklogBySprint,
-        // We will no longer directly use triggerGetProductBacklogBySprintLoading for the skeleton,
-        // instead, we manage `isInitialLoading` manually.
     } = useGetProductBacklogBySprint(props.sprintId)
     const { triggerReorderProductBacklog } = useReorderProductBacklog()
     const { triggerEditBacklogStatus } = useEditBacklogStatus()
@@ -505,7 +504,7 @@ export default function BoardSection(props: BoardSectionProps) {
                                     />
                                 ))}
                             </div>
-                            {activeTask && <DragOverlay>{<BacklogCard task={activeTask} isDragging />}</DragOverlay>}
+                            {activeTask && <DragOverlay>{<BacklogCard projectId={props.projectId} task={activeTask} isDragging />}</DragOverlay>}
                         </DndContext>
                     )}
 

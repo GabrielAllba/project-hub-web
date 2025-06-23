@@ -28,8 +28,8 @@ async function fetcher(
 export function useGetCompleteSprintInfo(sprintId: string) {
     const { trigger, data, isMutating } = useSWRMutation(`/sprint/${sprintId}/complete_sprint/info`, fetcher);
 
-    const triggerGetCompleteSprintInfo = async (): Promise<BaseResponse<CompleteSprintInfoResponseDTO>> => {
-        return await trigger({ sprintId: sprintId });
+    const triggerGetCompleteSprintInfo = async (id: string): Promise<BaseResponse<CompleteSprintInfoResponseDTO>> => {
+        return await trigger({ sprintId: id });
     };
 
     return {

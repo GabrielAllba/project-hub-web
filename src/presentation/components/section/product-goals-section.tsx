@@ -1,16 +1,18 @@
 "use client"
 import { NO_GOAL_ID } from "@/constants/constants"
 import type { ProductGoal } from "@/domain/entities/product-goal"
+import { useBacklog } from "@/shared/contexts/backlog-context"
 import { useProductGoals } from "@/shared/contexts/product-goals-context"
 import { useCreateProductGoal } from "@/shared/hooks/use-create-product-goal"
 import { cn } from "@/shared/utils/merge-class"
 import { Flag, X } from "lucide-react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import ProductGoalItem from "../items/product-goal-item"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
+import { useSprint } from "@/shared/contexts/sprint-context"
 
 interface ProductGoalsSectionProps {
     projectId: string
@@ -20,8 +22,31 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
     const [isAdding, setIsAdding] = useState(false)
     const [newGoalTitle, setNewGoalTitle] = useState("")
 
-    const { goals, selectedGoalIds, toggleSelectGoal, updateGoal, deleteGoal, loadMoreGoals, hasMore, setGoals } =
-        useProductGoals()
+    const {
+        setProductGoalIds: setProductGoalIdsSprintBacklog
+    } = useSprint()
+
+    const {
+        setProductGoalIds
+    } = useBacklog()
+
+    const {
+        goals,
+        selectedGoalIds,
+        toggleSelectGoal,
+        updateGoal,
+        deleteGoal,
+        loadMoreGoals,
+        hasMore,
+        setGoals
+    } = useProductGoals()
+
+    useEffect(() => {
+        setProductGoalIds(selectedGoalIds)
+        setProductGoalIdsSprintBacklog(selectedGoalIds)
+    }, [selectedGoalIds])
+
+
     const { triggerCreateProductGoal } = useCreateProductGoal()
 
     const handleAddGoal = async () => {
@@ -43,7 +68,7 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
         deleteGoal(goalId)
     }
 
-    const isNoGoalSelected = selectedGoalIds.has(NO_GOAL_ID)
+    const isNoGoalSelected = selectedGoalIds.includes(NO_GOAL_ID)
 
     return (
         <Card className="w-full rounded-lg border border-zinc-200 bg-gray-50 p-4 shadow-none">
@@ -78,7 +103,7 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                         <ProductGoalItem
                             key={goal.id}
                             goal={goal}
-                            isSelected={selectedGoalIds.has(goal.id)}
+                            isSelected={selectedGoalIds.includes(goal.id)}
                             onToggleSelect={() => toggleSelectGoal(goal.id)}
                             onUpdated={handleUpdateGoal}
                             onDeleted={handleDeleteGoal}

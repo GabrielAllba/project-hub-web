@@ -26,8 +26,8 @@ async function fetcher(
 export function useDeleteBacklog(backlogId: string) {
     const { trigger, data, isMutating } = useSWRMutation(`/product_backlog/${backlogId}`, fetcher);
 
-    const triggerDeleteBacklog = async (): Promise<BaseResponse<void>> => {
-        return await trigger({ backlogId });
+    const triggerDeleteBacklog = async (id: string): Promise<BaseResponse<void>> => {
+        return await trigger({ backlogId: id });
     };
 
     return {

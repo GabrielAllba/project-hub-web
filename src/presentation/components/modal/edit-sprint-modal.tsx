@@ -8,8 +8,9 @@ import { useForm } from "react-hook-form"
 import { toast } from "sonner"
 import { z } from "zod"
 
+import type { BaseResponse } from "@/domain/dto/base-response"
 import type { Sprint } from "@/domain/entities/sprint"
-import { useEditSprintGoalAndDates } from "@/shared/hooks/use-edit-sprint-goal-and-dates"
+import { useSprint } from "@/shared/contexts/sprint-context"
 import { cn } from "@/shared/utils/merge-class"
 import { Button } from "../ui/button"
 import { Calendar } from "../ui/calendar"
@@ -36,7 +37,6 @@ import {
     PopoverDialogContent,
     PopoverDialogTrigger,
 } from "../ui/popover-dialog"
-import type { BaseResponse } from "@/domain/dto/base-response"
 
 const sprintSchema = z.object({
     goal: z.string().min(0, "Sprint goal is required"),
@@ -48,11 +48,12 @@ type SprintFormValues = z.infer<typeof sprintSchema>
 
 interface EditSprintModalProps {
     sprint: Sprint
-    onEditSprint: (sprintId: string) => void
 }
 
-export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) {
-    const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
+export function EditSprintModal({ sprint }: EditSprintModalProps) {
+    const {
+        editSprintGoalAndDates
+    } = useSprint()
 
     const [open, setOpen] = useState(false)
 
@@ -88,15 +89,14 @@ export function EditSprintModal({ sprint, onEditSprint }: EditSprintModalProps) 
         }
 
         try {
-            await triggerEditSprintGoalAndDates({
+            await editSprintGoalAndDates({
                 sprintId: sprint.id,
                 sprintGoal: goal?.trim() ?? null,
-                startDate: start ? start.format("YYYY-MM-DD HH:mm:ss.SSS") : null,
-                endDate: end ? end.format("YYYY-MM-DD HH:mm:ss.SSS") : null,
+                startDate: start?.format("YYYY-MM-DD HH:mm:ss.SSS") ?? null,
+                endDate: end?.format("YYYY-MM-DD HH:mm:ss.SSS") ?? null,
             })
 
             toast.success("Sprint updated successfully!")
-            onEditSprint(sprint.id)
             setOpen(false)
         } catch (err) {
             const baseError = err as BaseResponse<null>

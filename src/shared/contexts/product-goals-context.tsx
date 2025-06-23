@@ -7,7 +7,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 
 interface ProductGoalsContextType {
     goals: ProductGoal[]
-    selectedGoalIds: Set<string>
+    selectedGoalIds: string[]
     setGoals: (goals: ProductGoal[]) => void
     updateGoal: (updated: ProductGoal) => void
     deleteGoal: (goalId: string) => void
@@ -30,7 +30,7 @@ interface ProductGoalsProviderProps {
 
 export function ProductGoalsProvider({ children, projectId }: ProductGoalsProviderProps) {
     const [goals, setGoals] = useState<ProductGoal[]>([])
-    const [selectedGoalIds, setSelectedGoalIds] = useState<Set<string>>(new Set())
+    const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)
 
@@ -85,12 +85,9 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
 
     const deleteGoal = (goalId: string) => {
         setGoals((prev) => prev.filter((goal) => goal.id !== goalId))
-        // Remove from selected goals if it was selected
-        setSelectedGoalIds((prev) => {
-            const newSet = new Set(prev)
-            newSet.delete(goalId)
-            return newSet
-        })
+
+        setSelectedGoalIds((prev) => prev?.filter((id) => id !== goalId))
+
     }
 
     const addGoal = (goal: ProductGoal) => {
@@ -98,19 +95,16 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
     }
 
     const toggleSelectGoal = (goalId: string) => {
-        setSelectedGoalIds((prev) => {
-            const newSet = new Set(prev)
-            if (newSet.has(goalId)) {
-                newSet.delete(goalId)
-            } else {
-                newSet.add(goalId)
-            }
-            return newSet
-        })
+        setSelectedGoalIds((prev) =>
+            prev?.includes(goalId)
+                ? prev.filter((id) => id !== goalId)
+                : [...prev || [], goalId]
+        )
     }
 
+
     const clearSelectedGoals = () => {
-        setSelectedGoalIds(new Set())
+        setSelectedGoalIds([])
     }
 
     const searchGoals = (query: string) => {

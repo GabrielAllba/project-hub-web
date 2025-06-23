@@ -1,12 +1,12 @@
 "use client"
 
 import { useGetSprintOverview } from "@/shared/hooks/use-get-sprint-overview"
+import { getSprintStatusColor, getSprintStatusLabel } from "@/shared/utils/sprint-utils"
 import { Target } from "lucide-react"
 import { useEffect } from "react"
+import { Badge } from "../ui/badge"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { Separator } from "../ui/separator"
-import { Badge } from "../ui/badge"
-import { getSprintStatusColor, getSprintStatusLabel } from "@/shared/utils/sprint-utils"
 
 interface SprintOverviewProps {
     sprintId: string
@@ -55,8 +55,8 @@ export const SprintOverview = ({ sprintId }: SprintOverviewProps) => {
                             Sprint Overview
                         </CardTitle>
                         <CardDescription>
-                            {new Date(overview.data.startDate).toDateString()} -{" "}
-                            {new Date(overview.data.endDate).toDateString()}
+                            {overview.data.startDate && new Date(overview.data.startDate).toDateString() + " - "}
+                            {overview.data.endDate && new Date(overview.data.endDate).toDateString()}
                         </CardDescription>
                     </div>
                     <Badge

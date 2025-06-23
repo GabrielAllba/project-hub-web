@@ -1,15 +1,15 @@
 "use client"
 
-import type { BaseResponse } from "@/domain/dto/base-response"
-import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import type { Sprint } from "@/domain/entities/sprint"
-import { useStartSprint } from "@/shared/hooks/use-start-sprint"
+import { useSprint } from "@/shared/contexts/sprint-context"
 import { cn } from "@/shared/utils/merge-class"
 import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
 import { toast } from "sonner"
 import { EmptyStateIllustration } from "../empty/empty-state"
+import { AddProductBacklogInput } from "../input/add-product-backlog-input"
+import { LoadingSpinner } from "../loading/loading-spinner"
 import { CompleteSprintModal } from "../modal/complete-sprint-modal"
 import { EditSprintModal } from "../modal/edit-sprint-modal"
 import { Badge } from "../ui/badge"
@@ -17,64 +17,60 @@ import { Button } from "../ui/button"
 import { SortableBacklog } from "./sortable-backlog"
 
 interface DroppableContainerSprintProps {
-  containerName: string
   sprint: Sprint
-  items: ProductBacklog[]
-  onDeleteBacklog: (backlog: ProductBacklog) => void
-  onEditSprint: (sprintId: string) => void
-  onEditBacklog: (backlogId: string) => void
-  onCompleteSprint: () => void
-  loadingBacklog: boolean
   isDraggedOver: boolean
-  totalElement: number
 }
 
-export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
-  const { setNodeRef, isOver } = useDroppable({ id: props.sprint.id })
-  const isDragActive = isOver || props.isDraggedOver
+export function DroppableContainerSprint({ sprint, isDraggedOver }: DroppableContainerSprintProps) {
+  const { setNodeRef, isOver } = useDroppable({ id: sprint.id })
+  const isDragActive = isOver || isDraggedOver
 
-  const { triggerStartSprint } = useStartSprint(props.sprint.id)
+  const {
+    startSprint,
+    sprintBacklogs,
+    sprintTotalItems,
+    loadingSprintBacklogs,
+    loadMoreSprintBacklogs,
+    sprintHasMore,
+  } = useSprint()
 
   const handleStartSprint = async () => {
     try {
-      await triggerStartSprint()
-      props.onEditSprint(props.sprint.id)
+      await startSprint(sprint.id)
     } catch (error) {
-      const baseError = error as BaseResponse<null>
-      toast.error(baseError.message)
-
+      toast.error("Start sprint failed: " + error)
     }
   }
 
-  const isSprintStarted = props.sprint.status === "IN_PROGRESS"
+  const items = sprintBacklogs[sprint.id] || []
+  const total = sprintTotalItems[sprint.id] ?? 0
+  const isLoadingBacklogsForThisSprint = loadingSprintBacklogs[sprint.id] ?? false
+  const isSprintStarted = sprint.status === "IN_PROGRESS"
+  const isInitialLoading = items.length === 0 && isLoadingBacklogsForThisSprint;
+
 
   return (
     <>
-      <div
-        className={cn(
-          "flex justify-between items-start px-3 py-2 rounded-t",
-          isSprintStarted ? "bg-blue-50 border-l-4 border-blue-500" : ""
-        )}
-      >
-        {/* Left: Sprint title, date, goal */}
+      <div className={cn(
+        "flex justify-between items-start px-3 py-2 rounded-t",
+        isSprintStarted ? "bg-blue-50 border-l-4 border-blue-500" : ""
+      )}>
         <div className="flex flex-col">
           <div className="flex gap-2 items-center flex-wrap">
-            <p className="font-semibold text-sm">{props.containerName}</p>
-            {props.sprint.startDate && props.sprint.endDate && (
-              <div className="flex gap-1 text-xs text-gray-700">
-                <p>{new Date(props.sprint.startDate).toDateString()}</p>
-                <span>-</span>
-                <p>{new Date(props.sprint.endDate).toDateString()}</p>
-              </div>
-            )}
-            <EditSprintModal sprint={props.sprint} onEditSprint={props.onEditSprint} />
+            <p className="font-semibold text-sm">{sprint.name}</p>
+            <div className="flex gap-1 text-xs text-gray-700">
+              {sprint.startDate && (
+                <p>{new Date(sprint.startDate).toDateString()} - </p>
+              )}
+              {sprint.endDate && (
+                <p>{new Date(sprint.endDate).toDateString()}</p>
+              )}
+            </div>
+            <EditSprintModal sprint={sprint} />
           </div>
-          <p className="text-xs text-gray-500 italic mt-1">
-            {props.sprint.sprintGoal}
-          </p>
+          <p className="text-xs text-gray-500 italic mt-1">{sprint.sprintGoal}</p>
         </div>
 
-        {/* Right: Status + actions */}
         <div className="flex items-center gap-3">
           {isSprintStarted && (
             <div className="flex items-center gap-1 text-xs text-blue-600 font-medium">
@@ -85,33 +81,20 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
               In Progress
             </div>
           )}
-
           <Badge variant="secondary" className="text-xs">
-            {props.loadingBacklog ? "..." : props.totalElement}
+            {isLoadingBacklogsForThisSprint ? "..." : total}
           </Badge>
-
           {isSprintStarted ? (
-            <CompleteSprintModal
-              sprintId={props.sprint.id}
-              sprintName={props.containerName}
-              availableSprints={[
-                { id: "backlog", name: "Backlog" }
-              ]}
-              onCompleteSprint={(moveToSprintId) => {
-                console.log(moveToSprintId)
-                props.onCompleteSprint()
-              }}
-            />
-
+            <CompleteSprintModal sprintId={sprint.id} />
           ) : (
             <Button
               onClick={handleStartSprint}
-              disabled={props.totalElement === 0 || props.loadingBacklog}
+              disabled={total === 0 || isLoadingBacklogsForThisSprint}
               size="sm"
               variant="outline"
               className={cn(
                 "hover:cursor-pointer text-xs rounded flex items-center gap-1",
-                props.totalElement === 0 || props.loadingBacklog ? "opacity-60 cursor-not-allowed" : ""
+                total === 0 || isLoadingBacklogsForThisSprint ? "opacity-60 cursor-not-allowed" : ""
               )}
             >
               <Plus className="w-4 h-4" />
@@ -121,41 +104,57 @@ export function DroppableContainerSprint(props: DroppableContainerSprintProps) {
         </div>
       </div>
 
-
       <div
         ref={setNodeRef}
         className={cn(
           "mt-0 rounded-b-md transition-all duration-200 border-2 border-dashed min-h-[120px] p-4 flex flex-col",
           isDragActive ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-white"
         )}
-        data-container-id={props.sprint.id}
+        data-container-id={sprint.id}
       >
-        {
-          !props.loadingBacklog && <SortableContext
-            items={props.items.map((item) => item.id)}
-            strategy={verticalListSortingStrategy}
-          >
+        {isInitialLoading ? (
+          <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px]">
+            <LoadingSpinner message=""></LoadingSpinner>
+          </div>
+        ) : (
+          <SortableContext items={items.map((item) => item.id)} strategy={verticalListSortingStrategy}>
             <div className="flex flex-col flex-1">
-              {props.items.map((item) => (
-                <SortableBacklog
-                  key={item.id}
-                  backlog={item}
-                  onDeleteBacklog={props.onDeleteBacklog}
-                  onEditBacklog={props.onEditBacklog}
-                />
+              {items.map((item) => (
+                <SortableBacklog key={"sorttable-backlog" + item.id} backlog={item} />
               ))}
-              {props.items.length === 0 && (
+              {items.length === 0 && (
                 <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px]">
-                  {isDragActive ? "Drop items here" :
-                    <EmptyStateIllustration size="sm" type="no-task"></EmptyStateIllustration>}
+                  <EmptyStateIllustration size="sm" type="no-task" />
                 </div>
               )}
             </div>
           </SortableContext>
-        }
-
+        )}
       </div>
-    </>
 
+      {/* Show AddProductBacklogInput only if initial loading for this sprint's backlogs is finished */}
+      {!isInitialLoading && <AddProductBacklogInput sprintId={sprint.id} />}
+
+      {/* Tombol Load More: Hanya tampilkan jika masih ada item yang bisa dimuat */}
+      {sprintHasMore[sprint.id] && (
+        <Button
+          variant="outline"
+          onClick={() => {
+            loadMoreSprintBacklogs(sprint.id);
+          }}
+          disabled={isLoadingBacklogsForThisSprint} // Tetap nonaktifkan jika sedang loading
+          className="flex mx-auto mt-2"
+        >
+          {/* Indikator loading hanya di dalam tombol "Load More" */}
+          {isLoadingBacklogsForThisSprint ? (
+            <span className="flex items-center gap-2">
+              <LoadingSpinner message=""></LoadingSpinner>
+            </span>
+          ) : (
+            "Load More Product Backlogs"
+          )}
+        </Button>
+      )}
+    </>
   )
 }

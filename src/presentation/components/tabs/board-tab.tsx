@@ -202,6 +202,7 @@ export const BoardTab = ({ projectId }: BoardTabProps) => {
         key={"board-" + selectedSprintId}
         sprintId={selectedSprintId}
         priorityFilters={selectedPriorities}
+        projectId={projectId}
       />
     </div>
   )

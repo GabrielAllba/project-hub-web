@@ -1,6 +1,7 @@
 "use client"
 
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
+import { useSprint } from "@/shared/contexts/sprint-context"
 import { useDroppable } from "@dnd-kit/core"
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { Plus } from "lucide-react"
@@ -12,15 +13,17 @@ import { SortableBacklog } from "./sortable-backlog"
 interface DroppableContainerProductBacklogProps {
   id: string
   items: ProductBacklog[]
-  onDeleteBacklog: (backlog: ProductBacklog) => void
   loadingUnassigned: boolean
   totalElement: number
-  onCreateSprint: () => void
-  onEditBacklogPoint: (backlogId: string) => void
   isDraggedOver: boolean
 }
 
 export function DroppableContainerProductBacklog(props: DroppableContainerProductBacklogProps) {
+
+  const {
+    createSprint
+  } = useSprint()
+
   const { setNodeRef, isOver } = useDroppable({
     id: props.id,
   })
@@ -39,7 +42,7 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
             size="sm"
             variant="outline"
             className="text-xs rounded hover:cursor-pointer"
-            onClick={props.onCreateSprint}
+            onClick={createSprint}
           >
             <Plus />
             Create sprint
@@ -58,14 +61,12 @@ export function DroppableContainerProductBacklog(props: DroppableContainerProduc
               <SortableBacklog
                 key={item.id}
                 backlog={item}
-                onDeleteBacklog={props.onDeleteBacklog}
-                onEditBacklog={props.onEditBacklogPoint}
               />
             ))}
             {/* Empty state */}
             {props.items.length === 0 && (
               <div className="flex-1 flex items-center justify-center text-gray-400 text-sm min-h-[80px]">
-                {isDragActive ? "Drop items here" : <EmptyStateIllustration size="sm" type="no-task"></EmptyStateIllustration>}
+                <EmptyStateIllustration size="sm" type="no-task"></EmptyStateIllustration>
               </div>
             )}
           </div>

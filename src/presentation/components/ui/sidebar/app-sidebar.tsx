@@ -33,9 +33,9 @@ const navMain = [
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user, loading: userLoading } = useUser()
-  const { projects, isInitialLoading } = useProjects()
+  const { recentProjects, isInitialLoading } = useProjects()
 
-  const proyekNavItems = projects
+  const proyekNavItems = recentProjects
     .slice(0, 5)
     .map((project) => ({
       name: project.name,

@@ -1,22 +1,21 @@
-import { STATUS_PROGRESS_MAP } from "@/constants/constants";
-import type { ProductBacklog } from "@/domain/entities/product-backlog";
-import { type Sprint } from "@/domain/entities/sprint";
-import { useGetSprintById } from "@/shared/hooks/use-get-sprint-by-id";
-import { cn } from "@/shared/utils/merge-class";
-import {
-    AlertTriangle, Circle,
-    Link as LinkIcon,
-    MessageSquare,
-    Minus
-} from "lucide-react";
-import type React from "react";
-import { forwardRef, useEffect, useState } from 'react';
-import { Avatar, AvatarFallback } from "../ui/avatar";
-import { Badge } from "../ui/badge";
-import { Card, CardContent } from "../ui/card";
+import { STATUS_PROGRESS_MAP } from "@/constants/constants"
+import type { ProductBacklog } from "@/domain/entities/product-backlog"
+import { type Sprint } from "@/domain/entities/sprint"
+import { type User } from "@/domain/entities/user"
+import { useGetProjectMembers } from "@/shared/hooks/use-get-project-members"
+import { useGetSprintById } from "@/shared/hooks/use-get-sprint-by-id"
+import { cn } from "@/shared/utils/merge-class"
+import { AlertTriangle, Circle, Minus } from "lucide-react"
+import type React from "react"
+import { forwardRef, useEffect, useState } from "react"
+import { Avatar, AvatarFallback } from "../ui/avatar"
+import { Badge } from "../ui/badge"
+import { Card, CardContent } from "../ui/card"
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip"
 
 interface BacklogCardProps {
     task: ProductBacklog
+    projectId: string
     isDragging?: boolean
     style?: React.CSSProperties
 }
@@ -40,27 +39,53 @@ const PRIORITY_CONFIG = {
 }
 
 export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
-    ({ task, isDragging = false, style, ...props }, ref) => {
+    ({ task, projectId, isDragging = false, style, ...props }, ref) => {
         const priority = PRIORITY_CONFIG[task.priority]
-        const [sprint, setSprint] = useState<Sprint>()
-
-        const getInitials = (id: string | null) => {
-            if (!id) return "?"
-            return id.slice(-2).toUpperCase()
-        }
-
         const statusInfo = STATUS_PROGRESS_MAP[task.status]
+        const [sprint, setSprint] = useState<Sprint>()
+        const [assignee, setAssignee] = useState<User | null>(null)
 
         const { triggerGetSprintById } = useGetSprintById(task.sprintId!)
+        const { triggerGetProjectMembers } = useGetProjectMembers(projectId)
 
         useEffect(() => {
             if (task.sprintId) {
                 triggerGetSprintById(task.sprintId).then((res) => {
-                    setSprint(res.data)
+                    if (res.status === "success") {
+                        setSprint(res.data)
+                    }
                 })
             }
-        }, [task])
+        }, [task.sprintId])
 
+        useEffect(() => {
+            const fetchAssignee = async () => {
+                if (!task.assigneeId) return
+                const roles = ["PRODUCT_OWNER", "SCRUM_MASTER", "DEVELOPER"] as const
+                const results = await Promise.all(
+                    roles.map((role) => triggerGetProjectMembers(role))
+                )
+                const all = results.flatMap((r) => r?.data || [])
+                const found = all.find((user) => user.id === task.assigneeId)
+                if (found) {
+                    setAssignee({
+                        ...found,
+                        isEmailVerified: false,
+                        isUserFirstTime: false,
+                    })
+                }
+            }
+            fetchAssignee()
+        }, [task.assigneeId])
+
+        const getInitials = (name: string) => {
+            return name
+                .split(" ")
+                .map((n) => n[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2)
+        }
 
         return (
             <Card
@@ -71,33 +96,43 @@ export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
                     "hover:bg-gray-50 hover:border-gray-300 hover:cursor-pointer",
                     isDragging && "opacity-50 rotate-2 scale-105"
                 )}
-
                 {...props}
             >
-
                 <CardContent className="p-4 space-y-3">
                     {/* Top Labels */}
                     <div className="flex justify-between items-start gap-2">
                         <div className="flex gap-2">
-                            <Badge className={cn("text-xs px-2", priority.color)}>{priority.label}</Badge>
-                            <Badge className="text-xs px-2 text-indigo-700 bg-indigo-100">Back-End</Badge>
+                            <Badge className={cn("text-xs px-2", priority.color)}>
+                                {priority.label}
+                            </Badge>
+                            <Badge className="text-xs px-2 text-indigo-700 bg-indigo-100">
+                                Back-End
+                            </Badge>
                         </div>
-                        {sprint && <span className="text-xs text-gray-400 font-medium">{sprint.name}</span>}
+                        {sprint && (
+                            <span className="text-xs text-gray-400 font-medium">
+                                {sprint.name}
+                            </span>
+                        )}
                     </div>
 
-                    {/* Title & Description */}
+                    {/* Title */}
                     <div>
-                        <h4 className="text-sm font-semibold text-gray-800 truncate">{task.title}</h4>
+                        <h4 className="text-sm font-semibold text-gray-800 truncate">
+                            {task.title}
+                        </h4>
                     </div>
 
                     {/* Progress */}
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Circle className={cn("w-3 h-3", {
-                                "text-gray-400": task.status === "TODO",
-                                "text-purple-500 animate-pulse": task.status === "INPROGRESS",
-                                "text-green-600": task.status === "DONE",
-                            })} />
+                            <Circle
+                                className={cn("w-3 h-3", {
+                                    "text-gray-400": task.status === "TODO",
+                                    "text-purple-500 animate-pulse": task.status === "INPROGRESS",
+                                    "text-green-600": task.status === "DONE",
+                                })}
+                            />
                             {statusInfo.label}
                         </div>
                         <span className="text-xs text-gray-500">{statusInfo.percent}%</span>
@@ -114,28 +149,22 @@ export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
                         />
                     </div>
 
-
-                    {/* Footer: avatars + icons */}
-                    <div className="flex justify-between items-center mt-2">
-                        <div className="flex -space-x-2">
-                            {[task.assigneeId].filter(Boolean).map((id) => (
-                                <Avatar key={id} className="w-6 h-6 border-2 border-white">
-                                    <AvatarFallback className="bg-gray-400 text-white text-xs">
-                                        {getInitials(id)}
-                                    </AvatarFallback>
-                                </Avatar>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-3 text-muted-foreground text-xs">
-                            <div className="flex items-center gap-1">
-                                <MessageSquare className="w-4 h-4" />
-                                <span>2</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                <LinkIcon className="w-4 h-4" />
-                                <span>1</span>
-                            </div>
-                        </div>
+                    {/* Footer: assignee avatar with tooltip */}
+                    <div className="flex justify-end items-center mt-2">
+                        {assignee && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Avatar className="w-6 h-6 border-2 border-white">
+                                        <AvatarFallback className="bg-blue-600 text-white text-xs">
+                                            {getInitials(assignee.username || assignee.email)}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p className="text-xs">{assignee.username || assignee.email}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
                     </div>
                 </CardContent>
             </Card>

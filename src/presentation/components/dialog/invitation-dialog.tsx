@@ -6,8 +6,7 @@ import { Button } from "@/presentation/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/presentation/components/ui/popover"
 import { ScrollArea } from "@/presentation/components/ui/scroll-area"
 import { Separator } from "@/presentation/components/ui/separator"
-import { useAcceptProjectInvitation } from "@/shared/hooks/use-accept-project-invitation"
-import { useRejectProjectInvitation } from "@/shared/hooks/use-reject-project-invitation"
+import { useProjects } from "@/shared/contexts/project-context"
 import { cn } from "@/shared/utils/merge-class"
 import { Bell } from "lucide-react"
 import { useMemo, useState } from "react"
@@ -30,8 +29,9 @@ export function InvitationDialog({
     const [hoveredInvitationId, setHoveredInvitationId] = useState<string | null>(null)
 
     const navigate = useNavigate()
+    const { acceptInvitation, rejectInvitation } = useProjects()
 
-    const pendingInvitationsCount = invitations.filter(inv => inv.status === "PENDING").length
+    const pendingInvitationsCount = invitations.filter((inv) => inv.status === "PENDING").length
 
     const sortedInvitations = useMemo(() => {
         return [...invitations].sort((a, b) => {
@@ -41,12 +41,9 @@ export function InvitationDialog({
         })
     }, [invitations])
 
-    const handleLoadMore = () => setVisibleCount(prev => prev + DEFAULT_PAGE_SIZE)
+    const handleLoadMore = () => setVisibleCount((prev) => prev + DEFAULT_PAGE_SIZE)
     const visibleInvitations = sortedInvitations.slice(0, visibleCount)
     const hasMore = visibleCount < sortedInvitations.length
-
-    const { triggerAcceptProjectInvitation } = useAcceptProjectInvitation("")
-    const { triggerRejectProjectInvitation } = useRejectProjectInvitation("")
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -87,29 +84,35 @@ export function InvitationDialog({
                                     key={inv.id}
                                     className="border border-muted rounded-lg p-3 flex flex-col gap-2 bg-background hover:bg-accent/50 transition-colors"
                                     onMouseEnter={() => setHoveredInvitationId(inv.id)}
-                                    onMouseLeave={() => setHoveredInvitationId(null)}>
-
+                                    onMouseLeave={() => setHoveredInvitationId(null)}
+                                >
                                     <div className="flex items-start justify-between">
                                         <div className="flex flex-col flex-grow">
                                             <div className="text-sm text-foreground">
-                                                <span className="font-medium">{inv.inviterUsername}</span> invited you to join{" "}
-                                                <span className="font-medium">{inv.projectName}</span> as a{" "}
+                                                <span className="font-medium">{inv.inviterUsername}</span> invited you to
+                                                join <span className="font-medium">{inv.projectName}</span> as a{" "}
                                                 <span className="font-medium">{inv.role.toLowerCase()}</span>.
                                             </div>
 
                                             {inv.invitedAt && (
                                                 <div className="text-xs text-muted-foreground mt-1">
-                                                    Invited at: <span className="font-semibold text-foreground">{inv.invitedAt}</span>
+                                                    Invited at:{" "}
+                                                    <span className="font-semibold text-foreground">{inv.invitedAt}</span>
                                                 </div>
                                             )}
                                         </div>
 
-                                        <span className={cn(
-                                            "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0 ml-2",
-                                            inv.status === "PENDING" && "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100",
-                                            inv.status === "ACCEPTED" && "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100",
-                                            inv.status === "REJECTED" && "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100",
-                                        )}>
+                                        <span
+                                            className={cn(
+                                                "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium shrink-0 ml-2",
+                                                inv.status === "PENDING" &&
+                                                "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-100",
+                                                inv.status === "ACCEPTED" &&
+                                                "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-100",
+                                                inv.status === "REJECTED" &&
+                                                "bg-red-100 text-red-800 dark:bg-red-800 dark:text-red-100"
+                                            )}
+                                        >
                                             {inv.status.charAt(0).toUpperCase() + inv.status.slice(1).toLowerCase()}
                                         </span>
                                     </div>
@@ -121,8 +124,8 @@ export function InvitationDialog({
                                                 variant="outline"
                                                 className="h-7 px-3 text-xs"
                                                 onClick={async () => {
-                                                    await triggerRejectProjectInvitation(inv.id)
-                                                    onReject?.(inv.id)
+                                                    const success = await rejectInvitation(inv.id)
+                                                    if (success) onReject?.(inv.id)
                                                 }}
                                             >
                                                 Reject
@@ -131,11 +134,11 @@ export function InvitationDialog({
                                                 size="sm"
                                                 className="h-7 px-3 text-xs"
                                                 onClick={async () => {
-                                                    await triggerAcceptProjectInvitation(inv.id)
-                                                    onAccept?.(inv.id)
-
-                                                    navigate(`/dashboard/project/${inv.projectId}`)
-
+                                                    const success = await acceptInvitation(inv.id)
+                                                    if (success) {
+                                                        onAccept?.(inv.id)
+                                                        navigate(`/dashboard/project/${inv.projectId}`)
+                                                    }
                                                 }}
                                             >
                                                 Accept

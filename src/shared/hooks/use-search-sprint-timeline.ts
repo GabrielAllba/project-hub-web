@@ -1,13 +1,13 @@
 import type { BaseResponse } from "@/domain/dto/base-response"
 import { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository"
 
-import { SearchSprintsUseCase } from "@/application/usecases/search-sprint-usecase"
 import type { Page } from "@/domain/dto/page-response"
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res"
 import useSWRMutation from "swr/mutation"
+import { SearchSprintsTimelineUseCase } from '../../application/usecases/search-sprint-timeline-usecase'
 import { convertAxiosErrorToBaseResponse } from "../utils/axios-utils"
 
-const searchSprintsUseCase = new SearchSprintsUseCase(new ProjectHubServiceRepository())
+const searchSprintsTimelineUseCase = new SearchSprintsTimelineUseCase(new ProjectHubServiceRepository())
 
 async function fetcher(
     _: string,
@@ -17,17 +17,15 @@ async function fetcher(
         arg: { token: string; projectId: string; keyword: string; page: number; size: number }
     }
 ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
-    try {
-        return await searchSprintsUseCase.execute(token, projectId, keyword, page, size)
-    } catch (err) {
-        return convertAxiosErrorToBaseResponse<Page<SprintResponseDTO>>(err)
-    }
+
+    return await searchSprintsTimelineUseCase.execute(token, projectId, keyword, page, size)
+
 }
 
-export function useSearchSprints(projectId: string) {
+export function useSearchSprintsTimeline(projectId: string) {
     const { trigger, data, isMutating, error } = useSWRMutation(`/sprint/${projectId}/search`, fetcher)
 
-    const triggerSearchSprints = async (
+    const triggerSearchSprintsTimeline = async (
         keyword: string,
         page: number = 0,
         size: number = 10
@@ -35,13 +33,17 @@ export function useSearchSprints(projectId: string) {
         const token = localStorage.getItem("accessToken")
         if (!token) throw new Error("No access token found")
 
-        return await trigger({ token, projectId, keyword, page, size })
+        try {
+            return await trigger({ token, projectId, keyword, page, size })
+        } catch (err) {
+            throw convertAxiosErrorToBaseResponse<Page<SprintResponseDTO>>(err)
+        }
     }
 
     return {
-        triggerSearchSprints,
-        searchSprintsResponse: data,
-        searchSprintsLoading: isMutating,
-        searchSprintsError: error,
+        triggerSearchSprintsTimeline,
+        searchSprintsTimelineResponse: data,
+        searchSprintsTimelineLoading: isMutating,
+        searchSprintsTimelineError: error,
     }
 }

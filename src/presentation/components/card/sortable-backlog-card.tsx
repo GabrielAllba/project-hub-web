@@ -19,5 +19,5 @@ export function SortableBacklogCard({ task }: SortableBacklogCardProps) {
     transition,
   }
 
-  return <BacklogCard ref={setNodeRef} task={task} isDragging={isDragging} style={style} {...attributes} {...listeners} />
+  return <BacklogCard projectId={task.projectId} ref={setNodeRef} task={task} isDragging={isDragging} style={style} {...attributes} {...listeners} />
 }

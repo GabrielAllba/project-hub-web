@@ -5,7 +5,7 @@ import type { BaseResponse } from "@/domain/dto/base-response"
 import type { Sprint, SprintStatus } from "@/domain/entities/sprint"
 import { useEditSprintGoalAndDates } from "@/shared/hooks/use-edit-sprint-goal-and-dates"
 import { useGetTimelineProjectSprints } from "@/shared/hooks/use-get-timeline-project-sprints"
-import { useSearchSprints } from "@/shared/hooks/use-search-sprint"
+import { useSearchSprintsTimeline } from "@/shared/hooks/use-search-sprint-timeline"
 import { getSprintStatusColor, getSprintStatusLabel } from "@/shared/utils/sprint-utils"
 import dayjs from "dayjs"
 import "dayjs/locale/id"
@@ -13,13 +13,14 @@ import { ArrowUpDown, CalendarDays, ChevronDown, Expand, Loader2, Minimize, Plus
 import type React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { Rnd } from "react-rnd"
+import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { EmptyStateIllustration } from "../empty/empty-state"
+import { LoadingSpinner } from "../loading/loading-spinner"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
 import { Input } from "../ui/input"
-import { EmptyStateIllustration } from "../empty/empty-state"
-import { LoadingSpinner } from "../loading/loading-spinner"
 
 interface TimelineTabProps {
   projectId: string
@@ -52,15 +53,16 @@ interface TimelineData {
 }
 
 const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
+  const navigate = useNavigate()
   const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
   const {
     triggerGetTimelineProjectSprints,
     triggerGetTimelineProjectSprintsResponse,
   } = useGetTimelineProjectSprints(projectId)
   const {
-    triggerSearchSprints,
-    searchSprintsResponse,
-    searchSprintsLoading } = useSearchSprints(projectId)
+    triggerSearchSprintsTimeline,
+    searchSprintsTimelineResponse,
+    searchSprintsTimelineLoading } = useSearchSprintsTimeline(projectId)
 
   // State
   const [visibleYear, setVisibleYear] = useState(dayjs().year())
@@ -103,7 +105,9 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
   // Initial fetch sprints data
   useEffect(() => {
     if (projectId) {
-      triggerGetTimelineProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE, visibleYear)
+      if (visibleYear) {
+        triggerGetTimelineProjectSprints(DEFAULT_PAGE, DEFAULT_PAGE_SIZE, visibleYear)
+      }
     }
   }, [projectId, visibleYear])
 
@@ -156,7 +160,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
         return best
       })
 
-      console.log(`Auto-changing year from ${visibleYear} to ${mostCommonYear} based on search results`)
+      toast.info(`Auto-changing year from ${visibleYear} to ${mostCommonYear} based on search results`)
 
       setVisibleYear(mostCommonYear)
 
@@ -175,8 +179,8 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
 
   // Handle search response data
   useEffect(() => {
-    if (searchSprintsResponse?.data && isSearchMode) {
-      const responseData = searchSprintsResponse.data
+    if (searchSprintsTimelineResponse?.data && isSearchMode) {
+      const responseData = searchSprintsTimelineResponse.data
       console.log(`Search results: ${responseData.content.length} sprints found`)
 
       // Auto-detect and change year if needed
@@ -187,7 +191,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
       setIsTimelineLoading(false)
       setIsLoadingMore(false)
     }
-  }, [searchSprintsResponse, isSearchMode, visibleYear])
+  }, [searchSprintsTimelineResponse, isSearchMode, visibleYear])
 
   // Simplified search with debounce
   useEffect(() => {
@@ -204,7 +208,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
         setSprintPositions({})
 
         try {
-          await triggerSearchSprints(searchTerm, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+          await triggerSearchSprintsTimeline(searchTerm, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
         } catch (error) {
           console.error("Search failed:", error)
           toast.error("Search failed")
@@ -537,7 +541,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
               className="pl-10 w-64"
             />
 
-            {searchSprintsLoading && (
+            {searchSprintsTimelineLoading && (
               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
                 <Loader2 className="w-4 h-4 animate-spin text-blue-600" />
               </div>
@@ -694,8 +698,8 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                     </span>
                     <span
                       className={`text-sm font-medium ${day.isToday
-                          ? "text-blue-600 dark:text-blue-400"
-                          : "text-zinc-800 dark:text-zinc-100"
+                        ? "text-blue-600 dark:text-blue-400"
+                        : "text-zinc-800 dark:text-zinc-100"
                         }`}
                     >
                       {day.dayOfMonth}
@@ -895,7 +899,15 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                           {/* Status indicator */}
                           <div className={`w-1 h-full ${getSprintStatusColor(sprint.status)}`} />
                           <div className="flex flex-col justify-center p-2 w-full">
-                            <div className="text-xs font-medium mb-1 truncate">{sprint.name}</div>
+                            <div className="text-xs font-medium mb-1 truncate">
+                              <span
+                                className="hover:underline hover:cursor-pointer"
+                                onClick={() => {
+                                  navigate(`/dashboard/project/${sprint.projectId}?tab=report&sprintId=${sprint.id}`, { replace: true })
+                                }}>
+                                {sprint.name}
+                              </span>
+                            </div>
                             <div className="flex items-center justify-between w-full">
                               <div className="text-xs text-gray-500 w-full">
                                 <p className="truncate text-xs max-w-3/4">
