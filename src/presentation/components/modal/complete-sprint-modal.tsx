@@ -1,6 +1,5 @@
 "use client"
 
-import { useBacklog } from "@/shared/contexts/backlog-context"
 import { useSprint } from "@/shared/contexts/sprint-context"
 import { BadgeCheck, Trophy } from "lucide-react"
 import { useEffect, useMemo, useState } from "react"
@@ -36,8 +35,7 @@ export function CompleteSprintModal({ sprintId }: CompleteSprintModalProps) {
   const navigate = useNavigate()
 
 
-  const { sprints, loadInitialSprints, completeSprint, getCompleteSprintInfo } = useSprint()
-  const { refreshUnassignedBacklogs } = useBacklog()
+  const { sprints, completeSprint, getCompleteSprintInfo } = useSprint()
 
   const sprintName = useMemo(() => {
     const sprint = sprints.find((s) => s.id === sprintId)
@@ -60,14 +58,12 @@ export function CompleteSprintModal({ sprintId }: CompleteSprintModalProps) {
   const handleComplete = async () => {
     try {
       const res = await completeSprint(sprintId)
-      await refreshUnassignedBacklogs()
-      await loadInitialSprints()
-      toast.success("Sprint completed successfully")
-      setOpen(false)
-      navigate(`/dashboard/project/${res.data.projectId}?tab=report&sprintId=${res.data.id}`, { replace: true })
-
+      if (res.status == "success" && res.data) {
+        setOpen(false)
+        navigate(`/dashboard/project/${res.data.projectId}?tab=report&sprintId=${res.data.id}`, { replace: true })
+      }
     } catch (err) {
-      toast.error("Failed to complete sprint: " + err)
+      toast.error("Unexpected error: " + err)
     }
   }
 

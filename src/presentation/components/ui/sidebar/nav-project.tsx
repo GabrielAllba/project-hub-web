@@ -1,7 +1,6 @@
 "use client"
 
 import {
-  IconFile,
   type Icon
 } from "@tabler/icons-react"
 
@@ -31,8 +30,7 @@ export function NavProject({
               to={item.url}
               className="flex items-center gap-3 rounded-md px-3 py-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             >
-              <IconFile className="w-5 h-5 text-blue-600" />
-              <span className="text-sm ">{item.name}</span>
+              📁<span className="text-sm ">{item.name}</span>
             </Link>
           </SidebarMenuButton>
 

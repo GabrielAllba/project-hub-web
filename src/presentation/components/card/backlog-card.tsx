@@ -2,9 +2,11 @@ import { STATUS_PROGRESS_MAP } from "@/constants/constants"
 import type { ProductBacklog } from "@/domain/entities/product-backlog"
 import { type Sprint } from "@/domain/entities/sprint"
 import { type User } from "@/domain/entities/user"
+import { useBacklog } from "@/shared/contexts/backlog-context"
 import { useGetProjectMembers } from "@/shared/hooks/use-get-project-members"
 import { useGetSprintById } from "@/shared/hooks/use-get-sprint-by-id"
 import { cn } from "@/shared/utils/merge-class"
+import { getGradientForUser, getUserInitials } from "@/shared/utils/product-backlog-utils"
 import { AlertTriangle, Circle, Minus } from "lucide-react"
 import type React from "react"
 import { forwardRef, useEffect, useState } from "react"
@@ -45,6 +47,10 @@ export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
         const [sprint, setSprint] = useState<Sprint>()
         const [assignee, setAssignee] = useState<User | null>(null)
 
+        const {
+            handleSetClickedBacklog
+        } = useBacklog()
+
         const { triggerGetSprintById } = useGetSprintById(task.sprintId!)
         const { triggerGetProjectMembers } = useGetProjectMembers(projectId)
 
@@ -78,15 +84,6 @@ export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
             fetchAssignee()
         }, [task.assigneeId])
 
-        const getInitials = (name: string) => {
-            return name
-                .split(" ")
-                .map((n) => n[0])
-                .join("")
-                .toUpperCase()
-                .slice(0, 2)
-        }
-
         return (
             <Card
                 ref={ref}
@@ -97,6 +94,9 @@ export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
                     isDragging && "opacity-50 rotate-2 scale-105"
                 )}
                 {...props}
+                onClick={() => {
+                    handleSetClickedBacklog(task.id)
+                }}
             >
                 <CardContent className="p-4 space-y-3">
                     {/* Top Labels */}
@@ -154,9 +154,11 @@ export const BacklogCard = forwardRef<HTMLDivElement, BacklogCardProps>(
                         {assignee && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Avatar className="w-6 h-6 border-2 border-white">
-                                        <AvatarFallback className="bg-blue-600 text-white text-xs">
-                                            {getInitials(assignee.username || assignee.email)}
+                                    <Avatar className="cursor-pointer h-6 w-6 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                        <AvatarFallback
+                                            className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(assignee.username.charAt(0).toUpperCase()))}
+                                        >
+                                            {getUserInitials(assignee.username.charAt(0).toUpperCase())}
                                         </AvatarFallback>
                                     </Avatar>
                                 </TooltipTrigger>

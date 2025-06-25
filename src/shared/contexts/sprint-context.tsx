@@ -35,6 +35,7 @@ import { useEditBacklogPriority } from "../hooks/use-edit-backlog-priority"
 import { useEditBacklogStatus } from "../hooks/use-edit-backlog-status"
 import { useEditBacklogTitle } from "../hooks/use-edit-backlog-title"
 import { useEditSprintGoalAndDates } from "../hooks/use-edit-sprint-goal-and-dates"
+import { useGetProjectSprintsInProgress } from "../hooks/use-get-project-sprints-in-progress"
 import { useReorderProductBacklog } from "../hooks/use-reorder-product-backlog"
 
 
@@ -52,11 +53,19 @@ interface SprintContextType {
   productGoalIds?: string[]
   assigneeIds?: string[]
 
+  sprintsInProgress: Sprint[]
+  selectedSprintId: string
+  selectedSprintBacklogs: ProductBacklog[]
+  selectedSprintBacklogsHasMore: boolean
+  isLoadMoreSelectedSprintBacklogsLoading: boolean
+
   setSearch: (search: string) => void
   setStatus: (status?: ProductBacklogStatus) => void
   setPriority: (priority?: ProductBacklogPriority) => void
   setProductGoalIds: (productGoalIds: string[]) => void
   setAssigneeIds: (assigneeIds: string[]) => void
+  setSelectedSprintId: (sprintId: string) => void
+
 
   loadInitialSprints: () => Promise<void>
   loadMoreSprints: () => Promise<void>
@@ -65,9 +74,11 @@ interface SprintContextType {
   removeSprintBacklogItem: (sprintId: string, backlogId: string) => void
   insertSprintBacklogItemAt: (sprintId: string, item: ProductBacklog, position: number) => Promise<void> // Mark as Promise<void>
   startSprint: (sprintId: string) => Promise<void>
-  completeSprint: (sprintId: string) => Promise<BaseResponse<SprintResponseDTO>>
+  completeSprint: (sprintId: string) => Promise<BaseResponse<SprintResponseDTO | null>>
   getCompleteSprintInfo: (sprintId: string) => Promise<BaseResponse<CompleteSprintInfoResponseDTO>>
   editSprintGoalAndDates: (req: EditSprintGoalAndDatesRequestDTO) => Promise<BaseResponse<SprintResponseDTO>>
+  loadMoreSelectedSprintBacklogs: () => Promise<void>
+
 
   createSprintBacklog: (dto: CreateProductBacklogRequestDTO) => Promise<BaseResponse<ProductBacklog>>
   editBacklogPoint: (sprintId: string, backlogId: string, point: number) => Promise<void>
@@ -90,6 +101,13 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
   const [loadingSprintBacklogs, setLoadingSprintBacklogs] = useState<Record<string, boolean>>({})
   const [currentPageSprints, setCurrentPageSprints] = useState(DEFAULT_PAGE)
   const [hasMoreSprints, setHasMoreSprints] = useState(true)
+
+  const [sprintsInProgress, setSprintsInProgress] = useState<Sprint[]>([])
+  const [selectedSprintId, setSelectedSprintId] = useState<string>("")
+  const [selectedSprintBacklogs, setSelectedSprintBacklogs] = useState<ProductBacklog[]>([])
+  const [selectedSprintBacklogsHasMore, setSelectedSprintBacklogsHasMore] = useState<boolean>(false)
+  const [isLoadMoreSelectedSprintBacklogsLoading, setIsLoadMoreSelectedSprintBacklogsLoading] = useState<boolean>(false)
+
 
   // Filter states
   const [search, setSearch] = useState<string>("")
@@ -114,6 +132,8 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
   const { triggerEditBacklogGoal } = useEditBacklogGoal()
   const { triggerAssignBacklogUser } = useAssignBacklogUser()
   const { triggerCreateProductBacklog } = useCreateProductBacklog()
+  const { triggerGetProjectSprintsInProgress } = useGetProjectSprintsInProgress(projectId)
+
 
   const createSprint = async () => {
     try {
@@ -143,6 +163,22 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       }
     } catch (err) {
       toast.error(`An unexpected error occurred: ${err}`);
+    }
+  }
+
+  const loadSprintsInProgress = async () => {
+    try {
+      const res = await triggerGetProjectSprintsInProgress(DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+      if (res.status === "success" && res.data?.content) {
+        setSprintsInProgress(res.data.content)
+        if (res.data.content.length > 0) {
+          setSelectedSprintId(res.data.content[0].id)
+        } else {
+          setSelectedSprintId("")
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch in-progress sprints:", err)
     }
   }
 
@@ -395,7 +431,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
-  const completeSprint = async (sprintId: string): Promise<BaseResponse<SprintResponseDTO>> => {
+  const completeSprint = async (sprintId: string): Promise<BaseResponse<SprintResponseDTO | null>> => {
     try {
       const res = await triggerCompleteSprint(sprintId)
 
@@ -412,10 +448,9 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
       return res
     } catch (error) {
-      const errMessage = error instanceof Error ? error.message : String(error)
-      toast.error(`An unexpected error occurred: ${errMessage}`)
-      return { status: "error", message: error || "Unexpected error" } as BaseResponse<SprintResponseDTO>;
-
+      const baseError = error as BaseResponse<null>
+      toast.error(`${baseError.message}`)
+      return { status: "error", message: baseError.message || "Unexpected error" } as BaseResponse<null>;
     }
   }
 
@@ -463,6 +498,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       const res = await triggerEditBacklogPoint({ backlogId, point });
       if (res.status === "success" && res.data) {
         loadInitialSprints();
+        setSelectedSprintBacklogs((prev) =>
+          prev.map((backlog) =>
+            backlog.id === backlogId ? { ...backlog, point: res.data.point } : backlog
+          )
+        )
         toast.success("Backlog point updated!");
       } else {
         toast.error(`Failed to update backlog point: ${res.message || "Unknown error"}`);
@@ -477,6 +517,12 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       const res = await triggerEditBacklogTitle({ backlogId, title });
       if (res.status === "success" && res.data) {
         loadInitialSprints();
+
+        setSelectedSprintBacklogs((prev) =>
+          prev.map((backlog) =>
+            backlog.id === backlogId ? { ...backlog, title: res.data.title } : backlog
+          )
+        )
         toast.success("Backlog title updated!");
       } else {
         toast.error(`Failed to update backlog title: ${res.message || "Unknown error"}`);
@@ -495,6 +541,12 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       const res = await triggerEditBacklogPriority({ backlogId, priority });
       if (res.status === "success") {
         loadInitialSprints();
+
+        setSelectedSprintBacklogs((prev) =>
+          prev.map((backlog) =>
+            backlog.id === backlogId ? { ...backlog, priority: res.data.priority } : backlog
+          )
+        )
         toast.success("Backlog priority updated successfully!");
       } else {
         toast.error(`Failed to update backlog priority: ${res.message || "Unknown error"}`);
@@ -510,6 +562,12 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       const res = await triggerEditBacklogStatus({ backlogId, status });
       if (res.status === "success" && res.data) {
         loadInitialSprints();
+
+        setSelectedSprintBacklogs((prev) =>
+          prev.map((backlog) =>
+            backlog.id === backlogId ? { ...backlog, status: res.data.status } : backlog
+          )
+        )
         toast.success("Backlog status updated!");
       } else {
         toast.error(`Failed to update backlog status: ${res.message || "Unknown error"}`);
@@ -524,6 +582,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       const res = await triggerEditBacklogGoal({ backlogId, goalId });
       if (res.status === "success" && res.data) {
         loadInitialSprints();
+        setSelectedSprintBacklogs((prev) =>
+          prev.map((backlog) =>
+            backlog.id === backlogId ? { ...backlog, productGoalId: res.data.productGoalId } : backlog
+          )
+        )
         toast.success("Backlog goal updated!");
       } else {
         toast.error(`Failed to update backlog goal: ${res.message || "Unknown error"}`);
@@ -538,6 +601,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       const res = await triggerAssignBacklogUser({ backlogId, assigneeId });
       if (res.status === "success" && res.data) {
         loadInitialSprints();
+        setSelectedSprintBacklogs((prev) =>
+          prev.map((backlog) =>
+            backlog.id === backlogId ? { ...backlog, assigneeId: res.data.assigneeId } : backlog
+          )
+        )
         toast.success("Backlog user assigned!");
       } else {
         toast.error(`Failed to assign backlog user: ${res.message || "Unknown error"}`);
@@ -563,10 +631,68 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
+  const loadMoreSelectedSprintBacklogs = async () => {
+    if (!selectedSprintId || !selectedSprintBacklogsHasMore || isLoadMoreSelectedSprintBacklogsLoading) return;
+
+    setIsLoadMoreSelectedSprintBacklogsLoading(true);
+
+    const page = Math.floor(selectedSprintBacklogs.length / DEFAULT_PAGE_SIZE);
+
+    try {
+      const res = await triggerGetProductBacklogBySprint(
+        selectedSprintId,
+        page,
+        DEFAULT_PAGE_SIZE,
+        {
+          search,
+          status,
+          priority,
+          productGoalIds,
+          assigneeIds,
+        }
+      );
+
+      if (res.status === "success" && res.data) {
+        const newItems = res.data.content.filter(
+          (item) => !selectedSprintBacklogs.some((existing) => existing.id === item.id)
+        );
+
+        setSelectedSprintBacklogs((prev) => [...prev, ...newItems]);
+        setSelectedSprintBacklogsHasMore(!res.data.last);
+      } else {
+        toast.error(`Failed to load more backlog items: ${res.message || "Unknown error"}`);
+      }
+    } catch (error) {
+      toast.error(`An unexpected error occurred: ${error}`);
+    } finally {
+      setIsLoadMoreSelectedSprintBacklogsLoading(false);
+    }
+  };
+
 
   useEffect(() => {
     loadInitialSprints()
   }, [projectId, search, status, priority, productGoalIds, assigneeIds])
+
+  useEffect(() => {
+    loadSprintsInProgress()
+  }, [projectId])
+
+  useEffect(() => {
+    const load = async () => {
+      const backlogRes = await triggerGetProductBacklogBySprint(selectedSprintId, DEFAULT_PAGE, DEFAULT_PAGE_SIZE)
+      if (backlogRes.status == "success") {
+        setSelectedSprintBacklogs(backlogRes.data.content)
+
+        if (!backlogRes.data.last) {
+          setSelectedSprintBacklogsHasMore(true)
+        }
+      }
+    }
+    load()
+
+  }, [selectedSprintId])
+
 
   return (
     <SprintContext.Provider
@@ -584,15 +710,23 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
         productGoalIds,
         assigneeIds,
 
+        sprintsInProgress,
+        selectedSprintId,
+        selectedSprintBacklogs,
+        selectedSprintBacklogsHasMore,
+        isLoadMoreSelectedSprintBacklogsLoading,
+
         setSearch,
         setStatus,
         setPriority,
         setAssigneeIds,
         setProductGoalIds,
+        setSelectedSprintId,
 
         loadInitialSprints,
         loadMoreSprints,
         loadMoreSprintBacklogs,
+        loadMoreSelectedSprintBacklogs,
 
         deleteSprintBacklogItem,
         removeSprintBacklogItem,

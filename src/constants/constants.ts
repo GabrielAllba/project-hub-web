@@ -20,3 +20,13 @@ export type ProjectRole = "SCRUM_MASTER" | "DEVELOPER" | "PRODUCT_OWNER"
 
 
 export const CHART_COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"]
+
+
+export type BacklogActivityType = "TITLE_CHANGE" |
+  "STATUS_CHANGE" |
+  "PRIORITY_CHANGE" |
+  "POINT_CHANGE" |
+  "GOAL_CHANGE" |
+  "ASSIGNEE_CHANGE" |
+  "BACKLOG_CREATED" |
+  "BACKLOG_REORDERED"

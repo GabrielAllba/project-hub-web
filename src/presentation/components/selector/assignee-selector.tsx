@@ -1,23 +1,24 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
 import { Check } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 
 import type { ProjectRole } from "@/constants/constants"
 import type { User } from "@/domain/entities/user"
 import { useGetProjectMembers } from "@/shared/hooks/use-get-project-members"
 
+import { Avatar, AvatarFallback } from "@/presentation/components/ui/avatar"
+import { Input } from "@/presentation/components/ui/input"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/presentation/components/ui/popover"
 import { ScrollArea } from "@/presentation/components/ui/scroll-area"
-import { Input } from "@/presentation/components/ui/input"
-import { Avatar, AvatarFallback } from "@/presentation/components/ui/avatar"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
-import { LoadingSpinner } from "../ui/loading-spinner"
 import { cn } from "@/shared/utils/merge-class"
+import { getGradientForUser, getUserInitials } from "@/shared/utils/product-backlog-utils"
+import { LoadingSpinner } from "../ui/loading-spinner"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip"
 
 type Props = {
     projectId: string
@@ -79,9 +80,11 @@ export function AssigneeSelector({
                         <div>
                             <TooltipTrigger asChild>
                                 {selectedAssignee ? (
-                                    <Avatar className="h-6 w-6">
-                                        <AvatarFallback className="text-xs bg-blue-500 text-white cursor-pointer">
-                                            {selectedAssignee.username.charAt(0).toUpperCase()}
+                                    <Avatar className="cursor-pointer h-6 w-6 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                        <AvatarFallback
+                                            className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(selectedAssignee.username.charAt(0).toUpperCase()))}
+                                        >
+                                            {getUserInitials(selectedAssignee.username.charAt(0).toUpperCase())}
                                         </AvatarFallback>
                                     </Avatar>
                                 ) : (
@@ -119,9 +122,11 @@ export function AssigneeSelector({
                                         )}
                                     >
                                         <div className="flex items-center gap-2">
-                                            <Avatar className="h-6 w-6">
-                                                <AvatarFallback className="text-xs bg-blue-500 text-white">
-                                                    {user.username?.charAt(0).toUpperCase() ?? "?"}
+                                            <Avatar className="cursor-pointer h-6 w-6 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                                <AvatarFallback
+                                                    className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(user.username.charAt(0).toUpperCase()))}
+                                                >
+                                                    {getUserInitials(user.username.charAt(0).toUpperCase())}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div className="flex flex-col text-sm">

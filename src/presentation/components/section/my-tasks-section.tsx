@@ -1,11 +1,11 @@
 "use client"
 
 import {
+    IconArrowIteration,
     IconCheckbox,
     IconFolder,
     IconLoader2,
-    IconRocket,
-    IconSubtask
+    IconTargetArrow
 } from "@tabler/icons-react";
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -95,7 +95,7 @@ export const MyTasksSection = () => {
         return (
             <div className="space-y-6">
                 <div className="flex items-center gap-2 pt-4">
-                    <IconSubtask className="text-blue-600" />
+
                     <span className="text-base font-medium">My Active Tasks</span>
                 </div>
                 <div className="pt-6">
@@ -107,7 +107,6 @@ export const MyTasksSection = () => {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-2 pt-4">
-                <IconSubtask className="text-blue-600" />
                 <span className="text-base font-medium">My Active Tasks</span>
             </div>
 
@@ -131,12 +130,12 @@ export const MyTasksSection = () => {
                                             {task.projectName}
                                         </span>
                                         <span className="flex items-center gap-1">
-                                            <IconRocket size={12} className="text-blue-500" />
+                                            <IconArrowIteration size={12} className="text-blue-500" />
                                             {task.sprintName}
                                         </span>
                                         {task.productGoalId && (
                                             <span className="flex items-center gap-1">
-                                                🎯
+                                                <IconTargetArrow size={12} className="text-red-600" />
                                                 {task.productGoalTitle}
                                             </span>
                                         )}

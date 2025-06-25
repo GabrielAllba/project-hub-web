@@ -74,4 +74,14 @@ export class AuthenticationServiceRepository {
     );
     return response.data;
   }
+
+  async findUserByEmail(email: string): Promise<BaseResponse<FindUserResponseDTO>> {
+    const response = await authenticationServices.get<BaseResponse<FindUserResponseDTO>>(
+      "/auth/find-by-email",
+      {
+        params: { email },
+      }
+    );
+    return response.data;
+  }
 }

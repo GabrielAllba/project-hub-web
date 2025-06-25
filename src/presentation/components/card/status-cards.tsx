@@ -1,4 +1,6 @@
-import { Card, CardContent, CardHeader, CardTitle } from "../ui/card"
+import { CheckCircle, Clock, ListChecks, Loader2 } from "lucide-react"
+import type { JSX } from "react"
+import { Card } from "../ui/card"
 import { Skeleton } from "../ui/skeleton"
 
 interface StatusCardsProps {
@@ -14,43 +16,65 @@ export function StatusCards({
     inProgress,
     completed,
     isLoading,
-    isError
+    isError,
 }: StatusCardsProps) {
-    const renderCard = (
-        color: string,
-        title: string,
+    const renderMiniCard = (
+        icon: JSX.Element,
         value: number,
-        subtitle: string
+        label: string,
+        bgColor: string
     ) => (
-        <Card className="rounded-sm">
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center">
-                    <div className={`w-3 h-3 rounded-full ${color} mr-2`} />
-                    <CardTitle className="text-lg font-medium">{title}</CardTitle>
-                </div>
-            </CardHeader>
-            <CardContent>
+        <Card className="flex flex-wrap flex-row  px-2 py-2 items-center gap-4 border rounded-lg">
+            <div
+                className={`h-10 w-10 rounded-md flex items-center justify-center ${bgColor}`}
+            >
+                {icon}
+            </div>
+            <div>
                 {isLoading ? (
-                    <Skeleton className="w-24 h-10" />
+                    <Skeleton className="w-20 h-6" />
                 ) : isError ? (
-                    <span className="text-red-500">Failed to load</span>
+                    <span className="text-red-500 text-sm">Failed to load</span>
                 ) : (
-                    <div className="flex items-baseline">
-                        <span className="text-4xl font-bold">{value}</span>
-                        <span className="ml-2 text-muted-foreground">{subtitle}</span>
-                    </div>
+                    <>
+                        <p className="text-base font-semibold">
+                            {value} {label}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                            in progress sprint
+                        </p>
+                    </>
                 )}
-            </CardContent>
+            </div>
         </Card>
     )
 
     return (
-        <div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {renderCard("bg-orange-500", "To Do", todo, "Tasks")}
-                {renderCard("bg-blue-500", "In Progress", inProgress, "Tasks in progress")}
-                {renderCard("bg-green-500", "Done", completed, "Tasks completed")}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {renderMiniCard(
+                <ListChecks size={20} className="text-slate-600" />,
+                (todo + inProgress + completed),
+                "total tasks",
+                "bg-slate-100"
+            )}
+            {renderMiniCard(
+                <Clock size={20} className="text-orange-600" />,
+                todo,
+                "todo",
+                "bg-orange-100"
+            )}
+            {renderMiniCard(
+                <Loader2 size={20} className="text-blue-600" />,
+                inProgress,
+                "in progress",
+                "bg-blue-100"
+            )}
+            {renderMiniCard(
+                <CheckCircle size={20} className="text-green-600" />,
+                completed,
+                "completed",
+                "bg-green-100"
+            )}
         </div>
     )
 }

@@ -20,13 +20,12 @@ import {
 } from "@/shared/utils/product-backlog-utils"
 import {
     ChevronDown,
-    Eye,
     GripVertical,
+    LogsIcon,
     Pencil,
     Trash2
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { ProductGoalModal } from "../modal/product-goal-modal"
 import { AssigneeSelector } from "../selector/assignee-selector"
@@ -46,7 +45,9 @@ interface BacklogItemProps {
 }
 
 export function BacklogItem({ backlog }: BacklogItemProps) {
-    const navigate = useNavigate()
+    const {
+        handleSetClickedBacklog
+    } = useBacklog()
     const {
         editBacklogPoint,
         editBacklogTitle,
@@ -131,11 +132,11 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
         if (backlog.sprintId) {
             await editSprintBacklogTitle(backlog.sprintId, backlog.id, titleValue)
             setEditingTitleBacklog(undefined)
-            toast.success("Backlog title updated successfully!")
+            // toast.success("Backlog title updated successfully!")
         } else {
             await editBacklogTitle(backlog.id, titleValue)
             setEditingTitleBacklog(undefined)
-            toast.success("Backlog title updated successfully!")
+            // toast.success("Backlog title updated successfully!")
         }
     }
 
@@ -166,7 +167,9 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                         onMouseLeave={() => setIsHoveringTitle(false)}>
                         {!editingTitleBacklog || editingTitleBacklog.id !== backlog.id ? (
                             <div className="flex items-center gap-1 truncate">
-                                <p className="text-sm truncate">{backlog.title}</p>
+                                {backlog.status == "DONE" && <p className="text-sm truncate line-through">{backlog.title}</p>}
+                                {backlog.status != "DONE" && <p className="text-sm truncate">{backlog.title}</p>}
+
                                 {isHoveringTitle && (
                                     <Pencil
                                         className="w-3 h-3 text-muted-foreground cursor-pointer hover:text-primary"
@@ -313,12 +316,10 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                     </div>
 
                     <div className="flex justify-end gap-1">
-                        <Eye
+                        <LogsIcon
                             className="w-4 h-4 text-muted-foreground hover:text-blue-500 cursor-pointer"
                             onClick={() => {
-                                const search = new URLSearchParams(window.location.search)
-                                search.set("backlogId", backlog.id)
-                                navigate({ search: search.toString() }, { replace: true })
+                                handleSetClickedBacklog(backlog.id)
                             }}
                         />
                         <Trash2

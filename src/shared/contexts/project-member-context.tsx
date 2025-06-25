@@ -16,7 +16,6 @@ import { useGetProjectMembers } from "../hooks/use-get-project-members"
 interface ProjectMemberContextType {
     members: ProjectUserResponseDTO[]
     isLoading: boolean
-    roleFilter: ProjectRole | null
     setRoleFilter: (role: ProjectRole | null) => void
     refreshMembers: () => Promise<void>
     triggerLoadAllMembers: () => Promise<void>
@@ -78,7 +77,7 @@ export const ProjectMemberProvider = ({
         } finally {
             setIsLoading(false)
         }
-    }, [])
+    }, [projectId, roleFilter])
 
     const refreshMembers = async () => {
         if (roleFilter) {
@@ -94,14 +93,13 @@ export const ProjectMemberProvider = ({
         } else {
             triggerLoadAllMembers()
         }
-    }, [roleFilter])
+    }, [projectId])
 
     return (
         <ProjectMemberContext.Provider
             value={{
                 members,
                 isLoading,
-                roleFilter,
                 setRoleFilter,
                 refreshMembers,
                 triggerLoadAllMembers,

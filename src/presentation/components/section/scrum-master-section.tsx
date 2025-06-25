@@ -10,6 +10,8 @@ import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
 import { Card, CardHeader, CardTitle } from "../ui/card"
 import { Separator } from "../ui/separator"
+import { cn } from "@/shared/utils/merge-class"
+import { getGradientForUser, getUserInitials } from "@/shared/utils/product-backlog-utils"
 
 export const ScrumMasterSection = ({ projectId }: { projectId: string }) => {
     const [members, setMembers] = useState<ProjectUserResponseDTO[]>([])
@@ -34,24 +36,21 @@ export const ScrumMasterSection = ({ projectId }: { projectId: string }) => {
                 </Button>
             </div>
             <Separator />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 ">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 ">
                 {members.map((member) => (
-                    <Card key={member.id} className="rounded-sm">
-                        <CardHeader className="flex flex-row items-center gap-4">
-                            <Avatar>
-                                <AvatarFallback>
-                                    {member.username
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")
-                                        .toUpperCase()}
+                    <Card key={member.id} className="rounded-sm px-0 py-0">
+                        <CardHeader className="flex flex-row items-center gap-4 px-3 py-3">
+                            <Avatar className="cursor-pointer h-8 w-8 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                                <AvatarFallback
+                                    className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(member.username.charAt(0).toUpperCase()))}
+                                >
+                                    {getUserInitials(member.username.charAt(0).toUpperCase())}
                                 </AvatarFallback>
                             </Avatar>
                             <div className="truncate">
                                 <CardTitle className="text-base">{member.username}</CardTitle>
                                 <p className="text-xs text-muted-foreground truncate">
-                                    @{member.username} • {member.email}
+                                    {member.email}
                                 </p>
                             </div>
                         </CardHeader>

@@ -31,7 +31,7 @@ export const ProjectHeaderSection = () => {
         <GreetingSection />
         <div className="flex flex-wrap items-center justify-between gap-2 mt-4">
           <div className="flex items-center gap-2">
-            <span className="text-base font-medium">Project</span>
+            <span className="text-base font-medium">Projects</span>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">

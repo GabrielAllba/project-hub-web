@@ -16,6 +16,7 @@ import type { EditSprintGoalAndDatesRequestDTO } from "@/domain/dto/req/edit-spr
 import type { RenameProductGoalRequestDTO } from "@/domain/dto/req/rename-product-goal-req";
 import type { RenameProjectRequestDTO } from "@/domain/dto/req/rename-project-req";
 import type { ReorderProductBacklogRequestDTO } from "@/domain/dto/req/reorder-product-backlog-req";
+import type { BacklogActivityLogResponseDTO } from "@/domain/dto/res/backlog-activity-log-res";
 import type { CompleteSprintInfoResponseDTO } from "@/domain/dto/res/complete-sprint-info-res";
 import type { GetMyActiveBacklogResponseDTO } from "@/domain/dto/res/get-my-active-backlog-res";
 import type { InvitationResponseDTO } from "@/domain/dto/res/invitation-res";
@@ -349,6 +350,25 @@ export class ProjectHubServiceRepository {
     size: number
   ): Promise<BaseResponse<Page<GetMyActiveBacklogResponseDTO>>> {
     const response = await projectHubService.get(`/product_backlog/my/active_sprint`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+
+  async getBacklogLogs(
+    token: string,
+    backlogId: string,
+    page: number,
+    size: number
+  ): Promise<BaseResponse<Page<BacklogActivityLogResponseDTO>>> {
+    const response = await projectHubService.get(`/logs/backlog/${backlogId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

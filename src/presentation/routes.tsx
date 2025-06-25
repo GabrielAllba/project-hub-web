@@ -4,6 +4,7 @@ import DashboardLayout from "./layouts/dashboard-layout";
 import { DashboardPage } from "./pages/dashboard-page";
 import { EmailVerificationPage } from "./pages/email-verification-page";
 import { FirstTimeUserPage } from "./pages/first-time-user-page";
+import { LandingPage } from "./pages/landing-page";
 import { LoginPage } from "./pages/login-page";
 import { ProjectDetailPage } from "./pages/project-detail-page";
 import { RegisterPage } from "./pages/register-page";
@@ -12,6 +13,7 @@ import { VerifyEmailProcessPage } from "./pages/verify-email-process-page";
 export const AppRoutes = () => (
   <BrowserRouter>
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
 

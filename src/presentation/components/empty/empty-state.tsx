@@ -1,8 +1,8 @@
 import { IconFolder, IconHammerOff, IconUserOff } from "@tabler/icons-react"
-import { Calendar, Filter, ListTodo, SearchX } from "lucide-react"
+import { Calendar, Filter, ListTodo, LogsIcon, SearchX } from "lucide-react"
 
 type EmptyStateProps = {
-    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project"
+    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project" | "no-activity"
     size?: "sm"
 }
 
@@ -96,6 +96,15 @@ export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) =
             <IconFolder className={`${sizeClasses.icon} text-blue-600`} />,
             "No Project Available",
             "Start your journey by creating your first project. Manage and monitor all your projects in one place.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+
+    if (type === "no-activity") {
+        return render(
+            <LogsIcon className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Activity Available",
+            "There are currently no activity on this backlog. Try changing point, title, assignee, or others to log the activity.",
             "bg-gradient-to-br from-blue-50 to-blue-100"
         )
     }

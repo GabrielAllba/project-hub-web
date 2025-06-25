@@ -1,12 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Link, useNavigate } from "react-router-dom"
-import { toast } from "sonner"
 import { Eye, EyeOff } from "lucide-react"
+import { useState } from "react"
+import { useNavigate } from "react-router-dom"
+import { toast } from "sonner"
 
-import type { LoginRequestDTO } from "@/domain/dto/req/login-req"
 import type { BaseResponse } from "@/domain/dto/base-response"
+import type { LoginRequestDTO } from "@/domain/dto/req/login-req"
 import { Button } from "@/presentation/components/ui/button"
 import { Input } from "@/presentation/components/ui/input"
 import { Label } from "@/presentation/components/ui/label"
@@ -122,12 +122,6 @@ export function LoginForm() {
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
-            <Link
-              to="/forgot-password"
-              className="ml-auto inline-block text-sm text-blue-600 dark:text-blue-400 font-semibold"
-            >
-              Forgot Password?
-            </Link>
           </div>
 
           {errorMessage && (

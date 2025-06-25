@@ -121,12 +121,13 @@ export const ProjectProvider = ({ children }: { children: ReactNode }) => {
             const response = await triggerRenameProject({ projectId, name: newName })
             if (response.status === "success" && response.data) {
                 toast.success("Project renamed successfully")
-                setProjects((prev) =>
+                setRecentProjects((prev) =>
                     prev.map((project) =>
                         project.projectId === projectId ? { ...project, name: response.data.name } : project
                     )
                 )
-                setRecentProjects((prev) =>
+
+                setProjects((prev) =>
                     prev.map((project) =>
                         project.projectId === projectId ? { ...project, name: response.data.name } : project
                     )

@@ -15,8 +15,8 @@ import { useProjects } from "@/shared/contexts/project-context"
 import { useUser } from "@/shared/contexts/user-context"
 import {
   IconFileWord,
-  IconFolder,
   IconInnerShadowTop,
+  IconLayoutDashboard
 } from "@tabler/icons-react"
 import * as React from "react"
 import { Link } from "react-router-dom"
@@ -27,7 +27,7 @@ const navMain = [
   {
     title: "Dashboard",
     url: "/dashboard",
-    icon: IconFolder,
+    icon: IconLayoutDashboard,
   },
 ]
 
@@ -58,7 +58,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                 asChild
                 className="w-full flex items-center justify-start gap-2 rounded-md hover:bg-blue-50 transition-colors"
               >
-                <Link to="/dashboard/project" className="flex items-center gap-2">
+                <Link to="/dashboard" className="flex items-center gap-2">
                   <IconInnerShadowTop className="size-5 text-blue-600" />
                   <span className="text-lg font-bold text-blue-900 ">Project Hub</span>
                 </Link>

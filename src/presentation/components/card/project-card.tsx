@@ -75,8 +75,9 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
                     }
                   }}
                   autoFocus
-                  className="text-sm font-semibold text-zinc-900 dark:text-white bg-transparent border-0 border-b border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500 w-full truncate"
+                  className="text-sm font-semibold text-zinc-900 dark:text-white w-full bg-transparent border-0 border-b border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500"
                 />
+
               ) : (
                 <Link
                   to={`/dashboard/project/${project.projectId}`}

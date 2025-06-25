@@ -79,7 +79,7 @@ export function EmailVerificationPage() {
         <div className="min-h-svh flex w-full text-zinc-900 dark:text-zinc-100">
             {/* LEFT SIDE - Illustration */}
             <div className="hidden lg:flex w-1/2 items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#a18cd1] via-[#fbc2eb] to-[#8fd3f4]">
-                <div className="absolute inset-0 bg-gradient-to-br from-[#2563EB] to-[#5325eb]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-800 to-blue-900" />
 
                 <div className="relative z-10 max-w-xl px-12 text-white">
                     <div className="mb-6 flex gap-3 text-sm font-medium">
@@ -135,7 +135,7 @@ export function EmailVerificationPage() {
                                         </p>
                                         <Button
                                             onClick={handleResendVerification}
-                                            className="cursor-pointer w-full bg-gradient-to-br from-[#2563EB] to-[#5325eb] text-white font-semibold"
+                                            className="cursor-pointer w-full bg-gradient-to-br from-blue-700 to-blue-800 text-white font-semibold"
                                             disabled={isSending}
                                         >
                                             {isSending ? (

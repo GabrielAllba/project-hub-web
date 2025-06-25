@@ -3,16 +3,17 @@ import { NO_GOAL_ID } from "@/constants/constants"
 import type { ProductGoal } from "@/domain/entities/product-goal"
 import { useBacklog } from "@/shared/contexts/backlog-context"
 import { useProductGoals } from "@/shared/contexts/product-goals-context"
+import { useSprint } from "@/shared/contexts/sprint-context"
 import { useCreateProductGoal } from "@/shared/hooks/use-create-product-goal"
 import { cn } from "@/shared/utils/merge-class"
-import { Flag, X } from "lucide-react"
+import { IconTargetArrow } from "@tabler/icons-react"
+import { Flag } from "lucide-react"
 import { useEffect, useState } from "react"
 import ProductGoalItem from "../items/product-goal-item"
 import { Button } from "../ui/button"
 import { Card } from "../ui/card"
 import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
-import { useSprint } from "@/shared/contexts/sprint-context"
 
 interface ProductGoalsSectionProps {
     projectId: string
@@ -72,9 +73,15 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
 
     return (
         <Card className="w-full rounded-lg border border-zinc-200 bg-gray-50 p-4 shadow-none">
-            <div className="flex items-center justify-between mb-4">
-                <h4 className="text-base font-semibold text-zinc-800">🎯 Product Goals</h4>
-                <X className="w-4 h-4 text-zinc-400 hover:text-zinc-600 cursor-pointer transition-colors" />
+            <div className="flex items-center justify-between">
+                <h4 className="text-base font-semibold text-zinc-800">
+                    <div className="flex gap-2 items-center">
+                        <IconTargetArrow size={16} className="text-red-600" />
+                        <span>
+                        Product Goals
+                        </span>
+                    </div>
+                </h4>
             </div>
 
             <ScrollArea className="h-[300px] pr-1.5">

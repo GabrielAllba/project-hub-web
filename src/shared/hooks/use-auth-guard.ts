@@ -23,7 +23,7 @@ export function useAuthGuard() {
   useEffect(() => {
     if (error || !token) {
       localStorage.removeItem("accessToken");
-      navigate("/login", { replace: true });
+      navigate("/login");
       toast.info("Your session has expired")
     }
   }, [error, navigate, token]);

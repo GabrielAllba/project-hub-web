@@ -18,6 +18,7 @@ import type {
 } from "@/domain/entities/product-backlog"
 import { toast } from "sonner"
 
+import type { BacklogActivityLog } from "@/domain/entities/backlog-activity-log"
 import { useAssignBacklogUser } from "@/shared/hooks/use-assign-backlog-user"
 import { useEditBacklogGoal } from "@/shared/hooks/use-edit-backlog-goal"
 import { useEditBacklogPoint } from "@/shared/hooks/use-edit-backlog-point"
@@ -27,6 +28,7 @@ import { useEditBacklogTitle } from "@/shared/hooks/use-edit-backlog-title"
 import { useGetProductBacklog } from "@/shared/hooks/use-get-product-backlog"
 import { useCreateProductBacklog } from "../hooks/use-create-product-backlog"
 import { useDeleteBacklog } from "../hooks/use-delete-backlog"
+import { useGetBacklogLogs } from "../hooks/use-get-backlog-logs"
 import { useReorderProductBacklog } from "../hooks/use-reorder-product-backlog"
 
 interface BacklogContextType {
@@ -46,6 +48,14 @@ interface BacklogContextType {
     setPriority: (priority: ProductBacklogPriority | undefined) => void
     setProductGoalIds: (productGoalIds: string[]) => void
     setAssigneeIds: (assigneeIds: string[]) => void
+    handleSetClickedBacklog: (backlogId: string) => void
+    loadMoreBacklogLogs: () => Promise<void>
+
+    clickedBacklog: string
+    backlogLogs: BacklogActivityLog[]
+    isBacklogLogsLoading: boolean
+    hasMoreBacklogLogs: boolean
+    isLoadingMoreBacklogLogs: boolean
 
 
     loadInitialBacklogs: () => Promise<void>
@@ -78,6 +88,15 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
     const [productGoalIds, setProductGoalIds] = useState<string[]>([])
     const [assigneeIds, setAssigneeIds] = useState<string[]>([])
 
+    const [clickedBacklog, setClickedBacklog] = useState<string>("")
+    const [backlogLogsPage, setBacklogLogsPage] = useState(DEFAULT_PAGE)
+    const [backlogLogs, setBacklogLogs] = useState<BacklogActivityLog[]>([])
+    const [isBacklogLogsLoading, setIsBacklogLogsLoading] = useState<boolean>(false)
+    const [hasMoreBacklogLogs, setHasMoreBacklogLogs] = useState(false)
+    const [isLoadingMoreBacklogLogs, setIsLoadingMoreBacklogLogs] = useState(false)
+
+
+
     const { triggerCreateProductBacklog } = useCreateProductBacklog()
     const { triggerGetProductBacklog } = useGetProductBacklog(projectId)
     const { triggerEditBacklogPoint } = useEditBacklogPoint()
@@ -88,6 +107,8 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
     const { triggerAssignBacklogUser } = useAssignBacklogUser()
     const { triggerDeleteBacklog } = useDeleteBacklog("")
     const { triggerReorderProductBacklog } = useReorderProductBacklog()
+    const { triggerGetBacklogLogs } = useGetBacklogLogs("")
+
 
     const loadInitialBacklogs = useCallback(async () => {
         setLoadingUnassigned(true)
@@ -240,9 +261,52 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
         })
     }
 
+
+    const handleSetClickedBacklog = (backlogId: string) => {
+        setClickedBacklog(backlogId)
+        setBacklogLogsPage(DEFAULT_PAGE)
+    }
+
+    const loadMoreBacklogLogs = async () => {
+        if (!hasMoreBacklogLogs || isLoadingMoreBacklogLogs) return
+
+        setIsLoadingMoreBacklogLogs(true)
+        const nextPage = backlogLogsPage + 1
+        try {
+            const res = await triggerGetBacklogLogs(clickedBacklog, nextPage, DEFAULT_PAGE_SIZE)
+            if (res.status === "success" && res.data?.content) {
+                const newLogs = res.data.content.filter(
+                    (log) => !backlogLogs.some((existing) => existing.id === log.id)
+                )
+                setBacklogLogs((prev) => [...prev, ...newLogs])
+                setHasMoreBacklogLogs(!res.data.last)
+                setBacklogLogsPage(nextPage)
+            }
+        } finally {
+            setIsLoadingMoreBacklogLogs(false)
+        }
+    }
+
+
     useEffect(() => {
         loadInitialBacklogs()
     }, [projectId, search, status, priority, productGoalIds, assigneeIds])
+
+
+    useEffect(() => {
+        if (clickedBacklog != "") {
+            setIsBacklogLogsLoading(true)
+            triggerGetBacklogLogs(clickedBacklog, DEFAULT_PAGE, DEFAULT_PAGE_SIZE).then((res) => {
+                if (res.status === "success" && res.data?.content) {
+                    setBacklogLogs(res.data.content)
+                    setIsBacklogLogsLoading(false)
+                    setHasMoreBacklogLogs(!res.data.last)
+                }
+            })
+        }
+    }, [clickedBacklog])
+
+
 
     return (
         <BacklogContext.Provider
@@ -264,6 +328,14 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
                 setProductGoalIds,
                 loadInitialBacklogs,
                 setAssigneeIds,
+                handleSetClickedBacklog,
+                loadMoreBacklogLogs,
+
+                backlogLogs,
+                clickedBacklog,
+                isBacklogLogsLoading,
+                hasMoreBacklogLogs,
+                isLoadingMoreBacklogLogs,
 
                 loadMoreBacklogs,
                 refreshUnassignedBacklogs,

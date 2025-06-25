@@ -7,8 +7,7 @@ import {
 
 import {
   Avatar,
-  AvatarFallback,
-  AvatarImage,
+  AvatarFallback
 } from "@/presentation/components/ui/avatar";
 import {
   DropdownMenu,
@@ -26,6 +25,8 @@ import {
 } from "@/presentation/components/ui/sidebar";
 
 import { useLogout } from "@/shared/hooks/use-logout";
+import { cn } from "@/shared/utils/merge-class";
+import { getGradientForUser, getUserInitials } from "@/shared/utils/product-backlog-utils";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
@@ -49,7 +50,7 @@ export function NavUser({
     try {
       await triggerLogout();
       localStorage.removeItem("accessToken");
-      navigate("/login");
+      navigate("/");
       toast.info("Successfully logged out!")
     } catch (error) {
       console.error("Logout failed", error);
@@ -65,9 +66,12 @@ export function NavUser({
               size="lg"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <Avatar className="h-8 w-8 rounded-lg grayscale">
-                <AvatarImage src={user.avatar} alt={user.username} />
-                <AvatarFallback className="rounded-lg">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+              <Avatar className="h-8 w-8 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                <AvatarFallback
+                  className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(user.username.charAt(0).toUpperCase()))}
+                >
+                  {getUserInitials(user.username)}
+                </AvatarFallback>
               </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-medium">{user.username}</span>
@@ -87,9 +91,12 @@ export function NavUser({
           >
             <DropdownMenuLabel className="p-0 font-normal">
               <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-                <Avatar className="h-8 w-8 rounded-lg">
-                  <AvatarImage src={user.avatar} alt={user.username} />
-                  <AvatarFallback className="rounded-lg">{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                <Avatar className="h-8 w-8 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                  <AvatarFallback
+                    className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(user.username.charAt(0).toUpperCase()))}
+                  >
+                    {getUserInitials(user.username)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="grid flex-1 text-left text-sm leading-tight">
                   <span className="truncate font-medium">{user.username}</span>
