@@ -38,7 +38,7 @@ import {
 import { Input } from "../../ui/input"
 
 
-export const ListTabContent = ({ projectId }: { projectId: string }) => {
+export const ListTabContent = () => {
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [showProductGoals, setShowProductGoals] = useState(true)
@@ -385,7 +385,7 @@ export const ListTabContent = ({ projectId }: { projectId: string }) => {
       <div className="flex gap-6">
         {showProductGoals && (
           <div className="w-[280px]">
-            <ProductGoalsSection projectId={projectId} />
+            <ProductGoalsSection />
           </div>
         )}
         <div className="flex-1">

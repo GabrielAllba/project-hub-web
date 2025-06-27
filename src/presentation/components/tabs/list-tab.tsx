@@ -17,7 +17,7 @@ export const ListTab = ({ projectId }: ListTabProps) => {
       <BacklogProvider projectId={projectId}>
         <SprintProvider projectId={projectId}>
           <DragStateProvider>
-            <ListTabContent projectId={projectId} />
+            <ListTabContent />
           </DragStateProvider>
         </SprintProvider>
       </BacklogProvider>
