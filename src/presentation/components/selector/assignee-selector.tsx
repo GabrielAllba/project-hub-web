@@ -82,7 +82,7 @@ export function AssigneeSelector({
                                 {selectedAssignee ? (
                                     <Avatar className="cursor-pointer h-6 w-6 border-2 border-white shadow-sm ring-1 ring-slate-100">
                                         <AvatarFallback
-                                            className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(selectedAssignee.username.charAt(0).toUpperCase()))}
+                                            className={cn("text-[9px] font-semibold text-white bg-gradient-to-br", getGradientForUser(selectedAssignee.username.charAt(0).toUpperCase()))}
                                         >
                                             {getUserInitials(selectedAssignee.username.charAt(0).toUpperCase())}
                                         </AvatarFallback>
@@ -124,7 +124,7 @@ export function AssigneeSelector({
                                         <div className="flex items-center gap-2">
                                             <Avatar className="cursor-pointer h-6 w-6 border-2 border-white shadow-sm ring-1 ring-slate-100">
                                                 <AvatarFallback
-                                                    className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(user.username.charAt(0).toUpperCase()))}
+                                                    className={cn("text-[8px] font-semibold text-white bg-gradient-to-br", getGradientForUser(user.username.charAt(0).toUpperCase()))}
                                                 >
                                                     {getUserInitials(user.username.charAt(0).toUpperCase())}
                                                 </AvatarFallback>
