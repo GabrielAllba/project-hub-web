@@ -36,6 +36,7 @@ import {
     getStatusColor,
     getStatusLabel,
 } from "@/shared/utils/product-backlog-utils"
+import { toast } from "sonner"
 
 interface TaskAssignmentsTableProps {
     sprintId: string
@@ -44,12 +45,12 @@ interface TaskAssignmentsTableProps {
 export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) => {
     const [backlogItems, setBacklogItems] = useState<ProductBacklog[]>([])
     const [assignees, setAssignees] = useState<Record<string, User>>({})
-    const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
-    const [hasMore, setHasMore] = useState(true)
+
 
     const {
         triggerGetProductBacklogBySprint,
         triggerGetProductBacklogBySprintLoading,
+        triggerGetProductBacklogBySprintResponse
     } = useGetProductBacklogBySprint(sprintId)
 
     const { triggerFindUser } = useFindUser()
@@ -57,8 +58,6 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
     useEffect(() => {
         setBacklogItems([])
         setAssignees({})
-        setCurrentPage(DEFAULT_PAGE)
-        setHasMore(true)
     }, [sprintId])
 
     useEffect(() => {
@@ -66,7 +65,7 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
             try {
                 const response = await triggerGetProductBacklogBySprint(
                     sprintId,
-                    currentPage,
+                    DEFAULT_PAGE,
                     DEFAULT_PAGE_SIZE
                 )
 
@@ -78,20 +77,17 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
                     combined.forEach((item) => uniqueItemsMap.set(item.id, item))
 
                     setBacklogItems(Array.from(uniqueItemsMap.values()))
-                    setHasMore(newItems.length === DEFAULT_PAGE_SIZE)
-                } else {
-                    setHasMore(false)
+
                 }
             } catch (error) {
-                console.error("Failed to load product backlog items:", error)
-                setHasMore(false)
+                toast.error("Failed to load product backlog items: " + error)
             }
         }
 
         if (sprintId) {
             loadBacklogItems()
         }
-    }, [currentPage, sprintId])
+    }, [sprintId])
 
     useEffect(() => {
         const fetchAssignees = async () => {
@@ -130,8 +126,29 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
         }
     }, [backlogItems, triggerFindUser, assignees])
 
-    const handleLoadMore = () => {
-        setCurrentPage((prev) => prev + 1)
+    const handleLoadMore = async () => {
+        const nowPage = Math.floor(backlogItems.length / DEFAULT_PAGE_SIZE)
+        try {
+            const response = await triggerGetProductBacklogBySprint(
+                sprintId,
+                nowPage,
+                DEFAULT_PAGE_SIZE
+            )
+
+            if (response?.data.content) {
+                const newItems = response.data.content
+                const combined = [...backlogItems, ...newItems]
+
+                const uniqueItemsMap = new Map<string, ProductBacklog>()
+                combined.forEach((item) => uniqueItemsMap.set(item.id, item))
+
+                setBacklogItems(Array.from(uniqueItemsMap.values()))
+
+            }
+        } catch (error) {
+            toast.error("Failed to load product backlog items: " + error)
+        }
+
     }
 
     return (
@@ -165,11 +182,11 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
                                     <TableCell className="font-medium">
                                         <div className="max-w-md">
                                             <p className="font-medium">{item.title}</p>
-                                            
+
                                         </div>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                            {item.point}
+                                        {item.point}
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <Badge
@@ -208,7 +225,7 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
                     </TableBody>
                 </Table>
 
-                {hasMore && (
+                {!triggerGetProductBacklogBySprintResponse?.data.last && (
                     <div className="flex justify-center mt-4">
                         <Button
                             onClick={handleLoadMore}
