@@ -63,7 +63,7 @@ export function CustomDrawer({
 
             {/* Drawer */}
             <div
-                className={`fixed top-0 bottom-0 bg-white shadow-2xl transition-transform duration-300 ease-out ${direction === "right" ? "right-0 translate-x-0" : "left-0 -translate-x-0"
+                className={`fixed top-0 bottom-0 bg-white w-1/4 shadow-2xl transition-transform duration-300 ease-out ${direction === "right" ? "right-0 translate-x-0" : "left-0 -translate-x-0"
                     }`}
                 style={{
                     animation: open

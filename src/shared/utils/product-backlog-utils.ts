@@ -41,10 +41,10 @@ export const getPriorityColor = (priority: ProductBacklogPriority): string => {
 
 export const getStatusColor = (status: ProductBacklogStatus): string => {
     switch (status) {
+        case "TODO":
+            return "bg-gray-100 text-gray-800"
         case "INPROGRESS":
             return "bg-blue-100 text-blue-800"
-        case "TODO":
-            return "bg-purple-100 text-purple-800"
         case "DONE":
             return "bg-green-100 text-green-800"
         default:

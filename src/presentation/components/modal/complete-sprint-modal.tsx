@@ -136,7 +136,7 @@ export function CompleteSprintModal({ sprintId }: CompleteSprintModalProps) {
             Cancel
           </Button>
           <Button onClick={handleComplete}>
-            <BadgeCheck className="w-4 h-4 mr-2" />
+            <BadgeCheck className="w-4 h-4 mr-2 " />
             Complete sprint
           </Button>
         </DialogFooter>

@@ -24,6 +24,7 @@ import type { ProjectBacklogSummaryResponseDTO } from "@/domain/dto/res/project-
 import type { ProjectUserResponseDTO } from "@/domain/dto/res/project-user-res";
 import type { SprintOverviewResponseDTO } from "@/domain/dto/res/sprint-overview-res";
 import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
+import type { TimelineSprintResponseDTO } from "@/domain/dto/res/timeline-sprint-res";
 import type { UserTaskDistributionResponseDTO } from "@/domain/dto/res/user-task-distribution-res";
 import type { UserWorkItemSummaryResponseDTO } from "@/domain/dto/res/user-work-item-summary-res";
 import type { ProductBacklog, ProductBacklogPriority, ProductBacklogStatus } from "@/domain/entities/product-backlog";
@@ -34,6 +35,7 @@ import type { TeamSummary } from "@/domain/entities/team-summary";
 import type { AssignBacklogUserRequestDTO } from '../../domain/dto/req/assign-backlog-user-req';
 import type { EditBacklogStatusRequestDTO } from '../../domain/dto/req/edit-backlog-status-req';
 import { projectHubService } from "../api/project-hub-services";
+import type { GetProductGoalByProjectResponseDTO } from "@/domain/dto/res/get-product-goal-by-project-res";
 
 export class ProjectHubServiceRepository {
   async getMyProject(token: string, page: number, size: number): Promise<BaseResponse<Page<ProjectSummary>>> {
@@ -450,7 +452,7 @@ export class ProjectHubServiceRepository {
     keyword: string,
     page: number,
     size: number
-  ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+  ): Promise<BaseResponse<Page<TimelineSprintResponseDTO>>> {
     const response = await projectHubService.get(`/sprint/search/timeline`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -485,7 +487,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number,
     year: number
-  ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+  ): Promise<BaseResponse<Page<TimelineSprintResponseDTO>>> {
     const response = await projectHubService.get(`/project/${projectId}/sprints/timeline`, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -780,7 +782,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
 
-  async getProductGoal(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<ProductGoal>>> {
+  async getProductGoal(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<GetProductGoalByProjectResponseDTO>>> {
     const response = await projectHubService.get(`/product-goal/by_project/${projectId}`, {
       headers: {
         Authorization: `Bearer ${token}`,

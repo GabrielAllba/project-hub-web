@@ -10,8 +10,16 @@ import { useRenameProductGoal } from "@/shared/hooks/use-rename-product-goal"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { toast } from "sonner"
 
+
+interface ProductGoalWithInfo extends ProductGoal {
+    todoTask?: number
+    inProgressTask?: number
+    doneTask?: number
+}
+
+
 interface ProductGoalsContextType {
-    goals: ProductGoal[]
+    goals: ProductGoalWithInfo[]
     selectedGoalIds: string[]
     setGoals: (goals: ProductGoal[]) => void
     updateGoal: (updated: ProductGoal) => void
@@ -36,8 +44,9 @@ interface ProductGoalsProviderProps {
     projectId: string
 }
 
+
 export function ProductGoalsProvider({ children, projectId }: ProductGoalsProviderProps) {
-    const [goals, setGoals] = useState<ProductGoal[]>([])
+    const [goals, setGoals] = useState<ProductGoalWithInfo[]>([])
     const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
     const [hasMore, setHasMore] = useState(true)

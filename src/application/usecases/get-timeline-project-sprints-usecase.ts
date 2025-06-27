@@ -1,6 +1,6 @@
 import type { BaseResponse } from "@/domain/dto/base-response";
 import type { Page } from "@/domain/dto/page-response";
-import type { SprintResponseDTO } from "@/domain/dto/res/sprint-res";
+import type { TimelineSprintResponseDTO } from "@/domain/dto/res/timeline-sprint-res";
 import type { ProjectHubServiceRepository } from "@/infrastructure/repositories/projecthub-service-repository";
 
 export class GetTimelineProjectSprintsUseCase {
@@ -12,7 +12,7 @@ export class GetTimelineProjectSprintsUseCase {
         page: number,
         size: number,
         year: number
-    ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
+    ): Promise<BaseResponse<Page<TimelineSprintResponseDTO>>> {
         return await this.projectHubRepo.getTimelineProjectSprints(token, projectId, page, size, year);
     }
 }

@@ -3,9 +3,12 @@
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants"
 import type { BaseResponse } from "@/domain/dto/base-response"
 import type { Sprint, SprintStatus } from "@/domain/entities/sprint"
+import { useUser } from "@/shared/contexts/user-context"
 import { useEditSprintGoalAndDates } from "@/shared/hooks/use-edit-sprint-goal-and-dates"
 import { useGetTimelineProjectSprints } from "@/shared/hooks/use-get-timeline-project-sprints"
 import { useSearchSprintsTimeline } from "@/shared/hooks/use-search-sprint-timeline"
+import { cn } from "@/shared/utils/merge-class"
+import { getGradientForUser, getUserInitials } from "@/shared/utils/product-backlog-utils"
 import { getSprintStatusColor, getSprintStatusLabel } from "@/shared/utils/sprint-utils"
 import dayjs from "dayjs"
 import "dayjs/locale/id"
@@ -17,6 +20,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { EmptyStateIllustration } from "../empty/empty-state"
 import { LoadingSpinner } from "../loading/loading-spinner"
+import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Badge } from "../ui/badge"
 import { Button } from "../ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "../ui/dropdown-menu"
@@ -52,8 +56,15 @@ interface TimelineData {
   endDate: dayjs.Dayjs
 }
 
+interface SprintWithUserTask extends Sprint {
+  userTask: number
+}
+
 const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
   const navigate = useNavigate()
+  const {
+    user
+  } = useUser()
   const { triggerEditSprintGoalAndDates } = useEditSprintGoalAndDates()
   const {
     triggerGetTimelineProjectSprints,
@@ -66,7 +77,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
 
   // State
   const [visibleYear, setVisibleYear] = useState(dayjs().year())
-  const [sprints, setSprints] = useState<Sprint[]>([])
+  const [sprints, setSprints] = useState<SprintWithUserTask[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [sprintPositions, setSprintPositions] = useState<Record<string, SprintPosition>>({})
   const [isExpanded, setIsExpanded] = useState(false)
@@ -87,7 +98,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
 
 
   // Grid size based on expanded state
-  const GRID_SIZE = isExpanded ? 10 : 40 // Width of each day column
+  const GRID_SIZE = isExpanded ? 15 : 40 // Width of each day column
   const ROW_HEIGHT = 80 // Height of each sprint row
   const SPRINT_HEIGHT = 60 // Height of sprint block
 
@@ -890,34 +901,71 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                           setActiveDragSprint(null)
                         }}
                       >
-                        <div
-                          className="w-full h-full bg-white shadow-sm cursor-move overflow-hidden flex rounded-sm"
-                          style={{
-                            border: "1px solid #e5e7eb",
-                          }}
-                        >
-                          {/* Status indicator */}
-                          <div className={`w-1 h-full ${getSprintStatusColor(sprint.status)}`} />
-                          <div className="flex flex-col justify-center p-2 w-full">
-                            <div className="text-xs font-medium mb-1 truncate">
+                        <div className="relative w-full h-full ">
+                          {/* Avatar + expandable task count */}
+                          {sprint.userTask != 0 && <div className="absolute -bottom-3 -right-3 z-20 ">
+                            <div className="p-1 flex items-center justify-center 
+                            bg-white border border-slate-200 
+                             shadow-sm rounded-full w-24full">
+                              {/* Avatar */}
+                              <Avatar className="h-4 w-4 m-0 p-0">
+                                <AvatarFallback
+                                  className={cn(
+                                    "text-[8px] font-semibold text-white bg-gradient-to-br",
+                                    getGradientForUser(user?.username.charAt(0).toUpperCase() || "")
+                                  )}
+                                >
+                                  {getUserInitials(user?.username.charAt(0).toUpperCase() || "")}
+                                </AvatarFallback>
+                              </Avatar>
+
+                              {/* Expand to right on hover */}
                               <span
-                                className="hover:underline hover:cursor-pointer"
-                                onClick={() => {
-                                  navigate(`/dashboard/project/${sprint.projectId}?tab=report&sprintId=${sprint.id}`, { replace: true })
-                                }}>
-                                {sprint.name}
+                                className={cn(
+                                  " text-xs text-gray-900 ml-1 mr-1"
+                                )}
+                              >
+                                {sprint.userTask} task{sprint.userTask > 1 ? "s" : ""}
                               </span>
                             </div>
-                            <div className="flex items-center justify-between w-full">
-                              <div className="text-xs text-gray-500 w-full">
-                                <p className="truncate text-xs max-w-3/4">
-                                  {extendsLeft ? "←" : ""} {dayjs(currentStartDate).format("D MMM YYYY")} -{" "}
-                                  {dayjs(currentEndDate).format("D MMM YYYY")} {extendsRight ? "→" : ""}
-                                </p>
+                          </div>}
+
+
+
+                          {/* Sprint card */}
+                          <div
+                            className="w-full h-full bg-white shadow-sm cursor-move overflow-hidden flex rounded-sm"
+                            style={{
+                              border: "1px solid #e5e7eb",
+                            }}
+                          >
+                            <div className={`w-1 h-full ${getSprintStatusColor(sprint.status)}`} />
+
+                            <div className="flex flex-col justify-center p-2 w-full">
+                              <div className="text-xs font-medium mb-1 truncate">
+                                <span
+                                  className="hover:underline hover:cursor-pointer"
+                                  onClick={() => {
+                                    navigate(`/dashboard/project/${sprint.projectId}?tab=report&sprintId=${sprint.id}`, {
+                                      replace: true,
+                                    })
+                                  }}
+                                >
+                                  {sprint.name}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between w-full">
+                                <div className="text-xs text-gray-500 w-full">
+                                  <p className="truncate text-xs max-w-3/4">
+                                    {extendsLeft ? "←" : ""} {dayjs(currentStartDate).format("D MMM YYYY")} -{" "}
+                                    {dayjs(currentEndDate).format("D MMM YYYY")} {extendsRight ? "→" : ""}
+                                  </p>
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
+
                       </Rnd>
                     )
                   })}

@@ -3,19 +3,23 @@
 import type { ProductGoal } from "@/domain/entities/product-goal"
 import { useProductGoals } from "@/shared/contexts/product-goals-context"
 import { cn } from "@/shared/utils/merge-class"
-import { IconListDetails, IconPencil, IconTrash } from "@tabler/icons-react"
+import { IconPencil, IconTrash } from "@tabler/icons-react"
 import { CheckSquare, MoreHorizontal, Square } from "lucide-react"
 import { useState } from "react"
 import { Button } from "../ui/button"
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
 } from "../ui/dropdown-menu"
 
 interface ProductGoalItemProps {
-  goal: ProductGoal
+  goal: ProductGoal & {
+    todoTask?: number
+    inProgressTask?: number
+    doneTask?: number
+  }
   isSelected: boolean
   onToggleSelect: () => void
 }
@@ -55,9 +59,10 @@ export default function ProductGoalItem({
     setEditingTitle(goal.title)
   }
 
-  const handleViewDetail = () => {
-    alert(`Viewing details for: ${goal.title}`)
-  }
+  const todo = goal.todoTask ?? 0
+  const inProgress = goal.inProgressTask ?? 0
+  const done = goal.doneTask ?? 0
+  const total = todo + inProgress + done
 
   return (
     <div
@@ -66,6 +71,7 @@ export default function ProductGoalItem({
         isSelected && "bg-blue-100 border-blue-400"
       )}
     >
+      {/* Title and checkbox */}
       <div className="flex items-center justify-between w-full px-3 py-2">
         <div className="flex items-center gap-2 w-full">
           {isSelected ? (
@@ -118,30 +124,49 @@ export default function ProductGoalItem({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem
-                onClick={handleRenameClick}
-                className="cursor-pointer"
-              >
-                <IconPencil></IconPencil>
+              <DropdownMenuItem onClick={handleRenameClick} className="cursor-pointer">
+                <IconPencil className="mr-2 h-4 w-4" />
                 Rename
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={handleDelete}
                 className="text-red-500 focus:bg-red-50 focus:text-red-600 cursor-pointer"
               >
-                <IconTrash className="text-red-500"></IconTrash>
+                <IconTrash className="mr-2 h-4 w-4 text-red-500" />
                 Delete
               </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleViewDetail}
-                className="cursor-pointer"
-              >
-                <IconListDetails></IconListDetails>
-                View Detail
-              </DropdownMenuItem>
+
             </DropdownMenuContent>
           </DropdownMenu>
         )}
+      </div>
+
+      {/* Multi-segment progress bar */}
+      <div className="px-3 pb-2">
+        <div className="h-2 w-full bg-zinc-200 rounded-full overflow-hidden flex">
+          {total > 0 && (
+            <>
+              <div
+                className="h-full bg-gray-400"
+                style={{ width: `${(todo / total) * 100}%` }}
+              />
+              <div
+                className="h-full bg-blue-600"
+                style={{ width: `${(inProgress / total) * 100}%` }}
+              />
+              <div
+                className="h-full bg-green-500"
+                style={{ width: `${(done / total) * 100}%` }}
+              />
+            </>
+          )}
+        </div>
+        <div className="text-xs text-zinc-500 mt-1 flex gap-2 flex-wrap">
+          <span>{todo} todo</span>
+          <span>{inProgress} in progress</span>
+          <span>{done} done</span>
+
+        </div>
       </div>
     </div>
   )
