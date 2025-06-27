@@ -1,114 +1,149 @@
-import { IconPencil, IconTrash } from "@tabler/icons-react"
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { IconArchive, IconDots, IconPencil, IconTrash } from "@tabler/icons-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
-import type { ProjectSummary } from "@/domain/entities/project-summary"
-import { useProjects } from "@/shared/contexts/project-context"
+import type { ProjectSummary } from "@/domain/entities/project-summary";
+import { useProjects } from "@/shared/contexts/project-context";
 
-import { Button } from "../ui/button"
-import { Card, CardContent } from "../ui/card"
+import { Button } from "../ui/button";
+import { Card, CardContent } from "../ui/card";
+
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "../ui/dialog"
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 interface ProjectCardProps {
-  project: ProjectSummary
+  project: ProjectSummary;
 }
 
 export const ProjectCard = ({ project }: ProjectCardProps) => {
-  const [isHoveringTitle, setIsHoveringTitle] = useState(false)
-  const [isRenaming, setIsRenaming] = useState(false)
-  const [renameValue, setRenameValue] = useState(project.name)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [isRenaming, setIsRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState(project.name);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showArchiveDialog, setShowArchiveDialog] = useState(false);
 
-  const { renameProject, deleteProject } = useProjects()
+  const { renameProject, deleteProject, archiveProject } = useProjects();
+
+
+  useEffect(() => {
+    if (showDeleteDialog || showArchiveDialog) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+  }, [showDeleteDialog, showArchiveDialog]);
 
   const handleRenameSubmit = async () => {
-    const trimmed = renameValue.trim()
+    const trimmed = renameValue.trim();
 
     if (!trimmed || trimmed === project.name) {
-      setRenameValue(project.name)
-      setIsRenaming(false)
-      return
+      setRenameValue(project.name);
+      setIsRenaming(false);
+      return;
     }
 
-    const updated = await renameProject(project.projectId, trimmed)
+    const updated = await renameProject(project.projectId, trimmed);
     if (updated) {
-      setRenameValue(updated.name)
+      setRenameValue(updated.name);
     }
 
-    setIsRenaming(false)
-  }
+    setIsRenaming(false);
+  };
 
   const handleDelete = async () => {
-    setShowDeleteDialog(false)
-    await deleteProject(project.projectId)
-  }
+    setShowDeleteDialog(false);
+    await deleteProject(project.projectId);
+  };
+
+  const handleArchive = async () => {
+    setShowArchiveDialog(false);
+    await archiveProject(project.projectId);
+  };
+
+  const handleRenameClick = () => {
+    setIsRenaming(true);
+    setRenameValue(project.name);
+
+  };
+
+  const handleArchiveClick = () => {
+    setShowArchiveDialog(true);
+  };
+
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
 
   return (
     <>
-      <Card className="rounded-sm border hover:shadow-md transition flex px-0 py-0">
+      <Card className="rounded-sm border hover:shadow-md transition flex px-0 py-0 relative">
         <CardContent className="flex justify-start px-2 py-2 gap-2">
           <div className="flex items-center">
             <div className="text-xl">📁</div>
           </div>
 
-          <div
-            className="group w-full truncate"
-            onMouseEnter={() => setIsHoveringTitle(true)}
-            onMouseLeave={() => setIsHoveringTitle(false)}
-          >
+          <div className="group w-full truncate">
             <div className="flex items-center justify-between gap-1 ">
               {isRenaming ? (
                 <input
                   value={renameValue}
                   onChange={(e) => setRenameValue(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRenameSubmit()
+                    if (e.key === "Enter") handleRenameSubmit();
                     if (e.key === "Escape") {
-                      setRenameValue(project.name)
-                      setIsRenaming(false)
+                      setRenameValue(project.name);
+                      setIsRenaming(false);
                     }
                   }}
                   autoFocus
                   className="text-sm font-semibold text-zinc-900 dark:text-white w-full bg-transparent border-0 border-b border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500"
                 />
-
               ) : (
                 <Link
                   to={`/dashboard/project/${project.projectId}`}
-                  className={`text-sm font-semibold text-zinc-900 dark:text-white truncate ${isHoveringTitle ? "underline" : ""}`}
+                  className={`text-sm font-semibold text-zinc-900 dark:text-white truncate`}
                 >
                   {renameValue}
                 </Link>
               )}
 
-              {isHoveringTitle && !isRenaming && (
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-5 h-5 bg-white hover:bg-white hover:text-blue-600 cursor-pointer"
-                    onClick={() => {
-                      setIsRenaming(true)
-                      setRenameValue(project.name)
-                    }}
-                  >
-                    <IconPencil size={14} />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-5 h-5 bg-white hover:bg-white text-red-500 hover:text-red-500 cursor-pointer"
-                    onClick={() => setShowDeleteDialog(true)}
-                  >
-                    <IconTrash size={14} />
-                  </Button>
-                </div>
+              {/* Dropdown Menu Shadcn - Selalu Tampil */}
+              {!isRenaming && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-5 h-5 bg-white hover:bg-white text-zinc-600 hover:text-zinc-900 cursor-pointer"
+                    >
+                      <IconDots size={14} />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem
+                      onClick={handleRenameClick}
+                      disabled={isRenaming}
+                      className="cursor-pointer"
+                    >
+                      <IconPencil size={14} className="mr-2" /> Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleArchiveClick}
+                      className="cursor-pointer"
+                    >
+                      <IconArchive size={14} className="mr-2" />Archive
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleDeleteClick}
+                      className="text-red-500 focus:bg-red-50 focus:text-red-600 cursor-pointer"
+                    >
+                      <IconTrash size={14} className="mr-2 text-red-500" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               )}
             </div>
 
@@ -119,30 +154,79 @@ export const ProjectCard = ({ project }: ProjectCardProps) => {
         </CardContent>
       </Card>
 
-      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Delete Project</DialogTitle>
-          </DialogHeader>
+      {/* Dialog Delete Manual */}
+      {showDeleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowDeleteDialog(false)}
+          ></div>
 
-          <div className="py-2 text-sm">
-            Are you sure you want to delete{" "}
-            <strong>{project.name}</strong> project? This action can't be undone.
+          {/* Konten Dialog */}
+          <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 dark:bg-zinc-800 dark:text-white">
+            {/* Dialog Header */}
+            <div className="text-lg font-semibold mb-2">Delete Project</div>
+
+            {/* Dialog Content */}
+            <div className="py-2 text-sm text-gray-700 dark:text-gray-300">
+              Are you sure you want to delete{" "}
+              <strong>{project.name}</strong> project? This action can't be
+              undone.
+            </div>
+
+            {/* Dialog Footer */}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDelete}>
+                Delete
+              </Button>
+            </div>
           </div>
+        </div>
+      )}
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowDeleteDialog(false)}
-            >
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialog Archive Manual */}
+      {showArchiveDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Overlay */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setShowArchiveDialog(false)}
+          ></div>
+
+          {/* Konten Dialog */}
+          <div className="relative bg-white rounded-lg shadow-lg max-w-sm w-full p-6 dark:bg-zinc-800 dark:text-white">
+            {/* Dialog Header */}
+            <div className="text-lg font-semibold mb-2">Archive Project</div>
+
+            {/* Dialog Content */}
+            <div className="py-2 text-sm text-gray-700 dark:text-gray-300">
+              Are you sure you want to archive{" "}
+              <strong>{project.name}</strong> project? You can unarchive it later
+              from the archived projects list.
+            </div>
+
+            {/* Dialog Footer */}
+            <div className="flex justify-end gap-2 mt-4">
+              <Button
+                variant="outline"
+                onClick={() => setShowArchiveDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button variant="default" onClick={handleArchive}>
+                Archive
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
-  )
-}
+  );
+};

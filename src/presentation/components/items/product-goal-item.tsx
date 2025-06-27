@@ -1,84 +1,148 @@
 "use client"
 
 import type { ProductGoal } from "@/domain/entities/product-goal"
-import { useDeleteProductGoal } from "@/shared/hooks/use-delete-product-goal"
-import { useRenameProductGoal } from "@/shared/hooks/use-rename-product-goal"
+import { useProductGoals } from "@/shared/contexts/product-goals-context"
 import { cn } from "@/shared/utils/merge-class"
-import { CheckSquare, Pencil, Square, Trash2 } from "lucide-react"
+import { IconListDetails, IconPencil, IconTrash } from "@tabler/icons-react"
+import { CheckSquare, MoreHorizontal, Square } from "lucide-react"
 import { useState } from "react"
-import { Input } from "../ui/input"
+import { Button } from "../ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "../ui/dropdown-menu"
 
 interface ProductGoalItemProps {
-    goal: ProductGoal
-    isSelected: boolean
-    onToggleSelect: () => void
-    onUpdated: (updated: ProductGoal) => void
-    onDeleted: (goalId: string) => void
+  goal: ProductGoal
+  isSelected: boolean
+  onToggleSelect: () => void
 }
 
 export default function ProductGoalItem({
-    goal,
-    isSelected,
-    onToggleSelect,
-    onUpdated,
-    onDeleted,
+  goal,
+  isSelected,
+  onToggleSelect,
 }: ProductGoalItemProps) {
-    const [isEditing, setIsEditing] = useState(false)
-    const [editingTitle, setEditingTitle] = useState(goal.title)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editingTitle, setEditingTitle] = useState(goal.title)
 
-    const { triggerRenameProductGoal } = useRenameProductGoal()
-    const { triggerDeleteProductGoal } = useDeleteProductGoal("")
+  const { renameGoal, deleteGoalByAPI } = useProductGoals()
 
-    const handleRename = async () => {
-        if (!editingTitle.trim()) return
-        const newTitle = editingTitle.trim()
-        await triggerRenameProductGoal({ productGoalId: goal.id, newTitle })
-        const updatedGoal = { ...goal, title: newTitle }
-        onUpdated(updatedGoal)
-        setIsEditing(false)
+  const handleRename = async () => {
+    const trimmed = editingTitle.trim()
+    if (!trimmed || trimmed === goal.title) {
+      setIsEditing(false)
+      setEditingTitle(goal.title)
+      return
     }
 
-    const handleDelete = async () => {
-        await triggerDeleteProductGoal(goal.id)
-        onDeleted(goal.id)
+    setIsEditing(false)
+    try {
+      await renameGoal(goal.id, trimmed)
+    } catch {
+      setEditingTitle(goal.title)
     }
+  }
 
-    return (
-        <div
-            className={cn(
-                "group relative rounded-md bg-white flex flex-col gap-1 cursor-pointer transition border",
-                isSelected && "bg-blue-100 border-blue-400",
-            )}
-        >
-            <div className="flex items-center justify-between">
-                <div className="w-full flex items-center justify-between">
-                    <div className="flex items-center gap-2 w-full px-3 py-2" onClick={onToggleSelect}>
-                        {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-blue-600" />
-                        ) : (
-                            <Square className="w-4 h-4 text-muted-foreground" />
-                        )}
-                        {isEditing ? (
-                            <Input
-                                className="text-sm h-6"
-                                value={editingTitle}
-                                onChange={(e) => setEditingTitle(e.target.value)}
-                                onBlur={handleRename}
-                                onKeyDown={(e) => {
-                                    if (e.key === "Enter") handleRename()
-                                }}
-                                autoFocus
-                            />
-                        ) : (
-                            <span className={cn("text-sm truncate max-w-[140px]", isSelected && "text-blue-600")}>{goal.title}</span>
-                        )}
-                    </div>
-                    <div className="flex gap-1 p-2">
-                        <Pencil className="w-4 h-4 text-muted-foreground cursor-pointer" onClick={() => setIsEditing(true)} />
-                        <Trash2 className="w-4 h-4 text-muted-foreground cursor-pointer" onClick={handleDelete} />
-                    </div>
-                </div>
-            </div>
+  const handleDelete = async () => {
+    await deleteGoalByAPI(goal.id)
+  }
+
+  const handleRenameClick = () => {
+    setIsEditing(true)
+    setEditingTitle(goal.title)
+  }
+
+  const handleViewDetail = () => {
+    alert(`Viewing details for: ${goal.title}`)
+  }
+
+  return (
+    <div
+      className={cn(
+        "group relative rounded-md bg-white flex flex-col gap-1 transition border",
+        isSelected && "bg-blue-100 border-blue-400"
+      )}
+    >
+      <div className="flex items-center justify-between w-full px-3 py-2">
+        <div className="flex items-center gap-2 w-full">
+          {isSelected ? (
+            <CheckSquare
+              className="cursor-pointer w-4 h-4 text-blue-600"
+              onClick={onToggleSelect}
+            />
+          ) : (
+            <Square
+              className="cursor-pointer w-4 h-4 text-muted-foreground"
+              onClick={onToggleSelect}
+            />
+          )}
+
+          {isEditing ? (
+            <input
+              value={editingTitle}
+              onChange={(e) => setEditingTitle(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleRename()
+                if (e.key === "Escape") {
+                  setIsEditing(false)
+                  setEditingTitle(goal.title)
+                }
+              }}
+              autoFocus
+              className="text-sm font-medium text-zinc-900 w-full bg-transparent border-0 border-b border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-500"
+            />
+          ) : (
+            <span
+              className={cn(
+                "text-sm font-medium truncate max-w-[140px]",
+                isSelected && "text-blue-600"
+              )}
+            >
+              {goal.title}
+            </span>
+          )}
         </div>
-    )
+
+        {!isEditing && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-5 h-5 bg-white hover:bg-white text-zinc-600 hover:text-zinc-900 cursor-pointer"
+              >
+                <MoreHorizontal className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem
+                onClick={handleRenameClick}
+                className="cursor-pointer"
+              >
+                <IconPencil></IconPencil>
+                Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleDelete}
+                className="text-red-500 focus:bg-red-50 focus:text-red-600 cursor-pointer"
+              >
+                <IconTrash className="text-red-500"></IconTrash>
+                Delete
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleViewDetail}
+                className="cursor-pointer"
+              >
+                <IconListDetails></IconListDetails>
+                View Detail
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+      </div>
+    </div>
+  )
 }

@@ -810,7 +810,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                             endDate: sprint.endDate,
                           })
                         }}
-                        onDrag={(e, data) => {
+                        onDrag={(_, data) => {
                           const newStartDate = getDateFromPosition(data.x)
                           const newEndDate = getEndDateFromStartAndWidth(newStartDate, position.width)
 
@@ -825,7 +825,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                             endDate: newEndDate,
                           })
                         }}
-                        onDragStop={(e, data) => {
+                        onDragStop={(_, data) => {
                           const newStartDate = getDateFromPosition(data.x)
                           const newEndDate = getEndDateFromStartAndWidth(newStartDate, position.width)
 
@@ -842,7 +842,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                             endDate: sprint.endDate,
                           })
                         }}
-                        onResize={(e, direction, ref, delta, newPosition) => {
+                        onResize={(_, __, ref, ___, newPosition) => {
                           const newWidth = ref.offsetWidth
                           const prevY = sprintPositions[sprint.id].y
                           const newX = newPosition.x
@@ -866,7 +866,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
                             endDate: newEndDate,
                           })
                         }}
-                        onResizeStop={(e, direction, ref, delta, newPosition) => {
+                        onResizeStop={(_, __, ref, ___, newPosition) => {
                           const newWidth = ref.offsetWidth
                           const newX = newPosition.x
                           const prevY = sprintPositions[sprint.id].y

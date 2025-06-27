@@ -82,7 +82,7 @@ export const ListTabContent = ({ projectId }: { projectId: string }) => {
     setPrioritySprintBacklog(prioritySprintBacklog === newPriority ? undefined : newPriority)
   }
 
-  const removeStatusFilter = (s: ProductBacklogStatus, e: React.MouseEvent) => {
+  const removeStatusFilter = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
 
@@ -90,7 +90,7 @@ export const ListTabContent = ({ projectId }: { projectId: string }) => {
     setStatusSprintBacklog(undefined)
   }
 
-  const removePriorityFilter = (p: ProductBacklogPriority, e: React.MouseEvent) => {
+  const removePriorityFilter = (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
     setPriority(undefined)
@@ -327,7 +327,7 @@ export const ListTabContent = ({ projectId }: { projectId: string }) => {
             >
               {getStatusLabel(status)}
               <button
-                onClick={(e) => removeStatusFilter(status, e)}
+                onClick={(e) => removeStatusFilter(e)}
                 className="ml-1 hover:bg-black/10 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-3 w-3" />
@@ -343,7 +343,7 @@ export const ListTabContent = ({ projectId }: { projectId: string }) => {
             >
               {getPriorityLabel(priority)}
               <button
-                onClick={(e) => removePriorityFilter(priority, e)}
+                onClick={(e) => removePriorityFilter(e)}
                 className="ml-1 hover:bg-black/10 rounded-full p-0.5 transition-colors"
               >
                 <X className="h-3 w-3" />

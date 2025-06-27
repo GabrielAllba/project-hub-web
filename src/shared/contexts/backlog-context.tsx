@@ -34,7 +34,6 @@ import { useReorderProductBacklog } from "../hooks/use-reorder-product-backlog"
 interface BacklogContextType {
     unassignedBacklogs: ProductBacklog[]
     totalUnassigned: number
-    currentPage: number
     hasMoreUnassigned: boolean
     loadingUnassigned: boolean
     search: string
@@ -78,7 +77,6 @@ const BacklogContext = createContext<BacklogContextType | undefined>(undefined)
 export const BacklogProvider = ({ projectId, children }: { projectId: string; children: ReactNode }) => {
     const [unassignedBacklogs, setUnassignedBacklogsState] = useState<ProductBacklog[]>([])
     const [totalUnassigned, setTotalUnassigned] = useState(0)
-    const [currentPage, setCurrentPage] = useState(DEFAULT_PAGE)
     const [hasMoreUnassigned, setHasMoreUnassigned] = useState(true)
     const [loadingUnassigned, setLoadingUnassigned] = useState(false)
 
@@ -89,13 +87,10 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
     const [assigneeIds, setAssigneeIds] = useState<string[]>([])
 
     const [clickedBacklog, setClickedBacklog] = useState<string>("")
-    const [backlogLogsPage, setBacklogLogsPage] = useState(DEFAULT_PAGE)
     const [backlogLogs, setBacklogLogs] = useState<BacklogActivityLog[]>([])
     const [isBacklogLogsLoading, setIsBacklogLogsLoading] = useState<boolean>(false)
     const [hasMoreBacklogLogs, setHasMoreBacklogLogs] = useState(false)
     const [isLoadingMoreBacklogLogs, setIsLoadingMoreBacklogLogs] = useState(false)
-
-
 
     const { triggerCreateProductBacklog } = useCreateProductBacklog()
     const { triggerGetProductBacklog } = useGetProductBacklog(projectId)
@@ -123,8 +118,9 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
             if (res.status === "success") {
                 setUnassignedBacklogsState(res.data.content)
                 setTotalUnassigned(res.data.totalElements)
-                setCurrentPage(DEFAULT_PAGE)
                 setHasMoreUnassigned(!res.data.last)
+
+
             }
         } finally {
             setLoadingUnassigned(false)
@@ -136,8 +132,9 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
 
         setLoadingUnassigned(true)
         try {
-            const nextPage = currentPage + 1
-            const res = await triggerGetProductBacklog(nextPage, DEFAULT_PAGE_SIZE, {
+            const nowPage = Math.floor(unassignedBacklogs.length / DEFAULT_PAGE_SIZE)
+
+            const res = await triggerGetProductBacklog(nowPage, DEFAULT_PAGE_SIZE, {
                 search,
                 status,
                 priority,
@@ -150,14 +147,12 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
                 )
                 setUnassignedBacklogsState((prev) => [...prev, ...newItems])
                 setTotalUnassigned(res.data.totalElements)
-                setCurrentPage(nextPage)
                 setHasMoreUnassigned(!res.data.last)
             }
         } finally {
             setLoadingUnassigned(false)
         }
     }, [
-        currentPage,
         hasMoreUnassigned,
         unassignedBacklogs,
         search,
@@ -178,7 +173,6 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
             })
             setUnassignedBacklogsState(res.data.content)
             setTotalUnassigned(res.data.totalElements)
-            setCurrentPage(DEFAULT_PAGE)
             setHasMoreUnassigned(false)
         } catch (err) {
             toast.error("Error refreshing unassigned backlog: " + err)
@@ -264,23 +258,21 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
 
     const handleSetClickedBacklog = (backlogId: string) => {
         setClickedBacklog(backlogId)
-        setBacklogLogsPage(DEFAULT_PAGE)
     }
 
     const loadMoreBacklogLogs = async () => {
         if (!hasMoreBacklogLogs || isLoadingMoreBacklogLogs) return
 
         setIsLoadingMoreBacklogLogs(true)
-        const nextPage = backlogLogsPage + 1
+        const nowPage = Math.floor(backlogLogs.length / DEFAULT_PAGE_SIZE)
         try {
-            const res = await triggerGetBacklogLogs(clickedBacklog, nextPage, DEFAULT_PAGE_SIZE)
+            const res = await triggerGetBacklogLogs(clickedBacklog, nowPage, DEFAULT_PAGE_SIZE)
             if (res.status === "success" && res.data?.content) {
                 const newLogs = res.data.content.filter(
                     (log) => !backlogLogs.some((existing) => existing.id === log.id)
                 )
                 setBacklogLogs((prev) => [...prev, ...newLogs])
                 setHasMoreBacklogLogs(!res.data.last)
-                setBacklogLogsPage(nextPage)
             }
         } finally {
             setIsLoadingMoreBacklogLogs(false)
@@ -313,7 +305,6 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
             value={{
                 unassignedBacklogs,
                 totalUnassigned,
-                currentPage,
                 hasMoreUnassigned,
                 loadingUnassigned,
                 search,

@@ -81,12 +81,12 @@ interface SprintContextType {
 
 
   createSprintBacklog: (dto: CreateProductBacklogRequestDTO) => Promise<BaseResponse<ProductBacklog>>
-  editBacklogPoint: (sprintId: string, backlogId: string, point: number) => Promise<void>
-  editBacklogTitle: (sprintId: string, backlogId: string, title: string) => Promise<void>
-  editBacklogPriority: (sprintId: string, backlogId: string, priority: ProductBacklogPriority) => Promise<void>
-  editBacklogStatus: (sprintId: string, backlogId: string, status: ProductBacklogStatus) => Promise<void>
-  editBacklogGoal: (sprintId: string, backlogId: string, goalId: string | null) => Promise<void>
-  assignBacklogUser: (sprintId: string, backlogId: string, assigneeId: string) => Promise<void>
+  editBacklogPoint: (backlogId: string, point: number) => Promise<void>
+  editBacklogTitle: (backlogId: string, title: string) => Promise<void>
+  editBacklogPriority: (backlogId: string, priority: ProductBacklogPriority) => Promise<void>
+  editBacklogStatus: (backlogId: string, status: ProductBacklogStatus) => Promise<void>
+  editBacklogGoal: (backlogId: string, goalId: string | null) => Promise<void>
+  assignBacklogUser: (backlogId: string, assigneeId: string) => Promise<void>
   createSprint: () => Promise<void>
 }
 
@@ -239,11 +239,12 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
   const loadMoreSprints = useCallback(async () => {
     if (!hasMoreSprints) return
-    const nextPage = currentPageSprints + 1
+    const nowPage = Math.floor(sprints.length / DEFAULT_PAGE_SIZE)
+
 
     setLoadingSprints(true)
     try {
-      const res = await triggerGetProjectSprints(nextPage, DEFAULT_PAGE_SIZE)
+      const res = await triggerGetProjectSprints(nowPage, DEFAULT_PAGE_SIZE)
       if (res.status === "success" && res.data) {
         const newSprints: Sprint[] = res.data.content.map((dto: SprintResponseDTO) => ({
           id: dto.id,
@@ -258,7 +259,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
         }))
 
         setSprints((prev) => [...prev, ...newSprints])
-        setCurrentPageSprints(nextPage)
+        setCurrentPageSprints(nowPage)
         setHasMoreSprints(!res.data.last)
 
         for (const sprint of newSprints) {
@@ -493,7 +494,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
   };
 
 
-  const editBacklogPoint = async (sprintId: string, backlogId: string, point: number) => {
+  const editBacklogPoint = async (backlogId: string, point: number) => {
     try {
       const res = await triggerEditBacklogPoint({ backlogId, point });
       if (res.status === "success" && res.data) {
@@ -512,7 +513,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
-  const editBacklogTitle = async (sprintId: string, backlogId: string, title: string) => {
+  const editBacklogTitle = async (backlogId: string, title: string) => {
     try {
       const res = await triggerEditBacklogTitle({ backlogId, title });
       if (res.status === "success" && res.data) {
@@ -533,7 +534,6 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
   };
 
   const editBacklogPriority = async (
-    sprintId: string,
     backlogId: string,
     priority: ProductBacklogPriority
   ) => {
@@ -557,7 +557,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
   };
 
 
-  const editBacklogStatus = async (sprintId: string, backlogId: string, status: ProductBacklogStatus) => {
+  const editBacklogStatus = async (backlogId: string, status: ProductBacklogStatus) => {
     try {
       const res = await triggerEditBacklogStatus({ backlogId, status });
       if (res.status === "success" && res.data) {
@@ -577,7 +577,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
-  const editBacklogGoal = async (sprintId: string, backlogId: string, goalId: string | null) => {
+  const editBacklogGoal = async (backlogId: string, goalId: string | null) => {
     try {
       const res = await triggerEditBacklogGoal({ backlogId, goalId });
       if (res.status === "success" && res.data) {
@@ -596,7 +596,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
-  const assignBacklogUser = async (sprintId: string, backlogId: string, assigneeId: string) => {
+  const assignBacklogUser = async (backlogId: string, assigneeId: string) => {
     try {
       const res = await triggerAssignBacklogUser({ backlogId, assigneeId });
       if (res.status === "success" && res.data) {

@@ -108,7 +108,7 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
 
     const handlePointSubmit = async () => {
         if (backlog.sprintId) {
-            await editSprintBacklogPoint(backlog.sprintId, backlog.id, pointValue)
+            await editSprintBacklogPoint(backlog.id, pointValue)
             setIsEditingPoint(false)
             toast.success("Backlog point updated successfully!")
         } else {
@@ -130,7 +130,7 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
 
     const handleTitleSubmit = async () => {
         if (backlog.sprintId) {
-            await editSprintBacklogTitle(backlog.sprintId, backlog.id, titleValue)
+            await editSprintBacklogTitle(backlog.id, titleValue)
             setEditingTitleBacklog(undefined)
             // toast.success("Backlog title updated successfully!")
         } else {
@@ -142,7 +142,7 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
 
     const handleProductGoalChange = async (goalId: string | null) => {
         if (backlog.sprintId) {
-            await editSprintBacklogGoal(backlog.sprintId, backlog.id, goalId)
+            await editSprintBacklogGoal(backlog.id, goalId)
             toast.success("Product goal updated successfully!")
         } else {
             await editBacklogGoal(backlog.id, goalId)
@@ -210,7 +210,7 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                             selectedAssignee={assignee}
                             onSelectAssignee={async (user) => {
                                 if (backlog.sprintId) {
-                                    await assignSprintBacklogUser(backlog.sprintId, backlog.id, user.id)
+                                    await assignSprintBacklogUser(backlog.id, user.id)
                                     setAssignee(user)
                                     toast.success("Assignee updated")
                                 } else {
@@ -266,7 +266,7 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                                         onClick={async () => {
                                             if (priority !== backlog.priority) {
                                                 if (backlog.sprintId) {
-                                                    await editSprintBacklogPriority(backlog.sprintId, backlog.id, priority)
+                                                    await editSprintBacklogPriority(backlog.id, priority)
                                                     toast.success("Priority updated successfully!")
                                                 } else {
                                                     await editBacklogPriority(backlog.id, priority)
@@ -297,7 +297,7 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                                         onClick={async () => {
                                             if (status !== backlog.status) {
                                                 if (backlog.sprintId) {
-                                                    await editSprintBacklogStatus(backlog.sprintId, backlog.id, status)
+                                                    await editSprintBacklogStatus(backlog.id, status)
                                                     toast.success("Status updated successfully!")
                                                 } else {
                                                     await editBacklogStatus(backlog.id, status)

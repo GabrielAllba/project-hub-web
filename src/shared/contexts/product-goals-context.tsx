@@ -1,9 +1,14 @@
 "use client"
 
 import { DEFAULT_PAGE, DEFAULT_PAGE_SIZE } from "@/constants/constants"
+import type { BaseResponse } from "@/domain/dto/base-response"
 import type { ProductGoal } from "@/domain/entities/product-goal"
+import { useCreateProductGoal } from "@/shared/hooks/use-create-product-goal"
+import { useDeleteProductGoal } from "@/shared/hooks/use-delete-product-goal"
 import { useGetProductGoal } from "@/shared/hooks/use-get-product-goal"
+import { useRenameProductGoal } from "@/shared/hooks/use-rename-product-goal"
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { toast } from "sonner"
 
 interface ProductGoalsContextType {
     goals: ProductGoal[]
@@ -12,6 +17,9 @@ interface ProductGoalsContextType {
     updateGoal: (updated: ProductGoal) => void
     deleteGoal: (goalId: string) => void
     addGoal: (goal: ProductGoal) => void
+    createGoal: (title: string) => Promise<void>
+    renameGoal: (goalId: string, newTitle: string) => Promise<void>
+    deleteGoalByAPI: (goalId: string) => Promise<void>
     refreshGoals: () => Promise<void>
     searchGoals: (query: string) => ProductGoal[]
     loadMoreGoals: () => Promise<void>
@@ -35,6 +43,9 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
     const [hasMore, setHasMore] = useState(true)
 
     const { triggerGetProductGoal } = useGetProductGoal(projectId)
+    const { triggerCreateProductGoal } = useCreateProductGoal()
+    const { triggerRenameProductGoal } = useRenameProductGoal()
+    const { triggerDeleteProductGoal } = useDeleteProductGoal("")
 
     useEffect(() => {
         if (projectId) {
@@ -51,7 +62,7 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
                 setHasMore(!res.data.last)
             }
         } catch (error) {
-            console.error("Failed to refresh goals:", error)
+            toast.error("Failed to refresh goals: " + error)
         } finally {
             setIsLoading(false)
         }
@@ -73,7 +84,7 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
                 setHasMore(!res.data.last)
             }
         } catch (error) {
-            console.error("Failed to load more goals:", error)
+            toast.error("Failed to load more goals: " + error)
         } finally {
             setIsLoading(false)
         }
@@ -85,23 +96,54 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
 
     const deleteGoal = (goalId: string) => {
         setGoals((prev) => prev.filter((goal) => goal.id !== goalId))
-
-        setSelectedGoalIds((prev) => prev?.filter((id) => id !== goalId))
-
+        setSelectedGoalIds((prev) => prev.filter((id) => id !== goalId))
     }
 
     const addGoal = (goal: ProductGoal) => {
         setGoals((prev) => [goal, ...prev])
     }
 
-    const toggleSelectGoal = (goalId: string) => {
-        setSelectedGoalIds((prev) =>
-            prev?.includes(goalId)
-                ? prev.filter((id) => id !== goalId)
-                : [...prev || [], goalId]
-        )
+    const createGoal = async (title: string) => {
+        try {
+            const res = await triggerCreateProductGoal({ title, projectId })
+            if (res.status === "success") {
+                addGoal(res.data)
+            }
+        } catch (error) {
+            const baseError = error as BaseResponse<null>
+            toast.error("Failed to create goal: " + baseError.message)
+        }
     }
 
+    const renameGoal = async (goalId: string, newTitle: string) => {
+        try {
+            const res = await triggerRenameProductGoal({ productGoalId: goalId, newTitle: newTitle })
+            if (res.status === "success") {
+                updateGoal(res.data)
+            }
+            toast.success("Success rename goal")
+        } catch (error) {
+            const baseError = error as BaseResponse<null>
+            toast.error("Failed to rename goal: " + baseError.message)
+            throw baseError
+        }
+    }
+
+    const deleteGoalByAPI = async (goalId: string) => {
+        try {
+            await triggerDeleteProductGoal(goalId)
+            deleteGoal(goalId)
+        } catch (error) {
+            const baseError = error as BaseResponse<null>
+            toast.error("Failed to delete goal: " + baseError.message)
+        }
+    }
+
+    const toggleSelectGoal = (goalId: string) => {
+        setSelectedGoalIds((prev) =>
+            prev.includes(goalId) ? prev.filter((id) => id !== goalId) : [...prev, goalId]
+        )
+    }
 
     const clearSelectedGoals = () => {
         setSelectedGoalIds([])
@@ -120,6 +162,9 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
         updateGoal,
         deleteGoal,
         addGoal,
+        createGoal,
+        renameGoal,
+        deleteGoalByAPI,
         refreshGoals,
         searchGoals,
         loadMoreGoals,

@@ -1,10 +1,8 @@
 "use client"
 import { NO_GOAL_ID } from "@/constants/constants"
-import type { ProductGoal } from "@/domain/entities/product-goal"
 import { useBacklog } from "@/shared/contexts/backlog-context"
 import { useProductGoals } from "@/shared/contexts/product-goals-context"
 import { useSprint } from "@/shared/contexts/sprint-context"
-import { useCreateProductGoal } from "@/shared/hooks/use-create-product-goal"
 import { cn } from "@/shared/utils/merge-class"
 import { IconTargetArrow } from "@tabler/icons-react"
 import { Flag } from "lucide-react"
@@ -15,11 +13,8 @@ import { Card } from "../ui/card"
 import { Input } from "../ui/input"
 import { ScrollArea } from "../ui/scroll-area"
 
-interface ProductGoalsSectionProps {
-    projectId: string
-}
 
-export default function ProductGoalsSection({ projectId }: ProductGoalsSectionProps) {
+export default function ProductGoalsSection() {
     const [isAdding, setIsAdding] = useState(false)
     const [newGoalTitle, setNewGoalTitle] = useState("")
 
@@ -35,11 +30,9 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
         goals,
         selectedGoalIds,
         toggleSelectGoal,
-        updateGoal,
-        deleteGoal,
         loadMoreGoals,
         hasMore,
-        setGoals
+        createGoal
     } = useProductGoals()
 
     useEffect(() => {
@@ -48,26 +41,15 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
     }, [selectedGoalIds])
 
 
-    const { triggerCreateProductGoal } = useCreateProductGoal()
 
     const handleAddGoal = async () => {
         if (!newGoalTitle.trim()) return
-        const response = await triggerCreateProductGoal({ projectId, title: newGoalTitle.trim() })
-        if (response.status === "success") {
-            const newGoal = response.data
-            setGoals([newGoal, ...goals])
-        }
+        await createGoal(newGoalTitle.trim())
         setNewGoalTitle("")
         setIsAdding(false)
     }
 
-    const handleUpdateGoal = (updated: ProductGoal) => {
-        updateGoal(updated)
-    }
-
-    const handleDeleteGoal = (goalId: string) => {
-        deleteGoal(goalId)
-    }
+   
 
     const isNoGoalSelected = selectedGoalIds.includes(NO_GOAL_ID)
 
@@ -78,7 +60,7 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                     <div className="flex gap-2 items-center">
                         <IconTargetArrow size={16} className="text-red-600" />
                         <span>
-                        Product Goals
+                            Product Goals
                         </span>
                     </div>
                 </h4>
@@ -112,8 +94,6 @@ export default function ProductGoalsSection({ projectId }: ProductGoalsSectionPr
                             goal={goal}
                             isSelected={selectedGoalIds.includes(goal.id)}
                             onToggleSelect={() => toggleSelectGoal(goal.id)}
-                            onUpdated={handleUpdateGoal}
-                            onDeleted={handleDeleteGoal}
                         />
                     ))}
                 </div>

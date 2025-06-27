@@ -50,6 +50,49 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
 
+  async archiveProject(token: string, projectId: string): Promise<BaseResponse<void>> {
+    const response = await projectHubService.post(
+      `/project/${projectId}/archive`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+
+  async unarchiveProject(token: string, projectId: string): Promise<BaseResponse<void>> {
+    const response = await projectHubService.post(
+      `/project/${projectId}/unarchive`,
+      {},
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    return response.data;
+  }
+
+  async getArchivedProjects(token: string, page: number, size: number): Promise<BaseResponse<Page<ProjectSummary>>> {
+    const response = await projectHubService.get("/project/archived", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+
+
   async createProject(token: string, data: CreateProjectRequestDTO): Promise<BaseResponse<ProjectSummary>> {
     const response = await projectHubService.post(
       "/project",
@@ -330,6 +373,26 @@ export class ProjectHubServiceRepository {
     size: number
   ): Promise<BaseResponse<Page<ProjectSummary>>> {
     const response = await projectHubService.get(`/project/search`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      params: {
+        keyword,
+        page,
+        size,
+      },
+    });
+
+    return response.data;
+  }
+
+  async searchArchivedProjects(
+    token: string,
+    keyword: string,
+    page: number,
+    size: number
+  ): Promise<BaseResponse<Page<ProjectSummary>>> {
+    const response = await projectHubService.get(`/project/search/archived`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },

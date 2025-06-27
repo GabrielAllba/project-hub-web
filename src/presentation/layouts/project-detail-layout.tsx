@@ -75,8 +75,12 @@ export const ProjectLayout = ({ children, project, tabs }: Props) => {
 }
 
 const Layout = ({ children, tabs, project }: Props) => {
-    const { projects, renameProject, deleteProject } = useProjects()
-    const selectedProject = projects.find((p) => p.projectId === project.projectId)
+    const { projects, recentProjects, archivedProjects, renameProject, deleteProject } = useProjects()
+    
+    const selectedProject =
+        projects.find((p) => p.projectId === project.projectId) ||
+        recentProjects.find((p) => p.projectId === project.projectId) ||
+        archivedProjects.find((p) => p.projectId === project.projectId)
 
     const [tempName, setTempName] = useState(selectedProject?.name ?? project.name)
     const [isRenaming, setIsRenaming] = useState(false)

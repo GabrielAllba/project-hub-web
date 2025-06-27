@@ -14,6 +14,7 @@ import { NavUser } from "@/presentation/components/ui/sidebar/nav-user"
 import { useProjects } from "@/shared/contexts/project-context"
 import { useUser } from "@/shared/contexts/user-context"
 import {
+  IconArchive,
   IconFileWord,
   IconInnerShadowTop,
   IconLayoutDashboard
@@ -28,6 +29,11 @@ const navMain = [
     title: "Dashboard",
     url: "/dashboard",
     icon: IconLayoutDashboard,
+  },
+  {
+    title: "Archived Projects",
+    url: "/dashboard/projects/archived",
+    icon: IconArchive,
   },
 ]
 

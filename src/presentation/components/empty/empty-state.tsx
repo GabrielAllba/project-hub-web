@@ -1,8 +1,8 @@
-import { IconFolder, IconHammerOff, IconUserOff } from "@tabler/icons-react"
+import { IconArchive, IconFolder, IconHammerOff, IconUserOff } from "@tabler/icons-react"
 import { Calendar, Filter, ListTodo, LogsIcon, SearchX } from "lucide-react"
 
 type EmptyStateProps = {
-    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project" | "no-activity"
+    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project" | "no-activity" | "no-archived-projects"
     size?: "sm"
 }
 
@@ -96,6 +96,14 @@ export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) =
             <IconFolder className={`${sizeClasses.icon} text-blue-600`} />,
             "No Project Available",
             "Start your journey by creating your first project. Manage and monitor all your projects in one place.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+    if (type === "no-archived-projects") {
+        return render(
+            <IconArchive className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Archived Projects Available",
+            "You haven't archived any projects yet. You can archive your project to keep your workspace clean and organized.",
             "bg-gradient-to-br from-blue-50 to-blue-100"
         )
     }

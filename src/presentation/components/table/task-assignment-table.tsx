@@ -110,6 +110,8 @@ export const TaskAssignmentsTable = ({ sprintId }: TaskAssignmentsTableProps) =>
                                 id: user.data.id,
                                 email: user.data.email,
                                 username: user.data.username,
+                                isEmailVerified: user.data.isEmailVerified,
+                                isUserFirstTime: user.data.isUserFirstTime
                             }
                         }
                     } catch (error) {

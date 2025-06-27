@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { NotFoundPage } from "./components/not-found/not-found";
 import DashboardLayout from "./layouts/dashboard-layout";
+import { ArchivedProjects } from "./pages/archived-projects";
 import { DashboardPage } from "./pages/dashboard-page";
 import { EmailVerificationPage } from "./pages/email-verification-page";
 import { FirstTimeUserPage } from "./pages/first-time-user-page";
@@ -19,6 +20,7 @@ export const AppRoutes = () => (
 
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<DashboardPage />} />
+        <Route path="projects/archived" element={<ArchivedProjects />} />
         <Route path="project/:projectId" element={<ProjectDetailPage />} />
         <Route path="first-time-user" element={<FirstTimeUserPage />} />
       </Route>

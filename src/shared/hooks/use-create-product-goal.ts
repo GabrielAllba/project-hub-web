@@ -12,24 +12,26 @@ async function fetcher(
     _: string,
     { arg }: { arg: CreateProductGoalRequestDTO }
 ): Promise<BaseResponse<ProductGoal>> {
-    try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-            throw new Error("No access token found");
-        }
 
-        const result = await createProductGoalUseCase.execute(token, arg);
-        return result;
-    } catch (err) {
-        return convertAxiosErrorToBaseResponse<ProductGoal>(err);
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+        throw new Error("No access token found");
     }
+
+    const result = await createProductGoalUseCase.execute(token, arg);
+    return result;
+
 }
 
 export function useCreateProductGoal() {
     const { trigger, data, isMutating } = useSWRMutation("/product-goal", fetcher);
 
     const triggerCreateProductGoal = async (payload: CreateProductGoalRequestDTO): Promise<BaseResponse<ProductGoal>> => {
-        return await trigger(payload);
+        try {
+            return await trigger(payload);
+        } catch (err) {
+            throw convertAxiosErrorToBaseResponse<ProductGoal>(err);
+        }
     };
 
     return {

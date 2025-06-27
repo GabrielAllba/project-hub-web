@@ -10,24 +10,27 @@ async function fetcher(
     _: string,
     { arg }: { arg: { productGoalId: string } }
 ): Promise<BaseResponse<void>> {
-    try {
-        const token = localStorage.getItem("accessToken");
-        if (!token) {
-            throw new Error("No access token found");
-        }
 
-        const result = await deleteProductGoalUseCase.execute(token, arg.productGoalId);
-        return result;
-    } catch (err) {
-        return convertAxiosErrorToBaseResponse<void>(err);
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+        throw new Error("No access token found");
     }
+
+    const result = await deleteProductGoalUseCase.execute(token, arg.productGoalId);
+    return result;
+
 }
 
 export function useDeleteProductGoal(productGoalId: string) {
     const { trigger, data, isMutating } = useSWRMutation(`/product-goal/${productGoalId}`, fetcher);
 
     const triggerDeleteProductGoal = async (idGoal: string): Promise<BaseResponse<void>> => {
-        return await trigger({ productGoalId: idGoal });
+        try {
+
+            return await trigger({ productGoalId: idGoal });
+        } catch (err) {
+            throw convertAxiosErrorToBaseResponse<void>(err);
+        }
     };
 
     return {
