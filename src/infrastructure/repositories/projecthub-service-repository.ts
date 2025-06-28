@@ -39,7 +39,7 @@ import type { GetProductGoalByProjectResponseDTO } from "@/domain/dto/res/get-pr
 
 export class ProjectHubServiceRepository {
   async getMyProject(token: string, page: number, size: number): Promise<BaseResponse<Page<ProjectSummary>>> {
-    const response = await projectHubService.get("/project/my", {
+    const response = await projectHubService.get("/api/project/my", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -54,7 +54,7 @@ export class ProjectHubServiceRepository {
 
   async archiveProject(token: string, projectId: string): Promise<BaseResponse<void>> {
     const response = await projectHubService.post(
-      `/project/${projectId}/archive`,
+      `/api/project/${projectId}/archive`,
       {},
       {
         headers: {
@@ -68,7 +68,7 @@ export class ProjectHubServiceRepository {
 
   async unarchiveProject(token: string, projectId: string): Promise<BaseResponse<void>> {
     const response = await projectHubService.post(
-      `/project/${projectId}/unarchive`,
+      `/api/project/${projectId}/unarchive`,
       {},
       {
         headers: {
@@ -81,7 +81,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getArchivedProjects(token: string, page: number, size: number): Promise<BaseResponse<Page<ProjectSummary>>> {
-    const response = await projectHubService.get("/project/archived", {
+    const response = await projectHubService.get("/api/project/archived", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -97,7 +97,7 @@ export class ProjectHubServiceRepository {
 
   async createProject(token: string, data: CreateProjectRequestDTO): Promise<BaseResponse<ProjectSummary>> {
     const response = await projectHubService.post(
-      "/project",
+      "/api/project",
       data,
       {
         headers: {
@@ -110,7 +110,7 @@ export class ProjectHubServiceRepository {
   }
   async inviteScrumMaster(token: string, projectId: string, data: AddScrumMasterRequestDTO): Promise<BaseResponse<InvitationResponseDTO[]>> {
     const response = await projectHubService.post(
-      `/project/${projectId}/scrum_master/invite`,
+      `/api/project/${projectId}/scrum_master/invite`,
       data,
       {
         headers: {
@@ -123,7 +123,7 @@ export class ProjectHubServiceRepository {
   }
   async inviteDeveloper(token: string, projectId: string, data: AddDeveloperRequestDTO): Promise<BaseResponse<InvitationResponseDTO[]>> {
     const response = await projectHubService.post(
-      `/project/${projectId}/developer/invite`,
+      `/api/project/${projectId}/developer/invite`,
       data,
       {
         headers: {
@@ -136,7 +136,7 @@ export class ProjectHubServiceRepository {
   }
   async inviteProductOwner(token: string, projectId: string, data: AddDeveloperRequestDTO): Promise<BaseResponse<InvitationResponseDTO[]>> {
     const response = await projectHubService.post(
-      `/project/${projectId}/product_owner/invite`,
+      `/api/project/${projectId}/product_owner/invite`,
       data,
       {
         headers: {
@@ -149,7 +149,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getMyTeams(token: string, page: number, size: number): Promise<BaseResponse<Page<TeamSummary>>> {
-    const response = await projectHubService.get("/team/my", {
+    const response = await projectHubService.get("/api/team/my", {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -164,7 +164,7 @@ export class ProjectHubServiceRepository {
 
   async createTeam(token: string, data: CreateTeamRequestDTO): Promise<BaseResponse<Team>> {
     const response = await projectHubService.post(
-      "/team",
+      "/api/team",
       data,
       {
         headers: {
@@ -190,7 +190,7 @@ export class ProjectHubServiceRepository {
     }
   ): Promise<BaseResponse<Page<ProductBacklog>>> {
     const response = await projectHubService.post(
-      `/project/${projectId}/product_backlogs`,
+      `/api/project/${projectId}/product_backlogs`,
       {
         ...options,
       },
@@ -211,7 +211,7 @@ export class ProjectHubServiceRepository {
 
 
   async createProductBacklog(token: string, projectId: string, data: CreateProductBacklogRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.post(`/product_backlog/${projectId}`,
+    const response = await projectHubService.post(`/api/product_backlog/${projectId}`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -222,7 +222,7 @@ export class ProjectHubServiceRepository {
   }
 
   async createSprint(token: string, data: CreateSprintRequestDTO): Promise<BaseResponse<SprintResponseDTO>> {
-    const response = await projectHubService.post(`/sprint`,
+    const response = await projectHubService.post(`/api/sprint`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -232,7 +232,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async startSprint(token: string, sprintId: string): Promise<BaseResponse<SprintResponseDTO>> {
-    const response = await projectHubService.put(`/sprint/${sprintId}/start`, null,
+    const response = await projectHubService.put(`/api/sprint/${sprintId}/start`, null,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -244,7 +244,7 @@ export class ProjectHubServiceRepository {
   }
 
   async completeSprint(token: string, sprintId: string): Promise<BaseResponse<SprintResponseDTO>> {
-    const response = await projectHubService.put(`/sprint/${sprintId}/complete`, null,
+    const response = await projectHubService.put(`/api/sprint/${sprintId}/complete`, null,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -255,7 +255,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getCompleteSprintInfo(token: string, sprintId: string): Promise<BaseResponse<CompleteSprintInfoResponseDTO>> {
-    const response = await projectHubService.get(`/sprint/${sprintId}/complete_sprint/info`,
+    const response = await projectHubService.get(`/api/sprint/${sprintId}/complete_sprint/info`,
       {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -267,7 +267,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProjectSprints(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
-    const response = await projectHubService.get(`/project/${projectId}/sprints`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/sprints`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -280,7 +280,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getProjectInvitations(token: string, userId: string, page: number, size: number): Promise<BaseResponse<Page<InvitationResponseDTO>>> {
-    const response = await projectHubService.get(`/project_invitation/user/${userId}`, {
+    const response = await projectHubService.get(`/api/project_invitation/user/${userId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -293,7 +293,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getProjectInvitationById(token: string, invitationId: string): Promise<BaseResponse<InvitationResponseDTO>> {
-    const response = await projectHubService.get(`/project_invitation/${invitationId}`, {
+    const response = await projectHubService.get(`/api/project_invitation/${invitationId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -306,7 +306,7 @@ export class ProjectHubServiceRepository {
     projectId: string,
     role: ProjectRole
   ): Promise<BaseResponse<ProjectUserResponseDTO[]>> {
-    const response = await projectHubService.get(`/project/${projectId}/members`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/members`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -321,7 +321,7 @@ export class ProjectHubServiceRepository {
     token: string,
     projectId: string,
   ): Promise<BaseResponse<ProjectBacklogSummaryResponseDTO>> {
-    const response = await projectHubService.get(`/project/${projectId}/backlog_summary`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/backlog_summary`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -334,7 +334,7 @@ export class ProjectHubServiceRepository {
     projectId: string,
     range: string,
   ): Promise<BaseResponse<UserWorkItemSummaryResponseDTO[]>> {
-    const response = await projectHubService.get(`/project/${projectId}/work_summary`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/work_summary`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -353,7 +353,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number
   ): Promise<BaseResponse<Page<SprintResponseDTO>>> {
-    const response = await projectHubService.get(`/sprint/search`, {
+    const response = await projectHubService.get(`/api/sprint/search`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -374,7 +374,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number
   ): Promise<BaseResponse<Page<ProjectSummary>>> {
-    const response = await projectHubService.get(`/project/search`, {
+    const response = await projectHubService.get(`/api/project/search`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -394,7 +394,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number
   ): Promise<BaseResponse<Page<ProjectSummary>>> {
-    const response = await projectHubService.get(`/project/search/archived`, {
+    const response = await projectHubService.get(`/api/project/search/archived`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -414,7 +414,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number
   ): Promise<BaseResponse<Page<GetMyActiveBacklogResponseDTO>>> {
-    const response = await projectHubService.get(`/product_backlog/my/active_sprint`, {
+    const response = await projectHubService.get(`/api/product_backlog/my/active_sprint`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -433,7 +433,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number
   ): Promise<BaseResponse<Page<BacklogActivityLogResponseDTO>>> {
-    const response = await projectHubService.get(`/logs/backlog/${backlogId}`, {
+    const response = await projectHubService.get(`/api/logs/backlog/${backlogId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -453,7 +453,7 @@ export class ProjectHubServiceRepository {
     page: number,
     size: number
   ): Promise<BaseResponse<Page<TimelineSprintResponseDTO>>> {
-    const response = await projectHubService.get(`/sprint/search/timeline`, {
+    const response = await projectHubService.get(`/api/sprint/search/timeline`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -469,7 +469,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProjectSprintsAllStatus(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
-    const response = await projectHubService.get(`/project/${projectId}/sprints/all-status`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/sprints/all-status`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -488,7 +488,7 @@ export class ProjectHubServiceRepository {
     size: number,
     year: number
   ): Promise<BaseResponse<Page<TimelineSprintResponseDTO>>> {
-    const response = await projectHubService.get(`/project/${projectId}/sprints/timeline`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/sprints/timeline`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -503,7 +503,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProjectSprintsInProgress(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<SprintResponseDTO>>> {
-    const response = await projectHubService.get(`/project/${projectId}/sprints/in_progress`, {
+    const response = await projectHubService.get(`/api/project/${projectId}/sprints/in_progress`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -516,7 +516,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getSprintById(token: string, sprintId: string): Promise<BaseResponse<SprintResponseDTO>> {
-    const response = await projectHubService.get(`/sprint/${sprintId}`, {
+    const response = await projectHubService.get(`/api/sprint/${sprintId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -525,7 +525,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getSprintOverview(token: string, sprintId: string): Promise<BaseResponse<SprintOverviewResponseDTO>> {
-    const response = await projectHubService.get(`/sprint/${sprintId}/overview`, {
+    const response = await projectHubService.get(`/api/sprint/${sprintId}/overview`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -534,7 +534,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async getSprintTaskDistribution(token: string, sprintId: string): Promise<BaseResponse<UserTaskDistributionResponseDTO[]>> {
-    const response = await projectHubService.get(`/sprint/${sprintId}/task_distribution`, {
+    const response = await projectHubService.get(`/api/sprint/${sprintId}/task_distribution`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -544,7 +544,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProjectById(token: string, projectId: string): Promise<BaseResponse<ProjectSummary>> {
-    const response = await projectHubService.get(`/project/${projectId}`, {
+    const response = await projectHubService.get(`/api/project/${projectId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -554,7 +554,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProductGoalById(token: string, productGoalId: string): Promise<BaseResponse<ProductGoal>> {
-    const response = await projectHubService.get(`/product-goal/${productGoalId}`, {
+    const response = await projectHubService.get(`/api/product-goal/${productGoalId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -577,7 +577,7 @@ export class ProjectHubServiceRepository {
     }
   ): Promise<BaseResponse<Page<ProductBacklog>>> {
     const response = await projectHubService.post(
-      `/sprint/${sprintId}/product_backlogs`,
+      `/api/sprint/${sprintId}/product_backlogs`,
       {
         ...options,
       },
@@ -596,7 +596,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProductBacklogById(token: string, backlogId: string): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.get(`/product_backlog/${backlogId}`, {
+    const response = await projectHubService.get(`/api/product_backlog/${backlogId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -606,7 +606,7 @@ export class ProjectHubServiceRepository {
   }
 
   async deleteBacklog(token: string, backlogId: string): Promise<BaseResponse<void>> {
-    const response = await projectHubService.delete(`/product_backlog/${backlogId}`, {
+    const response = await projectHubService.delete(`/api/product_backlog/${backlogId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -616,7 +616,7 @@ export class ProjectHubServiceRepository {
   }
 
   async deleteProject(token: string, projectId: string): Promise<BaseResponse<void>> {
-    const response = await projectHubService.delete(`/project/${projectId}`, {
+    const response = await projectHubService.delete(`/api/project/${projectId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -626,7 +626,7 @@ export class ProjectHubServiceRepository {
   }
 
   async reorderProductBacklog(token: string, data: ReorderProductBacklogRequestDTO): Promise<BaseResponse<void>> {
-    const response = await projectHubService.put(`/product_backlog/reorder`,
+    const response = await projectHubService.put(`/api/product_backlog/reorder`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -638,7 +638,7 @@ export class ProjectHubServiceRepository {
 
   async acceptProjectInvitation(token: string, invitationId: string): Promise<BaseResponse<InvitationResponseDTO>> {
     const response = await projectHubService.put(
-      `/project/${invitationId}/accept`,
+      `/api/project/${invitationId}/accept`,
       {},
       {
         headers: {
@@ -651,7 +651,7 @@ export class ProjectHubServiceRepository {
   }
   async rejectProjectInvitation(token: string, invitationId: string): Promise<BaseResponse<InvitationResponseDTO>> {
     const response = await projectHubService.put(
-      `/project/${invitationId}/reject`,
+      `/api/project/${invitationId}/reject`,
       {},
       {
         headers: {
@@ -665,7 +665,7 @@ export class ProjectHubServiceRepository {
 
 
   async editSprintGoalAndDates(token: string, data: EditSprintGoalAndDatesRequestDTO): Promise<BaseResponse<SprintResponseDTO>> {
-    const response = await projectHubService.put(`/sprint/edit_goal_and_dates`,
+    const response = await projectHubService.put(`/api/sprint/edit_goal_and_dates`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -676,7 +676,7 @@ export class ProjectHubServiceRepository {
   }
 
   async editBacklogPoint(token: string, data: EditBacklogPointRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.put(`/product_backlog/edit_backlog_point`,
+    const response = await projectHubService.put(`/api/product_backlog/edit_backlog_point`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -686,7 +686,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async assignBacklogUser(token: string, data: AssignBacklogUserRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.put(`/product_backlog/assign_user`,
+    const response = await projectHubService.put(`/api/product_backlog/assign_user`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -697,7 +697,7 @@ export class ProjectHubServiceRepository {
   }
 
   async editBacklogPriority(token: string, data: EditBacklogPriorityRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.put(`/product_backlog/edit_backlog_priority`,
+    const response = await projectHubService.put(`/api/product_backlog/edit_backlog_priority`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -707,7 +707,7 @@ export class ProjectHubServiceRepository {
     return response.data;
   }
   async editBacklogStatus(token: string, data: EditBacklogStatusRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.put(`/product_backlog/edit_backlog_status`,
+    const response = await projectHubService.put(`/api/product_backlog/edit_backlog_status`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -718,7 +718,7 @@ export class ProjectHubServiceRepository {
   }
 
   async editBacklogTitle(token: string, data: EditBacklogTitleRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.put(`/product_backlog/edit_backlog_title`,
+    const response = await projectHubService.put(`/api/product_backlog/edit_backlog_title`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -729,7 +729,7 @@ export class ProjectHubServiceRepository {
   }
 
   async renameProject(token: string, data: RenameProjectRequestDTO): Promise<BaseResponse<ProjectSummary>> {
-    const response = await projectHubService.put(`/project/rename`,
+    const response = await projectHubService.put(`/api/project/rename`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -740,7 +740,7 @@ export class ProjectHubServiceRepository {
   }
 
   async editBacklogGoal(token: string, data: EditBacklogGoalRequestDTO): Promise<BaseResponse<ProductBacklog>> {
-    const response = await projectHubService.put(`/product_backlog/edit_backlog_goal`,
+    const response = await projectHubService.put(`/api/product_backlog/edit_backlog_goal`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -751,7 +751,7 @@ export class ProjectHubServiceRepository {
   }
 
   async createProductGoal(token: string, data: CreateProductGoalRequestDTO): Promise<BaseResponse<ProductGoal>> {
-    const response = await projectHubService.post(`/product-goal`,
+    const response = await projectHubService.post(`/api/product-goal`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -762,7 +762,7 @@ export class ProjectHubServiceRepository {
   }
 
   async renameProductGoal(token: string, data: RenameProductGoalRequestDTO): Promise<BaseResponse<ProductGoal>> {
-    const response = await projectHubService.put(`/product-goal/rename`,
+    const response = await projectHubService.put(`/api/product-goal/rename`,
       data, {
       headers: {
         Authorization: `Bearer ${token}`,
@@ -773,7 +773,7 @@ export class ProjectHubServiceRepository {
   }
 
   async deleteProductGoal(token: string, productGoalId: string): Promise<BaseResponse<void>> {
-    const response = await projectHubService.delete(`/product-goal/${productGoalId}`, {
+    const response = await projectHubService.delete(`/api/product-goal/${productGoalId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -783,7 +783,7 @@ export class ProjectHubServiceRepository {
   }
 
   async getProductGoal(token: string, projectId: string, page: number, size: number): Promise<BaseResponse<Page<GetProductGoalByProjectResponseDTO>>> {
-    const response = await projectHubService.get(`/product-goal/by_project/${projectId}`, {
+    const response = await projectHubService.get(`/api/product-goal/by_project/${projectId}`, {
       headers: {
         Authorization: `Bearer ${token}`,
       },
