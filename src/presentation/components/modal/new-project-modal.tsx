@@ -51,12 +51,12 @@ export const NewProjectModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Tambah Proyek Baru</DialogTitle>
+          <DialogTitle>Create New Project</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <Input
-            placeholder="Nama Proyek"
+            placeholder="Project Name"
             value={projectName}
             onChange={(e) => setProjectName(e.target.value)}
             maxLength={255}
@@ -74,10 +74,10 @@ export const NewProjectModal = ({
             }}
             disabled={isCreating}
           >
-            Batal
+            Cancel
           </Button>
           <Button onClick={handleCreate} disabled={isCreating}>
-            {isCreating ? "Membuat..." : "Buat"}
+            {isCreating ? "Creating..." : "Create"}
           </Button>
         </DialogFooter>
       </DialogContent>

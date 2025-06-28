@@ -130,7 +130,6 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
     const loadMoreBacklogs = useCallback(async () => {
         if (!hasMoreUnassigned) return
 
-        setLoadingUnassigned(true)
         try {
             const nowPage = Math.floor(unassignedBacklogs.length / DEFAULT_PAGE_SIZE)
 
@@ -207,28 +206,78 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
 
     const editBacklogTitle = async (backlogId: string, title: string) => {
         await triggerEditBacklogTitle({ backlogId, title })
-        await loadInitialBacklogs()
+        setUnassignedBacklogsState((prev) =>
+            prev.map((item) =>
+                item.id === backlogId ? { ...item, title } : item
+            )
+        )
     }
 
-    const editBacklogPriority = async (backlogId: string, priority: ProductBacklogPriority) => {
-        await triggerEditBacklogPriority({ backlogId, priority })
-        await loadInitialBacklogs()
+
+    const editBacklogPriority = async (backlogId: string, newPriority: ProductBacklogPriority) => {
+        await triggerEditBacklogPriority({ backlogId, priority: newPriority })
+
+        setUnassignedBacklogsState((prev) => {
+            return prev.filter((item) => {
+                if (item.id !== backlogId) return true
+                if (priority && priority !== newPriority) return false
+                return true
+            }).map((item) =>
+                item.id === backlogId ? { ...item, priority: newPriority } : item
+            )
+        })
     }
 
-    const editBacklogStatus = async (backlogId: string, status: ProductBacklogStatus) => {
-        await triggerEditBacklogStatus({ backlogId, status })
-        await loadInitialBacklogs()
+    const editBacklogStatus = async (backlogId: string, newStatus: ProductBacklogStatus) => {
+        await triggerEditBacklogStatus({ backlogId, status: newStatus })
+
+        setUnassignedBacklogsState((prev) => {
+            return prev
+                .filter((item) => {
+                    if (item.id !== backlogId) return true
+                    if (status && newStatus !== status) return false
+                    return true
+                })
+                .map((item) =>
+                    item.id === backlogId ? { ...item, status: newStatus } : item
+                )
+        })
     }
+
 
     const editBacklogGoal = async (backlogId: string, goalId: string | null) => {
         await triggerEditBacklogGoal({ backlogId, goalId })
-        await loadInitialBacklogs()
+
+        setUnassignedBacklogsState((prev) =>
+            prev
+                .filter((item) => {
+                    if (item.id !== backlogId) return true
+                    if (productGoalIds.length > 0 && !productGoalIds.includes(goalId ?? "no-goal")) return false
+                    return true
+                })
+                .map((item) =>
+                    item.id === backlogId ? { ...item, goalId } : item
+                )
+        )
     }
+
 
     const assignBacklogUser = async (backlogId: string, assigneeId: string) => {
         await triggerAssignBacklogUser({ backlogId, assigneeId })
-        await loadInitialBacklogs()
+
+        setUnassignedBacklogsState((prev) =>
+            prev
+                .filter((item) => {
+                    if (item.id !== backlogId) return true
+                    if (assigneeIds.length > 0 && !assigneeIds.includes(assigneeId)) return false
+                    return true
+                })
+                .map((item) =>
+                    item.id === backlogId ? { ...item, assigneeId } : item
+                )
+        )
     }
+
 
     const removeBacklogItem = (id: string) => {
         setUnassignedBacklogsState((prev) => prev.filter((item) => item.id !== id))

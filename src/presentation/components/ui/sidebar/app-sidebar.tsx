@@ -23,6 +23,7 @@ import * as React from "react"
 import { Link } from "react-router-dom"
 import { Skeleton } from "../skeleton"
 import { NavProject } from "./nav-project"
+import { EmptyStateIllustration } from "../../empty/empty-state"
 
 const navMain = [
   {
@@ -92,11 +93,16 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                   <Skeleton key={i} className="h-8 w-full rounded-md bg-zinc-100" />
                 ))}
               </div>
-            ) : (
+            ) : proyekNavItems.length > 0 ? (
               <NavProject items={proyekNavItems} />
+            ) : (
+              <EmptyStateIllustration type="no-recent-projects" />
             )}
+
           </div>
         </SidebarContent>
+
+
 
         {/* Footer */}
         <SidebarFooter className="bg-white px-4 py-3">

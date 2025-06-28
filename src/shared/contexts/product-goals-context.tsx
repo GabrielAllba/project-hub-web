@@ -49,7 +49,7 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
     const [goals, setGoals] = useState<ProductGoalWithInfo[]>([])
     const [selectedGoalIds, setSelectedGoalIds] = useState<string[]>([])
     const [isLoading, setIsLoading] = useState(false)
-    const [hasMore, setHasMore] = useState(true)
+    const [hasMore, setHasMore] = useState(false)
 
     const { triggerGetProductGoal } = useGetProductGoal(projectId)
     const { triggerCreateProductGoal } = useCreateProductGoal()

@@ -51,7 +51,7 @@ export function BacklogDetailDrawer() {
             {/* Activity Log Section */}
             {isBacklogLogsLoading ? (
               <div className="flex items-center justify-center h-full">
-                <LoadingSpinner message="Memuat ..." />
+                <LoadingSpinner message="Loading ..." />
               </div>
             ) : backlogLogs && backlogLogs.length > 0 ? (
               <>

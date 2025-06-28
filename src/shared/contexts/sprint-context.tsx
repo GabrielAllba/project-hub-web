@@ -204,6 +204,10 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
         setCurrentPageSprints(DEFAULT_PAGE)
         setHasMoreSprints(!res.data.last)
 
+        if (newSprints.length === 0) {
+          return
+        }
+
         const backlogMap: Record<string, ProductBacklog[]> = {}
         const totalMap: Record<string, number> = {}
         const hasMoreMap: Record<string, boolean> = {}
@@ -689,7 +693,9 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
         }
       }
     }
-    load()
+    if(selectedSprintId != ""){
+      load()
+    }
 
   }, [selectedSprintId])
 

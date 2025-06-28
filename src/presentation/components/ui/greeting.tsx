@@ -2,15 +2,13 @@ import dayjs from "dayjs";
 import "dayjs/locale/id";
 import { useEffect, useState } from "react";
 
-import type { User } from "@/domain/entities/user";
-import { useGetMe } from "@/shared/hooks/use-get-me";
+import { useUser } from '../../../shared/contexts/user-context';
 
 export const GreetingSection = () => {
     const [today, setToday] = useState<string>("");
     const [greeting, setGreeting] = useState<string>("");
-
-    const { triggerGetMe, triggerGetMeResponse } = useGetMe();
-    const user: User | undefined = triggerGetMeResponse?.data;
+    const { user } = useUser()
+    
 
     useEffect(() => {
         dayjs.locale("en");
@@ -22,8 +20,6 @@ export const GreetingSection = () => {
         else if (hour < 15) setGreeting("Good afternoon");
         else if (hour < 18) setGreeting("Good evening");
         else setGreeting("Good night");
-
-        triggerGetMe();
     }, []);
 
     return (

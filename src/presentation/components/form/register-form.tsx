@@ -51,14 +51,14 @@ export function RegisterForm() {
         navigate(`/verify-email?id=${response.data.id}`)
       } else {
         setErrorMessage(response.message)
-        toast.error("Gagal registrasi", {
+        toast.error("Registration error", {
           description: response.message,
         })
       }
     } catch (err) {
       const baseError = err as BaseResponse<null>
       setErrorMessage(baseError.message)
-      toast.error("Gagal registrasi", {
+      toast.error("Registration error", {
         description: baseError.message,
       })
     }

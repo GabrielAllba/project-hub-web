@@ -4,6 +4,7 @@ import { useGetProjectBacklogSummary } from "@/shared/hooks/use-get-project-back
 import { useEffect } from "react"
 import { StatusCards } from "../card/status-cards"
 import { ChartAreaInteractive } from "../chart/chart-area-interactive"
+import { SummaryTabSkeleton } from "../loading/summary-tab-skeleton"
 
 interface SummaryTabProps {
     projectId: string
@@ -25,8 +26,8 @@ export const SummaryTab = ({ projectId }: SummaryTabProps) => {
         loadData()
     }, [projectId])
 
-    if (!triggerGetProjectBacklogSummaryResponse) {
-        return <></>
+    if (triggerGetProjectBacklogSummaryLoading || !triggerGetProjectBacklogSummaryResponse) {
+        return <SummaryTabSkeleton />
     }
     return (
         <div className="space-y-6">

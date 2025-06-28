@@ -1,8 +1,8 @@
-import { IconArchive, IconFolder, IconHammerOff, IconUserOff } from "@tabler/icons-react"
+import { IconArchive, IconFolderOff, IconHammerOff, IconUserOff } from "@tabler/icons-react"
 import { Calendar, Filter, ListTodo, LogsIcon, SearchX } from "lucide-react"
 
 type EmptyStateProps = {
-    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project" | "no-activity" | "no-archived-projects"
+    type: "no-sprints" | "no-search" | "no-filter" | "no-task" | "no-work-items" | "no-member" | "no-project" | "no-activity" | "no-archived-projects" | "no-recent-projects"
     size?: "sm"
 }
 
@@ -93,8 +93,8 @@ export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) =
 
     if (type === "no-project") {
         return render(
-            <IconFolder className={`${sizeClasses.icon} text-blue-600`} />,
-            "No Project Available",
+            <IconFolderOff className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Projects Available",
             "Start your journey by creating your first project. Manage and monitor all your projects in one place.",
             "bg-gradient-to-br from-blue-50 to-blue-100"
         )
@@ -113,6 +113,15 @@ export const EmptyStateIllustration = ({ type, size = "sm" }: EmptyStateProps) =
             <LogsIcon className={`${sizeClasses.icon} text-blue-600`} />,
             "No Activity Available",
             "There are currently no activity on this backlog. Try changing point, title, assignee, or others to log the activity.",
+            "bg-gradient-to-br from-blue-50 to-blue-100"
+        )
+    }
+
+    if (type === "no-recent-projects") {
+        return render(
+            <IconFolderOff className={`${sizeClasses.icon} text-blue-600`} />,
+            "No Recent Projects Available",
+            "There are currently no recent projects.",
             "bg-gradient-to-br from-blue-50 to-blue-100"
         )
     }

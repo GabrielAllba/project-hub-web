@@ -22,6 +22,7 @@ import { AddProductBacklogInput } from "../input/add-product-backlog-input"
 import { BacklogItem } from "../items/backlog-item"
 import { BacklogSkeleton } from "../loading/backlog-skeleton"
 import { Button } from "../ui/button"
+import { useState } from "react"
 
 export default function ListSection() {
     const {
@@ -36,6 +37,7 @@ export default function ListSection() {
 
     const {
         sprints,
+        loadingSprints,
         sprintBacklogs,
         removeSprintBacklogItem,
         insertSprintBacklogItemAt,
@@ -192,8 +194,7 @@ export default function ListSection() {
         resetDragState()
     }
 
-    const isInitialLoading = unassignedBacklogs.length === 0 && loadingUnassigned;
-
+    const [clickLoadMore, setClickLoadMore] = useState<boolean>(false)
 
     return (
         <main className="container">
@@ -206,7 +207,7 @@ export default function ListSection() {
                     onDragEnd={handleDragEnd}
                 >
 
-                    {sprints.map((sprint) => (
+                    {!loadingSprints ? sprints.map((sprint) => (
                         <div className="p-4 rounded-sm border border-gray-200 bg-gray-50 transition-colors">
                             <DroppableContainerSprint
                                 key={sprint.id}
@@ -214,11 +215,23 @@ export default function ListSection() {
                                 isDraggedOver={dragOverContainer === sprint.id}
                             />
                         </div>
-                    ))}
+                    )) : (
+                        <div className="p-4 space-y-2 rounded-sm border border-gray-200 bg-gray-50 transition-colors">
+                            <BacklogSkeleton></BacklogSkeleton>
+                            <BacklogSkeleton></BacklogSkeleton>
+                            <BacklogSkeleton></BacklogSkeleton>
+                            <BacklogSkeleton></BacklogSkeleton>
+                        </div>
+                    )}
 
                     <div className="p-4 rounded-sm border border-gray-200 bg-gray-50 transition-colors">
-                        {isInitialLoading ? (
-                            <BacklogSkeleton></BacklogSkeleton>
+                        {loadingUnassigned ? (
+                            <div className="space-y-2">
+                                <BacklogSkeleton></BacklogSkeleton>
+                                <BacklogSkeleton></BacklogSkeleton>
+                                <BacklogSkeleton></BacklogSkeleton>
+                                <BacklogSkeleton></BacklogSkeleton>
+                            </div>
                         ) : (
                             <DroppableContainerProductBacklog
                                 id="backlog"
@@ -231,11 +244,15 @@ export default function ListSection() {
 
                         {!loadingUnassigned && <AddProductBacklogInput />}
 
-                        {!loadingUnassigned && hasMoreUnassigned && (
+                        {hasMoreUnassigned && (
                             <Button
                                 variant="outline"
-                                onClick={loadMoreBacklogs}
-                                disabled={loadingUnassigned}
+                                onClick={async () => {
+                                    setClickLoadMore(true)
+                                    await loadMoreBacklogs()
+                                    setClickLoadMore(false)
+                                }}
+                                disabled={clickLoadMore || loadingUnassigned}
                                 className="flex mx-auto mt-2"
                             >
                                 Load More Product Backlogs

@@ -42,7 +42,7 @@ export function LoginForm() {
       if (response.status === "success" && response.data?.accessToken) {
         localStorage.setItem("accessToken", response.data.accessToken)
 
-        toast.success("Login berhasil", {
+        toast.success("Login Successful", {
           description: response.message,
         })
         navigate("/dashboard")

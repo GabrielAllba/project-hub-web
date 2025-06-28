@@ -1,6 +1,6 @@
 "use client"
 
-import { IconAlertCircle, IconHourglassEmpty, IconReport, IconUsersGroup } from "@tabler/icons-react"
+import { IconAlertCircle, IconReport, IconUsersGroup } from "@tabler/icons-react"
 import { Globe, Layout, List as ListIcon, PanelTop } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useParams, useSearchParams } from "react-router-dom"
@@ -17,6 +17,7 @@ import { ProjectLayout } from "../layouts/project-detail-layout"
 import type { BaseResponse } from "@/domain/dto/base-response"
 import type { ProjectSummary } from "@/domain/entities/project-summary"
 import { useGetProjectById } from "@/shared/hooks/use-get-project-by-id"
+import { ProjectDetailSkeleton } from "../components/loading/project-detail-skeleton"
 
 const tabConfig = [
   { value: "summary", label: "Summary", icon: Globe },
@@ -84,14 +85,9 @@ export const ProjectDetailPage = () => {
   }
 
   if (!project) {
-    return (
-      <div className="flex flex-col items-center justify-center py-24 text-center text-blue-800">
-        <IconHourglassEmpty className="w-16 h-16 text-blue-500 animate-pulse mb-4" />
-        <h2 className="text-xl font-semibold">Loading project info...</h2>
-        <p className="text-sm text-blue-600 mt-2">Please wait while we fetch the project details.</p>
-      </div>
-    )
+    return <ProjectDetailSkeleton />
   }
+
 
   const tabClass =
     "hover:cursor-pointer data-[state=active]:shadow-none rounded-none shadow-none group px-2 py-1 text-sm text-muted-foreground data-[state=active]:text-blue-600 data-[state=active]:border-b-2 border-0 data-[state=active]:border-blue-600 data-[state=active]:font-medium"

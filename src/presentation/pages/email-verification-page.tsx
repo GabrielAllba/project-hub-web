@@ -36,17 +36,17 @@ export function EmailVerificationPage() {
 
                 if (res.status === "success" && res.data) {
                     if (res.data.isEmailVerified) {
-                        toast.success("Email kamu sudah terverifikasi")
+                        toast.success("Your email has been verified")
                         navigate("/login")
                     } else {
                         setIsVerifying(false)
                     }
                 } else {
-                    toast.error("User tidak ditemukan")
+                    toast.error("User not fouund")
                     setIsVerifying(false)
                 }
             } catch (err) {
-                toast.error("Terjadi kesalahan saat verifikasi: " + err)
+                toast.error("An error occured: " + err)
                 setIsVerifying(false)
             }
         }

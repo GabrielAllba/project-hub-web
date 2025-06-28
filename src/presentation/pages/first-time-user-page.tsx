@@ -119,7 +119,6 @@ export const FirstTimeUserPage = () => {
 
             const newProject = await createProject(projectName)
             if (newProject) {
-                toast.success("Project created successfully!")
                 await markNotFirstTime()
                 navigate(`/dashboard/project/${newProject.projectId}`)
             } else {
