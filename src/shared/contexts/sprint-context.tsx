@@ -497,17 +497,39 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
+  const passesAllFilters = (backlog: ProductBacklog) => {
+    return (!status || backlog.status === status) &&
+      (!priority || backlog.priority === priority) &&
+      (assigneeIds.length === 0 || assigneeIds.includes(backlog.assigneeId ?? "")) &&
+      (productGoalIds.length === 0 || productGoalIds.includes(backlog.productGoalId ?? "no-goal")) &&
+      (!search || backlog.title.toLowerCase().includes(search.toLowerCase()));
+  };
+
+
 
   const editBacklogPoint = async (backlogId: string, point: number) => {
     try {
       const res = await triggerEditBacklogPoint({ backlogId, point });
       if (res.status === "success" && res.data) {
-        loadInitialSprints();
+        const updated = res.data;
+
+        const shouldInclude = passesAllFilters({ ...updated });
+
         setSelectedSprintBacklogs((prev) =>
-          prev.map((backlog) =>
-            backlog.id === backlogId ? { ...backlog, point: res.data.point } : backlog
-          )
-        )
+          shouldInclude
+            ? prev.map((item) => item.id === backlogId ? { ...item, point: updated.point } : item)
+            : prev.filter((item) => item.id !== backlogId)
+        );
+
+        setSprintBacklogs((prev) => ({
+          ...prev,
+          [selectedSprintId]: shouldInclude
+            ? prev[selectedSprintId]?.map((item) =>
+              item.id === backlogId ? { ...item, point: updated.point } : item
+            ) ?? []
+            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+        }));
+
         toast.success("Backlog point updated!");
       } else {
         toast.error(`Failed to update backlog point: ${res.message || "Unknown error"}`);
@@ -517,17 +539,29 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
+
   const editBacklogTitle = async (backlogId: string, title: string) => {
     try {
       const res = await triggerEditBacklogTitle({ backlogId, title });
       if (res.status === "success" && res.data) {
-        loadInitialSprints();
+        const updated = res.data;
+        const shouldInclude = passesAllFilters({ ...updated });
 
         setSelectedSprintBacklogs((prev) =>
-          prev.map((backlog) =>
-            backlog.id === backlogId ? { ...backlog, title: res.data.title } : backlog
-          )
-        )
+          shouldInclude
+            ? prev.map((item) => item.id === backlogId ? { ...item, title: updated.title } : item)
+            : prev.filter((item) => item.id !== backlogId)
+        );
+
+        setSprintBacklogs((prev) => ({
+          ...prev,
+          [selectedSprintId]: shouldInclude
+            ? prev[selectedSprintId]?.map((item) =>
+              item.id === backlogId ? { ...item, title: updated.title } : item
+            ) ?? []
+            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+        }));
+
         toast.success("Backlog title updated!");
       } else {
         toast.error(`Failed to update backlog title: ${res.message || "Unknown error"}`);
@@ -537,20 +571,28 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
-  const editBacklogPriority = async (
-    backlogId: string,
-    priority: ProductBacklogPriority
-  ) => {
+  const editBacklogPriority = async (backlogId: string, priority: ProductBacklogPriority) => {
     try {
       const res = await triggerEditBacklogPriority({ backlogId, priority });
-      if (res.status === "success") {
-        loadInitialSprints();
+      if (res.status === "success" && res.data) {
+        const updated = res.data;
+        const shouldInclude = passesAllFilters({ ...updated });
 
         setSelectedSprintBacklogs((prev) =>
-          prev.map((backlog) =>
-            backlog.id === backlogId ? { ...backlog, priority: res.data.priority } : backlog
-          )
-        )
+          shouldInclude
+            ? prev.map((item) => item.id === backlogId ? { ...item, priority: updated.priority } : item)
+            : prev.filter((item) => item.id !== backlogId)
+        );
+
+        setSprintBacklogs((prev) => ({
+          ...prev,
+          [selectedSprintId]: shouldInclude
+            ? prev[selectedSprintId]?.map((item) =>
+              item.id === backlogId ? { ...item, priority: updated.priority } : item
+            ) ?? []
+            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+        }));
+
         toast.success("Backlog priority updated successfully!");
       } else {
         toast.error(`Failed to update backlog priority: ${res.message || "Unknown error"}`);
@@ -561,17 +603,37 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
   };
 
 
-  const editBacklogStatus = async (backlogId: string, status: ProductBacklogStatus) => {
+  const editBacklogStatus = async (backlogId: string, newStatus: ProductBacklogStatus) => {
     try {
-      const res = await triggerEditBacklogStatus({ backlogId, status });
-      if (res.status === "success" && res.data) {
-        loadInitialSprints();
+      const res = await triggerEditBacklogStatus({ backlogId, status: newStatus });
 
+      if (res.status === "success" && res.data) {
+        const updatedBacklog = res.data;
+
+        // Cek apakah backlog masih sesuai dengan filter
+        const shouldInclude = (!status || updatedBacklog.status === status) &&
+          (!priority || updatedBacklog.priority === priority) &&
+          (assigneeIds.length === 0 || assigneeIds.includes(updatedBacklog.assigneeId ?? "")) &&
+          (productGoalIds.length === 0 || productGoalIds.includes(updatedBacklog.productGoalId ?? "no-goal")) &&
+          (!search || updatedBacklog.title.toLowerCase().includes(search.toLowerCase()))
+
+        // Update selectedSprintBacklogs
         setSelectedSprintBacklogs((prev) =>
-          prev.map((backlog) =>
-            backlog.id === backlogId ? { ...backlog, status: res.data.status } : backlog
-          )
-        )
+          shouldInclude
+            ? prev.map((item) => item.id === backlogId ? { ...item, status: newStatus } : item)
+            : prev.filter((item) => item.id !== backlogId)
+        );
+
+        // Update global sprintBacklogs
+        setSprintBacklogs((prev) => ({
+          ...prev,
+          [selectedSprintId]: shouldInclude
+            ? prev[selectedSprintId]?.map((item) =>
+              item.id === backlogId ? { ...item, status: newStatus } : item
+            ) ?? []
+            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? []
+        }));
+
         toast.success("Backlog status updated!");
       } else {
         toast.error(`Failed to update backlog status: ${res.message || "Unknown error"}`);
@@ -581,16 +643,32 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
+
+
   const editBacklogGoal = async (backlogId: string, goalId: string | null) => {
     try {
       const res = await triggerEditBacklogGoal({ backlogId, goalId });
       if (res.status === "success" && res.data) {
-        loadInitialSprints();
+        const updated = res.data;
+        const shouldInclude = passesAllFilters({ ...updated });
+
         setSelectedSprintBacklogs((prev) =>
-          prev.map((backlog) =>
-            backlog.id === backlogId ? { ...backlog, productGoalId: res.data.productGoalId } : backlog
-          )
-        )
+          shouldInclude
+            ? prev.map((item) =>
+              item.id === backlogId ? { ...item, productGoalId: updated.productGoalId } : item
+            )
+            : prev.filter((item) => item.id !== backlogId)
+        );
+
+        setSprintBacklogs((prev) => ({
+          ...prev,
+          [selectedSprintId]: shouldInclude
+            ? prev[selectedSprintId]?.map((item) =>
+              item.id === backlogId ? { ...item, productGoalId: updated.productGoalId } : item
+            ) ?? []
+            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+        }));
+
         toast.success("Backlog goal updated!");
       } else {
         toast.error(`Failed to update backlog goal: ${res.message || "Unknown error"}`);
@@ -600,16 +678,31 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
     }
   };
 
+
   const assignBacklogUser = async (backlogId: string, assigneeId: string) => {
     try {
       const res = await triggerAssignBacklogUser({ backlogId, assigneeId });
       if (res.status === "success" && res.data) {
-        loadInitialSprints();
+        const updated = res.data;
+        const shouldInclude = passesAllFilters({ ...updated });
+
         setSelectedSprintBacklogs((prev) =>
-          prev.map((backlog) =>
-            backlog.id === backlogId ? { ...backlog, assigneeId: res.data.assigneeId } : backlog
-          )
-        )
+          shouldInclude
+            ? prev.map((item) =>
+              item.id === backlogId ? { ...item, assigneeId: updated.assigneeId } : item
+            )
+            : prev.filter((item) => item.id !== backlogId)
+        );
+
+        setSprintBacklogs((prev) => ({
+          ...prev,
+          [selectedSprintId]: shouldInclude
+            ? prev[selectedSprintId]?.map((item) =>
+              item.id === backlogId ? { ...item, assigneeId: updated.assigneeId } : item
+            ) ?? []
+            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+        }));
+
         toast.success("Backlog user assigned!");
       } else {
         toast.error(`Failed to assign backlog user: ${res.message || "Unknown error"}`);
@@ -618,6 +711,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
       toast.error(`An unexpected error occurred: ${error}`);
     }
   };
+
 
   const createSprintBacklog = async (dto: CreateProductBacklogRequestDTO) => {
     try {
@@ -693,7 +787,7 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
         }
       }
     }
-    if(selectedSprintId != ""){
+    if (selectedSprintId != "") {
       load()
     }
 

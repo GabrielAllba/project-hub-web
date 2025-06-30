@@ -41,7 +41,6 @@ export const SprintSearchPopover = ({
 
     const totalPages = searchSprintsResponse?.data?.totalPages ?? 0
 
-    // initial or debounced search
     useEffect(() => {
         if (debouncedQuery.trim() !== "") {
             setPage(0)
@@ -66,10 +65,10 @@ export const SprintSearchPopover = ({
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Search className="w-5 h-5" />
-                    Select Sprint for Report
+                    Select Sprint 
                 </CardTitle>
                 <CardDescription>
-                    Search and select a sprint to view its detailed report and task assignments.
+                    Search and select a sprint to view the detail.
                 </CardDescription>
             </CardHeader>
             <CardContent>

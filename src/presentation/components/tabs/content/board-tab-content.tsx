@@ -10,9 +10,10 @@ import { useProjectMembers } from "@/shared/contexts/project-member-context"
 import { useSprint } from "@/shared/contexts/sprint-context"
 import { cn } from "@/shared/utils/merge-class"
 import { getGradientForUser, getPriorityColor, getPriorityLabel, getUserInitials } from "@/shared/utils/product-backlog-utils"
-import { Filter, FootprintsIcon, User, X } from "lucide-react"
+import { Filter, User, X } from "lucide-react"
 import { useState } from "react"
 import { BacklogDetailDrawer } from "../../backlog-detail-drawer/backlog-detail-drawer"
+import { SprintSearchPopover } from "../../dialog/sprint-search-popover"
 import BoardSection from "../../section/board-section"
 import { Avatar, AvatarFallback } from "../../ui/avatar"
 import { Badge } from "../../ui/badge"
@@ -25,25 +26,22 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "../../ui/dropdown-menu"
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue
-} from "../../ui/select"
 
-export const BoardTabContent = () => {
+export const BoardTabContent = ({ projectId }: { projectId: string }) => {
     const { members } = useProjectMembers()
 
     const {
-        sprintsInProgress,
+        sprints,
         selectedSprintId,
         setSelectedSprintId,
     } = useSprint()
 
     const [selectedPriorities, setSelectedPriorities] = useState<ProductBacklogPriority[]>([])
     const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([])
+
+
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
 
     const handlePriorityChange = (priority: ProductBacklogPriority) => {
         setSelectedPriorities((prev) =>
@@ -83,43 +81,24 @@ export const BoardTabContent = () => {
 
     return (
         <div className="space-y-6">
+            {/* Sprint Filter */}
+            <SprintSearchPopover
+                projectId={projectId}
+                isOpen={isSearchOpen}
+                onOpenChange={setIsSearchOpen}
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                selectedSprint={sprints.find(s => s.id === selectedSprintId) ?? null}
+                onSprintSelect={(sprint) => {
+                    setSelectedSprintId(sprint.id)
+                    setIsSearchOpen(false)
+                }}
+            />
             {/* Filters */}
             <div className="flex flex-wrap justify-start items-center gap-4 p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Filters:</span>
-                </div>
-
-                {/* Sprint Filter */}
-                <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Sprint:</span>
-                    <Select
-                        value={selectedSprintId}
-                        onValueChange={setSelectedSprintId}
-                        disabled={sprintsInProgress.length === 0}
-                    >
-                        <SelectTrigger className="w-[180px]">
-                            <div className="flex items-center gap-2">
-                                <SelectValue placeholder="No active sprints" />
-                            </div>
-                        </SelectTrigger>
-                        <SelectContent>
-                            {sprintsInProgress.length > 0 ? (
-                                sprintsInProgress.map((sprint) => (
-                                    <SelectItem key={sprint.id} value={sprint.id}>
-                                        <div className="flex items-center gap-2">
-                                            <FootprintsIcon className="w-4 h-4 text-blue-500" />
-                                            <span>{sprint.name}</span>
-                                        </div>
-                                    </SelectItem>
-                                ))
-                            ) : (
-                                <div className="text-sm text-muted-foreground px-4 py-2">
-                                    No sprints in progress
-                                </div>
-                            )}
-                        </SelectContent>
-                    </Select>
                 </div>
 
                 {/* Priority filter */}

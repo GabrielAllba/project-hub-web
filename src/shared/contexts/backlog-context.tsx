@@ -199,18 +199,29 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
         setTotalUnassigned((prev) => Math.max(0, prev - 1))
     }
 
-    const editBacklogPoint = async (backlogId: string, point: number) => {
-        await triggerEditBacklogPoint({ backlogId, point })
-        await loadInitialBacklogs()
+    const editBacklogPoint = async (backlogId: string, newPoint: number) => {
+        await triggerEditBacklogPoint({ backlogId, point: newPoint })
+        setUnassignedBacklogsState((prev) => {
+            return prev.filter((item) => {
+                if (item.id !== backlogId) return true
+                return true
+            }).map((item) =>
+                item.id === backlogId ? { ...item, point: newPoint } : item
+            )
+        })
     }
 
-    const editBacklogTitle = async (backlogId: string, title: string) => {
-        await triggerEditBacklogTitle({ backlogId, title })
-        setUnassignedBacklogsState((prev) =>
-            prev.map((item) =>
-                item.id === backlogId ? { ...item, title } : item
+    const editBacklogTitle = async (backlogId: string, newTitle: string) => {
+        await triggerEditBacklogTitle({ backlogId, title: newTitle })
+        setUnassignedBacklogsState((prev) => {
+            return prev.filter((item) => {
+                if (item.id !== backlogId) return true
+                if (search && search !== newTitle) return false
+                return true
+            }).map((item) =>
+                item.id === backlogId ? { ...item, title: newTitle } : item
             )
-        )
+        })
     }
 
 

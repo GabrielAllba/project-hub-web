@@ -12,17 +12,17 @@ interface BoardTabProps {
 
 export const BoardTab = ({ projectId }: BoardTabProps) => {
   return (
-    
-      <ProductGoalsProvider projectId={projectId}>
-        <BacklogProvider projectId={projectId}>
-          <SprintProvider projectId={projectId}>
-            <DragStateProvider>
-              <BoardTabContent />
-            </DragStateProvider>
-          </SprintProvider>
-        </BacklogProvider>
-      </ProductGoalsProvider>
-    
+
+    <ProductGoalsProvider projectId={projectId}>
+      <BacklogProvider projectId={projectId}>
+        <SprintProvider projectId={projectId}>
+          <DragStateProvider>
+            <BoardTabContent projectId={projectId} />
+          </DragStateProvider>
+        </SprintProvider>
+      </BacklogProvider>
+    </ProductGoalsProvider>
+
   )
 }
 
