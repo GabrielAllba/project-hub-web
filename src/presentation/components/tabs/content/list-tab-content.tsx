@@ -162,7 +162,7 @@ export const ListTabContent = () => {
     <div className="flex flex-col gap-4">
       {/* Filters row */}
       <div className="flex flex-wrap justify-between gap-4 items-center">
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           <Button
             onClick={toggleProductGoals}
             variant="outline"
@@ -382,13 +382,13 @@ export const ListTabContent = () => {
       )}
 
       {/* Main content */}
-      <div className="flex gap-6">
+      <div className="flex gap-6 flex-wrap">
         {showProductGoals && (
           <div className="w-[280px]">
             <ProductGoalsSection />
           </div>
         )}
-        <div className="flex-1">
+        <div className="flex">
           <ListSection />
         </div>
         <BacklogDetailDrawer />

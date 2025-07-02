@@ -356,7 +356,7 @@ export default function BoardSection(props: BoardSectionProps) {
 
     return (
         <div className="bg-background min-h-screen">
-            {isInitialLoading && filteredTasks.length != 0 ? (
+            {isInitialLoading && filteredTasks? (
                 <BoardSkeleton columnCount={3} cardCountPerColumn={3} />
             ) : (
                 <>

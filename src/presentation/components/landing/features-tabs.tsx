@@ -12,9 +12,8 @@ const tabsData = {
             "A streamlined task view for backlog management. Filter, search, sort and update backlog items in one powerful interface.",
         features: [
             "Compact list-based backlog view",
-            "Advanced filtering and search",
+            "Filtering and search",
             "Quick inline editing",
-            "Bulk actions and priority sorting",
         ],
         image: "/images/list-preview.png",
         cta: "Get Started",
@@ -27,9 +26,7 @@ const tabsData = {
             "Manage your Scrum boards effortlessly with visual task tracking, drag-and-drop workflows, and custom statuses. Perfect for sprint planning, standups, and reviews.",
         features: [
             "Kanban-style task management",
-            "Customizable columns & statuses",
             "Drag-and-drop backlog and sprint tasks",
-            "Real-time updates for all team members",
         ],
         image: "/images/board-preview.png",
         cta: "Get Started",
@@ -42,8 +39,7 @@ const tabsData = {
             "Visualize your sprint timelines with interactive Gantt charts. Manage dependencies, milestones, and release cycles with precision and flexibility.",
         features: [
             "Gantt-style sprint timeline",
-            "Milestone & release planning",
-            "Dependency tracking",
+            "Tracking",
             "Drag-to-reschedule functionality",
         ],
         image: "/images/timeline-preview.png",
@@ -56,10 +52,10 @@ const tabsData = {
         description:
             "Collaborate across Product Owners, Scrum Masters, and Developers. Assign roles, manage team capacity, and keep everyone aligned in one shared workspace.",
         features: [
-            "Role-based access control",
+            "Role-based",
             "Team directory & avatars",
             "Workload and availability tracking",
-            "Real-time collaboration & mentions",
+            "Collaboration",
         ],
         image: "/images/team-preview.png",
         cta: "Get Started",
@@ -77,7 +73,7 @@ export function FeaturesTabs() {
             <div className="px-4 sm:px-6 lg:px-8 w-full">
                 <div className="w-full">
                     <div className="flex justify-center mb-16 w-full">
-                        <div className="flex space-x-16">
+                        <div className="grid grid-cols-2 md:grid-cols-4">
                             {tabOrder.map((key) => {
                                 const data = tabsData[key as keyof typeof tabsData]
                                 const IconComponent = data.icon

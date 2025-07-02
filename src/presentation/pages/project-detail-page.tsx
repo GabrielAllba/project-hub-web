@@ -1,7 +1,7 @@
 "use client"
 
 import { IconAlertCircle, IconReport, IconUsersGroup } from "@tabler/icons-react"
-import { Globe, Layout, List as ListIcon, PanelTop } from "lucide-react"
+import { Calendar, Globe, Layout, List as ListIcon } from "lucide-react"
 import { useEffect, useState } from "react"
 import { useParams, useSearchParams } from "react-router-dom"
 
@@ -23,7 +23,7 @@ const tabConfig = [
   { value: "summary", label: "Summary", icon: Globe },
   { value: "list", label: "Backlog", icon: ListIcon },
   { value: "board", label: "Board", icon: Layout },
-  { value: "timeline", label: "Timeline", icon: PanelTop },
+  { value: "timeline", label: "Timeline", icon: Calendar },
   { value: "report", label: "Report", icon: IconReport },
   { value: "team", label: "Team", icon: IconUsersGroup },
 ]

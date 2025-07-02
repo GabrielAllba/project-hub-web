@@ -541,15 +541,15 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
   return (
     <div className="w-full h-full bg-white flex flex-col">
       {/* Header Controls */}
-      <div className="flex items-center justify-between p-4 border-b bg-gray-50 flex-shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-wrap gap-4 items-center justify-between p-4 border-b bg-gray-50 flex-shrink-0">
+        <div className="flex items-center gap-4 flex-wrap">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <Input
               placeholder="Search sprints..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 w-64"
+              className="pl-10 w-full"
             />
 
             {searchSprintsTimelineLoading && (
@@ -596,7 +596,7 @@ const TimelineTab: React.FC<TimelineTabProps> = ({ projectId }) => {
           </DropdownMenu>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Button variant="ghost" size="sm" onClick={toggleExpand} className="mr-2">
             {isExpanded ? <Minimize className="w-4 h-4 mr-2" /> : <Expand className="w-4 h-4 mr-2" />}
             {isExpanded ? "Minimize" : "Expand"}

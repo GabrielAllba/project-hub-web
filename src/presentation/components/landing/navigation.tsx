@@ -4,15 +4,12 @@ import { useGetMe } from "@/shared/hooks/use-get-me"
 import { cn } from "@/shared/utils/merge-class"
 import { getGradientForUser, getUserInitials } from "@/shared/utils/product-backlog-utils"
 import { IconInnerShadowTop } from "@tabler/icons-react"
-import { Menu } from "lucide-react"
 import { useEffect, useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Avatar, AvatarFallback } from "../ui/avatar"
 import { Button } from "../ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet"
 
 export function Navigation() {
-  const [isOpen, setIsOpen] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const navigate = useNavigate()
 
@@ -52,7 +49,7 @@ export function Navigation() {
           </div>
 
           {/* Right: Desktop CTA */}
-          <div className="hidden md:flex items-center space-x-4">
+          <div className="flex items-center space-x-4">
 
             {isAuthenticated ? (
               <div
@@ -66,7 +63,7 @@ export function Navigation() {
                     {getUserInitials(username.charAt(0).toUpperCase())}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm font-bold text-gray-900">
+                <span className="text-sm font-bold text-gray-900 hidden md:flex">
                   {username.toUpperCase()}
                 </span>
               </div>
@@ -82,58 +79,7 @@ export function Navigation() {
             )}
           </div>
 
-          {/* Mobile menu */}
-          <Sheet open={isOpen} onOpenChange={setIsOpen}>
-            <SheetTrigger asChild className="md:hidden">
-              <Button variant="ghost" size="icon">
-                <Menu className="h-6 w-6" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="right" className="w-full sm:w-80">
-              <div className="flex flex-col h-full space-y-8">
-                {/* Logo */}
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center">
-                    <span className="text-white font-bold text-lg">P</span>
-                  </div>
-                  <span className="text-lg font-semibold text-gray-800">Project Hub</span>
-                </div>
-
-                {/* Nav links */}
-                <div className="flex flex-col space-y-4 text-base font-medium text-gray-700">
-                  <Link to="#features">Features</Link>
-                  <Link to="#resources">Resources</Link>
-                  <Link to="#templates">Templates</Link>
-                  <Link to="#pricing">Pricing</Link>
-                  <Link to="#enterprise">Enterprise</Link>
-                </div>
-
-                {/* Auth section */}
-                <div className="mt-auto flex flex-col space-y-3">
-                  {isAuthenticated ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setIsOpen(false)
-                        navigate("/dashboard")
-                      }}
-                    >
-                      Go to Dashboard
-                    </Button>
-                  ) : (
-                    <>
-                      <Button variant="outline" asChild>
-                        <Link to="/login">Login</Link>
-                      </Button>
-                      <Button asChild className="bg-blue-600 hover:bg-blue-700">
-                        <Link to="/register">Get Started</Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
+          
         </div>
       </div>
     </nav>

@@ -16,6 +16,7 @@ import { toast } from "sonner"
 
 import type { ProductBacklogPriority } from "@/domain/entities/product-backlog"
 import type { Sprint } from "@/domain/entities/sprint"
+import { useSprint } from "@/shared/contexts/sprint-context"
 import { cn } from "@/shared/utils/merge-class"
 import { getGradientForUser, getPriorityColor, getPriorityLabel, getUserInitials } from "@/shared/utils/product-backlog-utils"
 import { BacklogDetailDrawer } from "../../backlog-detail-drawer/backlog-detail-drawer"
@@ -50,6 +51,7 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
     const [searchQuery, setSearchQuery] = useState("")
 
     const { members } = useProjectMembers()
+    const { setSelectedSprintId } = useSprint()
 
     const handlePriorityChange = (priority: ProductBacklogPriority) => {
         setSelectedPriorities((prev) =>
@@ -85,14 +87,18 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
     useEffect(() => {
         const fetchSprint = async () => {
             if (!sprintIdFromQuery) return
+
             try {
                 const res = await triggerGetSprintById(sprintIdFromQuery)
                 if (res.status === "success" && res.data) {
                     setSelectedSprint(res.data)
+                    setSelectedSprintId(res.data.id)
                     setSprintFetchFailed(false)
                 } else {
                     setSprintFetchFailed(true)
-                    toast.error("Failed to load sprint", { description: res.message })
+                    toast.error("Failed to load sprint", {
+                        description: res.message,
+                    })
                 }
             } catch (err) {
                 setSprintFetchFailed(true)
