@@ -1,19 +1,26 @@
 "use client"
 
 import type React from "react"
+import { useEffect, useState } from "react"
+import { useLocation, useNavigate } from "react-router-dom"
 
 import {
-    PRODUCT_BACKLOG_PRIORITY_OPTIONS
+    PRODUCT_BACKLOG_PRIORITY_OPTIONS,
 } from "@/constants/constants"
-import type { ProductBacklogPriority } from "@/domain/entities/product-backlog"
+
 import { useProjectMembers } from "@/shared/contexts/project-member-context"
-import { useSprint } from "@/shared/contexts/sprint-context"
+import { useGetSprintById } from "@/shared/hooks/use-get-sprint-by-id"
+
+import { Filter, User, X } from "lucide-react"
+import { toast } from "sonner"
+
+import type { ProductBacklogPriority } from "@/domain/entities/product-backlog"
+import type { Sprint } from "@/domain/entities/sprint"
 import { cn } from "@/shared/utils/merge-class"
 import { getGradientForUser, getPriorityColor, getPriorityLabel, getUserInitials } from "@/shared/utils/product-backlog-utils"
-import { Filter, User, X } from "lucide-react"
-import { useState } from "react"
 import { BacklogDetailDrawer } from "../../backlog-detail-drawer/backlog-detail-drawer"
 import { SprintSearchPopover } from "../../dialog/sprint-search-popover"
+import { EmptyStateIllustration } from "../../empty/empty-state"
 import BoardSection from "../../section/board-section"
 import { Avatar, AvatarFallback } from "../../ui/avatar"
 import { Badge } from "../../ui/badge"
@@ -28,35 +35,37 @@ import {
 } from "../../ui/dropdown-menu"
 
 export const BoardTabContent = ({ projectId }: { projectId: string }) => {
-    const { members } = useProjectMembers()
+    const location = useLocation()
+    const navigate = useNavigate()
+    const sprintIdFromQuery = new URLSearchParams(location.search).get("sprintId")
 
-    const {
-        sprints,
-        selectedSprintId,
-        setSelectedSprintId,
-    } = useSprint()
+    const { triggerGetSprintById } = useGetSprintById("")
+    const [selectedSprint, setSelectedSprint] = useState<Sprint | null>(null)
+    const [sprintFetchFailed, setSprintFetchFailed] = useState(false)
 
     const [selectedPriorities, setSelectedPriorities] = useState<ProductBacklogPriority[]>([])
     const [selectedAssigneeIds, setSelectedAssigneeIds] = useState<string[]>([])
 
-
     const [isSearchOpen, setIsSearchOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
 
+    const { members } = useProjectMembers()
+
     const handlePriorityChange = (priority: ProductBacklogPriority) => {
         setSelectedPriorities((prev) =>
-            prev.includes(priority)
-                ? prev.filter((p) => p !== priority)
-                : [...prev, priority]
+            prev.includes(priority) ? prev.filter((p) => p !== priority) : [...prev, priority]
         )
     }
 
     const handleAssigneeIdChange = (assigneeId: string) => {
         setSelectedAssigneeIds((prev) =>
-            prev.includes(assigneeId)
-                ? prev.filter((p) => p !== assigneeId)
-                : [...prev, assigneeId]
+            prev.includes(assigneeId) ? prev.filter((p) => p !== assigneeId) : [...prev, assigneeId]
         )
+    }
+
+    const clearFilters = () => {
+        setSelectedPriorities([])
+        setSelectedAssigneeIds([])
     }
 
     const removePriorityFilter = (priority: ProductBacklogPriority, event: React.MouseEvent) => {
@@ -64,44 +73,59 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
         event.stopPropagation()
         setSelectedPriorities((prev) => prev.filter((p) => p !== priority))
     }
+
     const removeAssigneeIdFilter = (assigneeId: string, event: React.MouseEvent) => {
         event.preventDefault()
         event.stopPropagation()
         setSelectedAssigneeIds((prev) => prev.filter((p) => p !== assigneeId))
     }
 
-
-
-    const clearFilters = () => {
-        setSelectedPriorities([])
-        setSelectedAssigneeIds([])
-    }
-
     const hasActiveFilters = selectedPriorities.length > 0 || selectedAssigneeIds.length > 0
+
+    useEffect(() => {
+        const fetchSprint = async () => {
+            if (!sprintIdFromQuery) return
+            try {
+                const res = await triggerGetSprintById(sprintIdFromQuery)
+                if (res.status === "success" && res.data) {
+                    setSelectedSprint(res.data)
+                    setSprintFetchFailed(false)
+                } else {
+                    setSprintFetchFailed(true)
+                    toast.error("Failed to load sprint", { description: res.message })
+                }
+            } catch (err) {
+                setSprintFetchFailed(true)
+                toast.error("Unexpected error while fetching sprint: " + err)
+            }
+        }
+
+        fetchSprint()
+    }, [sprintIdFromQuery])
 
     return (
         <div className="space-y-6">
-            {/* Sprint Filter */}
             <SprintSearchPopover
                 projectId={projectId}
                 isOpen={isSearchOpen}
                 onOpenChange={setIsSearchOpen}
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
-                selectedSprint={sprints.find(s => s.id === selectedSprintId) ?? null}
+                selectedSprint={selectedSprint}
                 onSprintSelect={(sprint) => {
-                    setSelectedSprintId(sprint.id)
+                    setSelectedSprint(sprint)
+                    setSprintFetchFailed(false)
                     setIsSearchOpen(false)
+                    navigate(`?tab=board&sprintId=${sprint.id}`, { replace: true })
                 }}
             />
-            {/* Filters */}
+
             <div className="flex flex-wrap justify-start items-center gap-4 p-4 bg-muted/50 rounded-lg">
                 <div className="flex items-center gap-2">
                     <Filter className="w-4 h-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Filters:</span>
                 </div>
 
-                {/* Priority filter */}
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-1">
@@ -123,49 +147,41 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
                                 checked={selectedPriorities.includes(priority)}
                                 onCheckedChange={() => handlePriorityChange(priority)}
                             >
-                                <span
-                                    className={`px-2 py-0.5 text-xs font-medium rounded-sm ${getPriorityColor(priority)}`}
-                                >
+                                <span className={`px-2 text-xs font-medium rounded-sm ${getPriorityColor(priority)}`}>
                                     {getPriorityLabel(priority)}
                                 </span>
                             </DropdownMenuCheckboxItem>
                         ))}
-                        {selectedPriorities.length > 0 && (
-                            <>
-                                <DropdownMenuSeparator />
-                                <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="w-full justify-start text-xs text-muted-foreground"
-                                    onClick={() => setSelectedPriorities([])}
-                                >
-                                    Clear priority filters
-                                </Button>
-                            </>
-                        )}
                     </DropdownMenuContent>
                 </DropdownMenu>
-                {/* Assignee Filter */}
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline" className="flex items-center gap-1">
                             <User className="h-4 w-4" />
                             Assignee
-                            {selectedAssigneeIds && selectedAssigneeIds?.length > 0 && <Badge className="ml-1 bg-gray-100 text-black">{selectedAssigneeIds.length}</Badge>}
+                            {selectedAssigneeIds.length > 0 && (
+                                <Badge className="ml-1 bg-gray-100 text-black">
+                                    {selectedAssigneeIds.length}
+                                </Badge>
+                            )}
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-64 max-h-60 overflow-y-auto">
                         <DropdownMenuLabel>Filter by Assignees</DropdownMenuLabel>
                         <DropdownMenuSeparator />
-                        {members.map(user => (
+                        {members.map((user) => (
                             <DropdownMenuCheckboxItem
                                 key={user.id}
-                                checked={selectedAssigneeIds && selectedAssigneeIds.includes(user.id)}
+                                checked={selectedAssigneeIds.includes(user.id)}
                                 onCheckedChange={() => handleAssigneeIdChange(user.id)}
                             >
                                 <Avatar className="cursor-pointer h-6 w-6 border-2 border-white shadow-sm ring-1 ring-slate-100">
                                     <AvatarFallback
-                                        className={cn("text-sm font-semibold text-white bg-gradient-to-br", getGradientForUser(user.username.charAt(0).toUpperCase()))}
+                                        className={cn(
+                                            "text-sm font-semibold text-white bg-gradient-to-br",
+                                            getGradientForUser(user.username.charAt(0).toUpperCase())
+                                        )}
                                     >
                                         {getUserInitials(user.username.charAt(0).toUpperCase())}
                                     </AvatarFallback>
@@ -176,7 +192,6 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Clear all filters button */}
                 {hasActiveFilters && (
                     <Button variant="outline" size="sm" onClick={clearFilters}>
                         <X className="w-3 h-3 mr-1" />
@@ -185,7 +200,6 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
                 )}
             </div>
 
-            {/* Active filters display */}
             {hasActiveFilters && (
                 <div className="flex flex-wrap gap-2 items-center">
                     <span className="text-sm text-muted-foreground">Active filters:</span>
@@ -207,7 +221,6 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
                     ))}
                     {selectedAssigneeIds.map((assigneeId) => {
                         const user = members.find((m) => m.id === assigneeId)
-
                         return (
                             <Badge
                                 key={assigneeId}
@@ -225,17 +238,27 @@ export const BoardTabContent = ({ projectId }: { projectId: string }) => {
                             </Badge>
                         )
                     })}
-
                 </div>
             )}
 
-            {/* Content */}
-            <BoardSection
-                key={"board-" + selectedSprintId}
-                priorityFilters={selectedPriorities}
-                assigneeIdFilters={selectedAssigneeIds}
-            />
-            <BacklogDetailDrawer />
+            {sprintIdFromQuery && sprintFetchFailed ? (
+                <div className="p-8">
+                    <EmptyStateIllustration type="no-sprints" />
+                </div>
+            ) : selectedSprint ? (
+                <>
+                    <BoardSection
+                        key={"board-" + selectedSprint.id}
+                        priorityFilters={selectedPriorities}
+                        assigneeIdFilters={selectedAssigneeIds}
+                    />
+                    <BacklogDetailDrawer />
+                </>
+            ) : (
+                <div className="p-8">
+                    <EmptyStateIllustration type="no-sprints" />
+                </div>
+            )}
         </div>
     )
 }
