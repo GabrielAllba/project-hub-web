@@ -267,7 +267,7 @@ export const BacklogProvider = ({ projectId, children }: { projectId: string; ch
                     return true
                 })
                 .map((item) =>
-                    item.id === backlogId ? { ...item, goalId } : item
+                    item.id === backlogId ? { ...item, productGoalId: goalId } : item
                 )
         )
     }

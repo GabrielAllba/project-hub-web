@@ -523,11 +523,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
         setSprintBacklogs((prev) => ({
           ...prev,
-          [selectedSprintId]: shouldInclude
-            ? prev[selectedSprintId]?.map((item) =>
-              item.id === backlogId ? { ...item, point: updated.point } : item
+          [updated.sprintId as string]: shouldInclude
+            ? prev[updated.sprintId as string]?.map((item) =>
+              item.id === backlogId ? { ...updated} : item
             ) ?? []
-            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+            : prev[updated.sprintId as string]?.filter((item) => item.id !== backlogId) ?? [],
         }));
 
         toast.success("Backlog point updated!");
@@ -555,11 +555,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
         setSprintBacklogs((prev) => ({
           ...prev,
-          [selectedSprintId]: shouldInclude
-            ? prev[selectedSprintId]?.map((item) =>
-              item.id === backlogId ? { ...item, title: updated.title } : item
+          [updated.sprintId as string]: shouldInclude
+            ? prev[updated.sprintId as string]?.map((item) =>
+              item.id === backlogId ? { ...updated } : item
             ) ?? []
-            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+            : prev[updated.sprintId as string]?.filter((item) => item.id !== backlogId) ?? [],
         }));
 
         toast.success("Backlog title updated!");
@@ -586,11 +586,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
         setSprintBacklogs((prev) => ({
           ...prev,
-          [selectedSprintId]: shouldInclude
-            ? prev[selectedSprintId]?.map((item) =>
-              item.id === backlogId ? { ...item, priority: updated.priority } : item
+          [updated.sprintId as string]: shouldInclude
+            ? prev[updated.sprintId as string]?.map((item) =>
+              item.id === backlogId ? { ...updated } : item
             ) ?? []
-            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+            : prev[updated.sprintId as string]?.filter((item) => item.id !== backlogId) ?? [],
         }));
 
         toast.success("Backlog priority updated successfully!");
@@ -620,18 +620,18 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
         // Update selectedSprintBacklogs
         setSelectedSprintBacklogs((prev) =>
           shouldInclude
-            ? prev.map((item) => item.id === backlogId ? { ...item, status: newStatus } : item)
+            ? prev.map((item) => item.id === backlogId ? { ...updatedBacklog } : updatedBacklog)
             : prev.filter((item) => item.id !== backlogId)
         );
 
         // Update global sprintBacklogs
         setSprintBacklogs((prev) => ({
           ...prev,
-          [selectedSprintId]: shouldInclude
-            ? prev[selectedSprintId]?.map((item) =>
-              item.id === backlogId ? { ...item, status: newStatus } : item
+          [updatedBacklog.sprintId as string]: shouldInclude
+            ? prev[updatedBacklog.sprintId as string]?.map((item) =>
+              item.id === backlogId ? { ...updatedBacklog } : item
             ) ?? []
-            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? []
+            : prev[updatedBacklog.sprintId as string]?.filter((item) => item.id !== backlogId) ?? []
         }));
 
         toast.success("Backlog status updated!");
@@ -662,11 +662,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
         setSprintBacklogs((prev) => ({
           ...prev,
-          [selectedSprintId]: shouldInclude
-            ? prev[selectedSprintId]?.map((item) =>
-              item.id === backlogId ? { ...item, productGoalId: updated.productGoalId } : item
+          [updated.sprintId as string]: shouldInclude
+            ? prev[updated.sprintId as string]?.map((item) =>
+              item.id === backlogId ? { ...updated } : item
             ) ?? []
-            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+            : prev[updated.sprintId as string]?.filter((item) => item.id !== backlogId) ?? [],
         }));
 
         toast.success("Backlog goal updated!");
@@ -696,11 +696,11 @@ export const SprintProvider = ({ projectId, children }: { projectId: string; chi
 
         setSprintBacklogs((prev) => ({
           ...prev,
-          [selectedSprintId]: shouldInclude
-            ? prev[selectedSprintId]?.map((item) =>
-              item.id === backlogId ? { ...item, assigneeId: updated.assigneeId } : item
+          [updated.sprintId as string]: shouldInclude
+            ? prev[updated.sprintId as string]?.map((item) =>
+              item.id === backlogId ? { ...updated } : item
             ) ?? []
-            : prev[selectedSprintId]?.filter((item) => item.id !== backlogId) ?? [],
+            : prev[updated.sprintId as string]?.filter((item) => item.id !== backlogId) ?? [],
         }));
 
         toast.success("Backlog user assigned!");

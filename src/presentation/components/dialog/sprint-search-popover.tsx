@@ -119,8 +119,8 @@ export const SprintSearchPopover = ({
                                                     <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                                         <span className="flex items-center gap-1">
                                                             <Calendar className="w-3 h-3" />
-                                                            {new Date(sprint.startDate).toLocaleDateString()} -{" "}
-                                                            {new Date(sprint.endDate).toLocaleDateString()}
+                                                            {sprint.startDate && new Date(sprint.startDate).toLocaleDateString()} - {" "}
+                                                            {sprint.endDate && new Date(sprint.endDate).toLocaleDateString()}
                                                         </span>
                                                     </div>
                                                     {sprint.sprintGoal && (
