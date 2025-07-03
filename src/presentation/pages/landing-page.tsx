@@ -7,10 +7,10 @@ export const LandingPage = () => {
         <div className="min-h-screen bg-white">
             <Navigation />
 
-            {/* Hero Section */}
             <section className="bg-white text-center py-24 px-4 sm:px-8 relative overflow-hidden">
                 <div className="max-w-5xl mx-auto">
                     <h1 className="text-4xl sm:text-6xl font-extrabold text-gray-900 leading-tight mb-6">
+                        <span className="text-[#1868DB]">Easily </span>
                         Plan and track your task<br />
                         with <span className="text-[#1868DB]">Project Hub</span>
                     </h1>
@@ -27,7 +27,6 @@ export const LandingPage = () => {
             </section>
 
 
-            {/* Feature Tabs */}
             <FeaturesTabs />
         </div>
     )

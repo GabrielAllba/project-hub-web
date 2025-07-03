@@ -26,7 +26,6 @@ import {
     Trash2
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { toast } from "sonner"
 import { ProductGoalModal } from "../modal/product-goal-modal"
 import { AssigneeSelector } from "../selector/assignee-selector"
 import { Badge } from "../ui/badge"
@@ -110,21 +109,17 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
         if (backlog.sprintId) {
             await editSprintBacklogPoint(backlog.id, pointValue)
             setIsEditingPoint(false)
-            toast.success("Backlog point updated successfully!")
         } else {
             await editBacklogPoint(backlog.id, pointValue)
             setIsEditingPoint(false)
-            toast.success("Backlog point updated successfully!")
         }
     }
 
     const handleDeleteBacklog = async () => {
         if (backlog.sprintId) {
             await deleteSprintBacklogItem(backlog.sprintId, backlog.id)
-            toast.success("Backlog removed from sprint successfully!")
         } else {
             await deleteUnassignedBacklog(backlog.id)
-            toast.success("Backlog deleted successfully!")
         }
     }
 
@@ -132,21 +127,17 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
         if (backlog.sprintId) {
             await editSprintBacklogTitle(backlog.id, titleValue)
             setEditingTitleBacklog(undefined)
-            // toast.success("Backlog title updated successfully!")
         } else {
             await editBacklogTitle(backlog.id, titleValue)
             setEditingTitleBacklog(undefined)
-            // toast.success("Backlog title updated successfully!")
         }
     }
 
     const handleProductGoalChange = async (goalId: string | null) => {
         if (backlog.sprintId) {
             await editSprintBacklogGoal(backlog.id, goalId)
-            toast.success("Product goal updated successfully!")
         } else {
             await editBacklogGoal(backlog.id, goalId)
-            toast.success("Product goal updated successfully!")
         }
     }
 
@@ -212,11 +203,9 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                                 if (backlog.sprintId) {
                                     await assignSprintBacklogUser(backlog.id, user.id)
                                     setAssignee(user)
-                                    toast.success("Assignee updated")
                                 } else {
                                     await assignBacklogUser(backlog.id, user.id)
                                     setAssignee(user)
-                                    toast.success("Assignee updated")
                                 }
                             }}
                         />
@@ -267,10 +256,8 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                                             if (priority !== backlog.priority) {
                                                 if (backlog.sprintId) {
                                                     await editSprintBacklogPriority(backlog.id, priority)
-                                                    toast.success("Priority updated successfully!")
                                                 } else {
                                                     await editBacklogPriority(backlog.id, priority)
-                                                    toast.success("Priority updated successfully!")
                                                 }
                                             }
                                         }}
@@ -298,10 +285,8 @@ export function BacklogItem({ backlog }: BacklogItemProps) {
                                             if (status !== backlog.status) {
                                                 if (backlog.sprintId) {
                                                     await editSprintBacklogStatus(backlog.id, status)
-                                                    toast.success("Status updated successfully!")
                                                 } else {
                                                     await editBacklogStatus(backlog.id, status)
-                                                    toast.success("Status updated successfully!")
                                                 }
                                             }
                                         }}

@@ -14,7 +14,8 @@ export class AuthenticationServiceRepository {
     return response.data;
   }
   async register(data: RegisterRequestDTO): Promise<BaseResponse<RegisterResponseDTO>> {
-    const response = await authenticationServices.post<BaseResponse<RegisterResponseDTO>>("/api/auth/register", data);
+    const response = await authenticationServices.post<BaseResponse<RegisterResponseDTO>>(
+      "/api/auth/register", data);
     return response.data;
   }
   async validateToken(token: string): Promise<BaseResponse<{ message: string }>> {

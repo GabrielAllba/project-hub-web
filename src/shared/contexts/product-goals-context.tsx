@@ -128,7 +128,7 @@ export function ProductGoalsProvider({ children, projectId }: ProductGoalsProvid
         try {
             const res = await triggerRenameProductGoal({ productGoalId: goalId, newTitle: newTitle })
             if (res.status === "success") {
-                updateGoal(res.data)
+                setGoals((prev) => prev.map((goal) => (goal.id === res.data.id ? {...goal, title: res.data.title} : goal)))
             }
             toast.success("Success rename goal")
         } catch (error) {

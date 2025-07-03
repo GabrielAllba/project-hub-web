@@ -388,7 +388,7 @@ export const ListTabContent = () => {
             <ProductGoalsSection />
           </div>
         )}
-        <div className="flex">
+        <div className="flex-1">
           <ListSection />
         </div>
         <BacklogDetailDrawer />

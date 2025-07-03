@@ -49,15 +49,15 @@ type ChartEntry = {
 const chartConfig = {
     todo: {
         label: "To Do",
-        color: "#9CA3AF", // gray-400 (neutral, cocok untuk belum dikerjakan)
+        color: "#9CA3AF", 
     },
     inProgress: {
         label: "In Progress",
-        color: "#60A5FA", // blue-400
+        color: "#60A5FA", 
     },
     done: {
         label: "Done",
-        color: "#C084FC", // purple-400
+        color: "#C084FC", 
     },
 
 }

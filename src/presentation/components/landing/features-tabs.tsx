@@ -6,7 +6,7 @@ import { Button } from "../ui/button"
 
 const tabsData = {
     list: {
-        title: "Manage your tasks efficiently",
+        title: "Manage your tasks easily",
         subtitle: "List",
         description:
             "A streamlined task view for backlog management. Filter, search, sort and update backlog items in one powerful interface.",

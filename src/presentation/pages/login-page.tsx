@@ -27,7 +27,6 @@ export function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT SIDE - Login Form */}
       <div className="flex flex-col w-full lg:w-1/2 justify-center px-6 md:px-10 lg:px-16 py-12 bg-white dark:bg-zinc-950">
         <div className="w-full max-w-md mx-auto space-y-6">
           <div className="space-y-1 text-left">
